@@ -35,7 +35,7 @@ export default function RootLayout({
           <TooltipProvider>
             <KeyboardShortcuts />
             {children}
-            <Toaster richColors position="bottom-right" />
+            <Toaster richColors position="bottom-right" visibleToasts={1} />
           </TooltipProvider>
         </AuthSessionProvider>
       </body>
