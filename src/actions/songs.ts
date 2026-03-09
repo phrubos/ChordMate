@@ -69,6 +69,8 @@ export async function createSong(formData: FormData) {
 
   revalidatePath('/songs');
   revalidatePath('/dashboard');
+
+  return { imageFound: !!imageUrl };
 }
 
 export async function updateSong(id: string, formData: FormData) {
