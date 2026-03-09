@@ -39,6 +39,15 @@ export function StatsWidget({ totalSongs, withTabs, favorites, avgDifficulty, to
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
+
   const tabPct = totalSongs > 0 ? Math.round((withTabs / totalSongs) * 100) : 0;
   const favPct = totalSongs > 0 ? Math.round((favorites / totalSongs) * 100) : 0;
 
@@ -70,7 +79,7 @@ export function StatsWidget({ totalSongs, withTabs, favorites, avgDifficulty, to
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="absolute top-4 right-4 z-10 flex size-8 items-center justify-center rounded-full bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground transition-colors mix-blend-screen"
+              className="absolute top-4 right-4 z-50 flex size-8 items-center justify-center rounded-full bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground transition-colors mix-blend-screen"
             >
               <X className="size-4" />
             </button>
