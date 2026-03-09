@@ -59,6 +59,53 @@ export async function removeSongFromDate(entryId: string) {
   revalidatePath('/dashboard');
 }
 
+export async function reorderCalendarEntries(entryIds: string[]) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  for (let i = 0; i < entryIds.length; i++) {
+    await db
+      .update(calendarEntries)
+      .set({ sortOrder: i })
+      .where(eq(calendarEntries.id, entryIds[i]));
+  }
+
+  revalidatePath('/dashboard');
+}
+
+export async function getCalendarStats() {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const allEntries = await db.query.calendarEntries.findMany({
+    with: { song: true },
+    orderBy: [asc(calendarEntries.date)],
+  });
+
+  // Group by date for practice history
+  const practiceHistory: { date: string; songCount: number; songs: string[] }[] = [];
+  const grouped = new Map<string, { count: number; songs: string[] }>();
+
+  for (const entry of allEntries) {
+    const existing = grouped.get(entry.date);
+    if (existing) {
+      existing.count++;
+      existing.songs.push(entry.song.title);
+    } else {
+      grouped.set(entry.date, { count: 1, songs: [entry.song.title] });
+    }
+  }
+
+  for (const [date, data] of grouped) {
+    practiceHistory.push({ date, songCount: data.count, songs: data.songs });
+  }
+
+  return {
+    totalPracticeDays: practiceHistory.length,
+    practiceHistory: practiceHistory.sort((a, b) => b.date.localeCompare(a.date)),
+  };
+}
+
 export async function copySongsToDate(fromDate: string, toDate: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');

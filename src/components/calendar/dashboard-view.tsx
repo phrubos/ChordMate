@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { format, parseISO, isAfter, startOfDay } from 'date-fns';
-import { hu } from 'date-fns/locale';
-import { CalendarCheck } from 'lucide-react';
+import { format } from 'date-fns';
 import { CalendarHeader } from './calendar-header';
 import { CalendarGrid } from './calendar-grid';
 import { DayDetailPanel } from './day-detail-panel';
@@ -61,17 +59,6 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
     setSelectedDate(format(now, 'yyyy-MM-dd'));
   }
 
-  const nextPractice = useMemo(() => {
-    const today = startOfDay(new Date());
-    const futureDates = [...new Set(entries.map((e) => e.date))]
-      .filter((d) => {
-        const date = parseISO(d);
-        return isAfter(date, today) || format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
-      })
-      .sort();
-    return futureDates.length > 0 ? futureDates[0] : null;
-  }, [entries]);
-
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="flex flex-col gap-4">
@@ -89,26 +76,6 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
           songCountByDate={songCountByDate}
           onSelectDate={setSelectedDate}
         />
-
-        {/* Next practice indicator */}
-        <div className="flex items-center gap-2.5 rounded-lg border border-border/40 bg-card/30 px-4 py-3">
-          <CalendarCheck className="size-4 text-primary shrink-0" />
-          {nextPractice ? (
-            <p className="text-sm text-foreground">
-              Következő próba:{' '}
-              <span className="font-semibold text-primary capitalize">
-                {format(parseISO(nextPractice), 'MMMM d., EEEE', { locale: hu })}
-              </span>
-              <span className="text-muted-foreground ml-1">
-                ({songCountByDate[nextPractice] ?? 0} dal)
-              </span>
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Nincs beállítva következő próba — adj dalokat egy naphoz!
-            </p>
-          )}
-        </div>
       </div>
       <DayDetailPanel
         selectedDate={selectedDate}

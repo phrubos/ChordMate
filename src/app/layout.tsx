@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
+import { KeyboardShortcuts } from "@/components/shared/keyboard-shortcuts";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
       >
         <AuthSessionProvider>
           <TooltipProvider>
+            <KeyboardShortcuts />
             {children}
             <Toaster richColors position="bottom-right" />
           </TooltipProvider>

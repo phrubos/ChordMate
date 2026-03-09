@@ -22,6 +22,7 @@ export function SongList({ songs, searchQuery }: SongListProps) {
       return (
         <EmptyState
           icon={ListMusic}
+          illustration="search"
           title="Nincs találat"
           description={`Nincs találat erre: "${searchQuery}"`}
         />
@@ -30,6 +31,7 @@ export function SongList({ songs, searchQuery }: SongListProps) {
     return (
       <EmptyState
         icon={ListMusic}
+        illustration="songs"
         title="Még nincsenek dalok"
         description="Adj hozzá az első dalt, hogy elkezdhessétek a gyakorlást!"
       >

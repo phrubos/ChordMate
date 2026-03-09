@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { format } from "date-fns"
+import { format, differenceInDays, differenceInWeeks, differenceInMonths } from "date-fns"
 import { hu } from "date-fns/locale"
 
 export function cn(...inputs: ClassValue[]) {
@@ -23,4 +23,22 @@ export function extractYoutubeId(url: string): string | null {
 export function formatDate(date: Date | string, formatStr: string = 'yyyy. MMMM d.'): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return format(d, formatStr, { locale: hu });
+}
+
+export function formatRelativeDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const days = differenceInDays(now, d);
+
+  if (days === 0) return 'ma';
+  if (days === 1) return 'tegnap';
+  if (days < 7) return `${days} napja`;
+
+  const weeks = differenceInWeeks(now, d);
+  if (weeks < 4) return `${weeks} hete`;
+
+  const months = differenceInMonths(now, d);
+  if (months < 12) return `${months} hónapja`;
+
+  return format(d, 'yyyy.MM.dd.', { locale: hu });
 }

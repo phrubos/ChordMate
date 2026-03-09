@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Plus, X, Play, Music, Copy, FileText, Square } from 'lucide-react';
+import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical } from 'lucide-react';
 import { ImageLightbox } from '@/components/shared/image-lightbox';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,182 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { YouTubePlayer } from '@/components/youtube/youtube-player';
-import { assignSongToDate, removeSongFromDate, copySongsToDate } from '@/actions/calendar';
+import { assignSongToDate, removeSongFromDate, copySongsToDate, reorderCalendarEntries } from '@/actions/calendar';
 import { TabViewerModal } from '@/components/songs/tab-viewer-modal';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { CalendarEntryWithSong, Song } from '@/types';
 
+// --- Sortable song item ---
+function SortableSongItem({
+  entry,
+  playingUrl,
+  setPlayingUrl,
+  onRemove,
+  isPending,
+}: {
+  entry: CalendarEntryWithSong;
+  playingUrl: string | null;
+  setPlayingUrl: (url: string | null) => void;
+  onRemove: (id: string) => void;
+  isPending: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: entry.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group/item flex items-center gap-2.5 rounded-lg p-2 transition-colors hover:bg-secondary/30 ${isDragging ? 'z-10 bg-card shadow-lg ring-1 ring-primary/20' : ''}`}
+    >
+      <button
+        className="shrink-0 cursor-grab touch-none text-muted-foreground/30 hover:text-muted-foreground active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="size-4" />
+      </button>
+      <div className="size-9 shrink-0 overflow-hidden rounded-md bg-secondary/50">
+        {entry.song.imageUrl ? (
+          <ImageLightbox
+            src={entry.song.imageUrl}
+            alt={entry.song.title}
+            width={36}
+            height={36}
+            className="size-full object-cover"
+          />
+        ) : (
+          <div className="flex size-full items-center justify-center">
+            <Music className="size-4 text-muted-foreground/30" />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium truncate leading-tight">{entry.song.title}</p>
+        <p className="text-xs text-muted-foreground truncate">{entry.song.artist}</p>
+      </div>
+      <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity">
+        {entry.song.tabContent && (
+          <TabViewerModal
+            songTitle={entry.song.title}
+            artist={entry.song.artist}
+            tabContent={entry.song.tabContent}
+            tabUrl={entry.song.tabUrl}
+            trigger={
+              <Button variant="ghost" size="sm" className="size-6 p-0 text-muted-foreground hover:text-primary">
+                <FileText className="size-3" />
+              </Button>
+            }
+          />
+        )}
+        {entry.song.youtubeUrl && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-6 p-0 text-muted-foreground hover:text-primary"
+            onClick={() =>
+              setPlayingUrl(playingUrl === entry.song.youtubeUrl ? null : entry.song.youtubeUrl)
+            }
+          >
+            {playingUrl === entry.song.youtubeUrl ? (
+              <Square className="size-3" />
+            ) : (
+              <Play className="size-3" />
+            )}
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="size-6 p-0 text-muted-foreground/50 hover:text-destructive"
+          onClick={() => onRemove(entry.id)}
+          disabled={isPending}
+        >
+          <X className="size-3" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// --- Sortable song list wrapper ---
+function SortableSongList({
+  entries,
+  playingUrl,
+  setPlayingUrl,
+  onRemove,
+  onReorder,
+  isPending,
+}: {
+  entries: CalendarEntryWithSong[];
+  playingUrl: string | null;
+  setPlayingUrl: (url: string | null) => void;
+  onRemove: (id: string) => void;
+  onReorder: (reorderedEntries: CalendarEntryWithSong[], ids: string[]) => void;
+  isPending: boolean;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = entries.findIndex((e) => e.id === active.id);
+    const newIndex = entries.findIndex((e) => e.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = [...entries];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    onReorder(reordered, reordered.map((e) => e.id));
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={entries.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-col gap-1.5">
+          {entries.map((entry) => (
+            <SortableSongItem
+              key={entry.id}
+              entry={entry}
+              playingUrl={playingUrl}
+              setPlayingUrl={setPlayingUrl}
+              onRemove={onRemove}
+              isPending={isPending}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+// --- Main panel ---
 interface DayDetailPanelProps {
   selectedDate: string | null;
   entries: CalendarEntryWithSong[];
@@ -33,6 +205,23 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [songSearch, setSongSearch] = useState('');
+  const [localEntries, setLocalEntries] = useState(entries);
+
+  useEffect(() => {
+    setLocalEntries(entries);
+  }, [entries]);
+
+  function handleReorder(reorderedEntries: CalendarEntryWithSong[], entryIds: string[]) {
+    setLocalEntries(reorderedEntries);
+    startTransition(async () => {
+      try {
+        await reorderCalendarEntries(entryIds);
+      } catch {
+        toast.error('Hiba a sorrend mentésekor');
+        setLocalEntries(entries);
+      }
+    });
+  }
 
   if (!selectedDate) {
     return (
@@ -121,7 +310,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
 
       {/* Song list */}
       <div className="flex-1 overflow-y-auto p-3">
-        {entries.length === 0 ? (
+        {localEntries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
             <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-primary/5">
               <Music className="size-5 text-primary/30" />
@@ -129,74 +318,14 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
             <p className="text-sm text-muted-foreground">Még nincs dal ezen a napon</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-1.5">
-            {entries.map((entry) => (
-              <div
-                key={entry.id}
-                className="group/item flex items-center gap-2.5 rounded-lg p-2 transition-colors hover:bg-secondary/30"
-              >
-                <div className="size-9 shrink-0 overflow-hidden rounded-md bg-secondary/50">
-                  {entry.song.imageUrl ? (
-                    <ImageLightbox
-                      src={entry.song.imageUrl}
-                      alt={entry.song.title}
-                      width={36}
-                      height={36}
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex size-full items-center justify-center">
-                      <Music className="size-4 text-muted-foreground/30" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate leading-tight">{entry.song.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">{entry.song.artist}</p>
-                </div>
-                <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                  {entry.song.tabContent && (
-                    <TabViewerModal
-                      songTitle={entry.song.title}
-                      artist={entry.song.artist}
-                      tabContent={entry.song.tabContent}
-                      tabUrl={entry.song.tabUrl}
-                      trigger={
-                        <Button variant="ghost" size="sm" className="size-6 p-0 text-muted-foreground hover:text-primary">
-                          <FileText className="size-3" />
-                        </Button>
-                      }
-                    />
-                  )}
-                  {entry.song.youtubeUrl && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="size-6 p-0 text-muted-foreground hover:text-primary"
-                      onClick={() =>
-                        setPlayingUrl(playingUrl === entry.song.youtubeUrl ? null : entry.song.youtubeUrl)
-                      }
-                    >
-                      {playingUrl === entry.song.youtubeUrl ? (
-                        <Square className="size-3" />
-                      ) : (
-                        <Play className="size-3" />
-                      )}
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="size-6 p-0 text-muted-foreground/50 hover:text-destructive"
-                    onClick={() => handleRemove(entry.id)}
-                    disabled={isPending}
-                  >
-                    <X className="size-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <SortableSongList
+            entries={localEntries}
+            playingUrl={playingUrl}
+            setPlayingUrl={setPlayingUrl}
+            onRemove={handleRemove}
+            onReorder={handleReorder}
+            isPending={isPending}
+          />
         )}
 
         {playingUrl && (

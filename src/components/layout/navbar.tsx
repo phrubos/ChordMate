@@ -14,13 +14,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
 
 const navLinks = [
   { href: '/dashboard', label: 'Naptár', icon: Calendar },
   { href: '/songs', label: 'Dalok', icon: ListMusic },
 ];
 
-export function Navbar() {
+interface NavbarProps {
+  stats?: React.ReactNode;
+}
+
+export function Navbar({ stats }: NavbarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -68,7 +73,11 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* User menu (desktop) */}
+        {/* Theme toggle + User menu (desktop) */}
+        <div className="hidden items-center gap-1 md:flex">
+          {stats}
+          <ThemeToggle />
+        </div>
         <div className="hidden md:block">
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -89,15 +98,19 @@ export function Navbar() {
           </DropdownMenu>
         </div>
 
-        {/* Mobile hamburger */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="size-9 p-0 md:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </Button>
+        {/* Mobile controls */}
+        <div className="flex items-center gap-1 md:hidden">
+          {stats}
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-9 p-0"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </Button>
+        </div>
       </div>
 
       {/* Mobile menu */}

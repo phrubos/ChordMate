@@ -4,28 +4,48 @@ import { db } from '@/lib/db';
 import { songs } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { eq, or, ilike, desc } from 'drizzle-orm';
+import { eq, or, and, ilike, desc, isNotNull } from 'drizzle-orm';
 import { songSchema } from '@/lib/validators';
 import { fetchAlbumArt } from '@/lib/fetch-album-art';
 
-export async function getSongs(search?: string) {
+interface SongFilters {
+  search?: string;
+  difficulty?: number;
+  hasTab?: boolean;
+  favOnly?: boolean;
+}
+
+export async function getSongs(filters?: string | SongFilters) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
-  if (search) {
-    return db.query.songs.findMany({
-      where: or(
-        ilike(songs.title, `%${search}%`),
-        ilike(songs.artist, `%${search}%`)
-      ),
-      with: { addedBy: true },
-      orderBy: [desc(songs.createdAt)],
-    });
+  // Support legacy string search param
+  const f: SongFilters = typeof filters === 'string' ? { search: filters } : (filters ?? {});
+
+  const conditions = [];
+
+  if (f.search) {
+    conditions.push(
+      or(
+        ilike(songs.title, `%${f.search}%`),
+        ilike(songs.artist, `%${f.search}%`)
+      )!
+    );
+  }
+  if (f.difficulty) {
+    conditions.push(eq(songs.difficulty, f.difficulty));
+  }
+  if (f.hasTab) {
+    conditions.push(isNotNull(songs.tabContent));
+  }
+  if (f.favOnly) {
+    conditions.push(eq(songs.isFavorite, true));
   }
 
   return db.query.songs.findMany({
+    where: conditions.length > 0 ? and(...conditions) : undefined,
     with: { addedBy: true },
-    orderBy: [desc(songs.createdAt)],
+    orderBy: [desc(songs.isFavorite), desc(songs.createdAt)],
   });
 }
 
@@ -69,7 +89,6 @@ export async function createSong(formData: FormData) {
 
   revalidatePath('/songs');
   revalidatePath('/dashboard');
-
   return { imageFound: !!imageUrl };
 }
 
@@ -115,6 +134,7 @@ export async function updateSong(id: string, formData: FormData) {
 
   revalidatePath('/songs');
   revalidatePath('/dashboard');
+  return { imageFound: !!imageUrl };
 }
 
 export async function deleteSong(id: string) {
@@ -125,4 +145,36 @@ export async function deleteSong(id: string) {
 
   revalidatePath('/songs');
   revalidatePath('/dashboard');
+}
+
+export async function toggleFavorite(id: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const song = await db.query.songs.findFirst({ where: eq(songs.id, id) });
+  if (!song) throw new Error('Song not found');
+
+  await db
+    .update(songs)
+    .set({ isFavorite: !song.isFavorite, updatedAt: new Date() })
+    .where(eq(songs.id, id));
+
+  revalidatePath('/songs');
+  revalidatePath('/dashboard');
+}
+
+export async function getSongStats() {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const allSongs = await db.select().from(songs);
+  const totalSongs = allSongs.length;
+  const withTabs = allSongs.filter((s) => s.tabContent).length;
+  const favorites = allSongs.filter((s) => s.isFavorite).length;
+  const withDifficulty = allSongs.filter((s) => s.difficulty);
+  const avgDifficulty =
+    withDifficulty.reduce((sum: number, s) => sum + (s.difficulty ?? 0), 0) /
+      (withDifficulty.length || 1);
+
+  return { totalSongs, withTabs, favorites, avgDifficulty: Math.round(avgDifficulty * 10) / 10 };
 }

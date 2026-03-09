@@ -3,6 +3,7 @@ import {
   text,
   timestamp,
   integer,
+  boolean,
   primaryKey,
   uuid,
   date,
@@ -85,6 +86,7 @@ export const songs = pgTable('songs', {
   tabContent: text('tab_content'),
   tabUrl: text('tab_url'),
   imageUrl: text('image_url'),
+  isFavorite: boolean('is_favorite').default(false).notNull(),
   addedById: text('added_by_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),

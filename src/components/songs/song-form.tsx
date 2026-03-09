@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition, useState } from 'react';
+import { useTransition, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Star, ExternalLink, ChevronDown, ChevronUp, Search } from 'lucide-react';
@@ -25,6 +25,29 @@ export function SongForm({ song }: SongFormProps) {
   const [title, setTitle] = useState(song?.title ?? '');
   const [artist, setArtist] = useState(song?.artist ?? '');
   const isEdit = !!song;
+  const [isDirty, setIsDirty] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Track form changes
+  const markDirty = useCallback(() => { if (!isDirty) setIsDirty(true); }, [isDirty]);
+
+  // Warn before browser close/refresh
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (isDirty) {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  function handleBack() {
+    if (isDirty && !window.confirm('Nem mentett változtatásaid vannak. Biztosan el akarsz navigálni?')) {
+      return;
+    }
+    router.back();
+  }
 
   const searchUrl = title && artist
     ? `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(`${artist} ${title}`)}`
@@ -35,12 +58,16 @@ export function SongForm({ song }: SongFormProps) {
 
     startTransition(async () => {
       try {
+        let result;
         if (isEdit) {
-          await updateSong(song.id, formData);
+          result = await updateSong(song.id, formData);
           toast.success('Dal sikeresen frissítve');
         } else {
-          await createSong(formData);
+          result = await createSong(formData);
           toast.success('Dal sikeresen hozzáadva');
+        }
+        if (result?.imageFound) {
+          toast.success('Borítókép automatikusan betöltve', { icon: '🎵' });
         }
         router.push('/songs');
       } catch {
@@ -72,7 +99,7 @@ export function SongForm({ song }: SongFormProps) {
                 defaultValue={song?.title}
                 placeholder="pl. Hotel California"
                 className="h-10 rounded-lg bg-background/50"
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => { setTitle(e.target.value); markDirty(); }}
                 required
               />
             </div>
@@ -86,7 +113,7 @@ export function SongForm({ song }: SongFormProps) {
                 defaultValue={song?.artist}
                 placeholder="pl. Eagles"
                 className="h-10 rounded-lg bg-background/50"
-                onChange={(e) => setArtist(e.target.value)}
+                onChange={(e) => { setArtist(e.target.value); markDirty(); }}
                 required
               />
             </div>
@@ -101,7 +128,7 @@ export function SongForm({ song }: SongFormProps) {
                 name="youtubeUrl"
                 defaultValue={song?.youtubeUrl ?? ''}
                 placeholder="https://youtube.com/watch?v=..."
-                onChange={(e) => setYoutubeUrl(e.target.value)}
+                onChange={(e) => { setYoutubeUrl(e.target.value); markDirty(); }}
                 className="h-10 rounded-lg bg-background/50"
               />
             </div>
@@ -150,6 +177,7 @@ export function SongForm({ song }: SongFormProps) {
                 placeholder='pl. "Capo 2. érintőn"'
                 rows={2}
                 className="rounded-lg bg-background/50 resize-none"
+                onChange={markDirty}
               />
             </div>
 
@@ -205,6 +233,7 @@ export function SongForm({ song }: SongFormProps) {
                       placeholder={"Am        C\nHello, it's me\nF             G\nI was wondering..."}
                       rows={8}
                       className="rounded-lg bg-background/50 font-mono text-sm resize-y"
+                      onChange={markDirty}
                     />
                   </div>
                 </div>
@@ -214,7 +243,7 @@ export function SongForm({ song }: SongFormProps) {
 
           {/* Footer */}
           <div className="mt-6 flex justify-end gap-2 border-t border-border/30 pt-4">
-            <Button type="button" variant="ghost" onClick={() => router.back()} disabled={isPending}>
+            <Button type="button" variant="ghost" onClick={handleBack} disabled={isPending}>
               Mégse
             </Button>
             <Button type="submit" disabled={isPending} className="min-w-[100px]">

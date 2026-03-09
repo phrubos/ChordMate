@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Pencil, Trash2, Play, Star, FileText, Music } from 'lucide-react';
+import { Pencil, Trash2, Play, Star, FileText, Music, Heart } from 'lucide-react';
 import { ImageLightbox } from '@/components/shared/image-lightbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { SongWithUser } from '@/types';
-import { formatDate } from '@/lib/utils';
-import { useState } from 'react';
+import { formatRelativeDate } from '@/lib/utils';
+import { useState, useTransition } from 'react';
+import { toggleFavorite } from '@/actions/songs';
 import { DeleteSongDialog } from './delete-song-dialog';
 import { TabViewerModal } from './tab-viewer-modal';
 
@@ -33,6 +34,8 @@ function DifficultyStars({ level }: { level: number | null }) {
 
 export function SongCard({ song, onPlay }: SongCardProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isFav, setIsFav] = useState(song.isFavorite);
+  const [, startTransition] = useTransition();
 
   return (
     <>
@@ -64,7 +67,7 @@ export function SongCard({ song, onPlay }: SongCardProps) {
             </div>
             <div className="mt-1.5 flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
-                {song.addedBy?.name ?? 'Ismeretlen'} · {formatDate(song.createdAt, 'yyyy.MM.dd.')}
+                {song.addedBy?.name ?? 'Ismeretlen'} · {formatRelativeDate(song.createdAt)}
               </span>
               {song.tabContent && (
                 <Badge variant="secondary" className="h-5 px-1.5 text-[11px] font-medium bg-primary/15 text-primary border-0">
@@ -100,6 +103,17 @@ export function SongCard({ song, onPlay }: SongCardProps) {
             }
           />
           <div className="flex-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 px-2.5 ${isFav ? 'text-pink-500' : 'text-muted-foreground'}`}
+            onClick={() => {
+              setIsFav(!isFav);
+              startTransition(() => toggleFavorite(song.id));
+            }}
+          >
+            <Heart className={`size-3.5 ${isFav ? 'fill-current' : ''}`} />
+          </Button>
           <Link href={`/songs/${song.id}/edit`}>
             <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground">
               <Pencil className="size-3.5" />
