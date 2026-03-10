@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Plus, Copy, X } from 'lucide-react';
+import { Plus, Copy, X, Check } from 'lucide-react';
 
 interface CalendarDayCellProps {
   day: number;
@@ -29,6 +29,8 @@ export function CalendarDayCell({
   onDeleteDate,
 }: CalendarDayCellProps) {
   const hasSongs = songCount > 0 && isCurrentMonth;
+  const isPastWithSongs = hasSongs && isPast;
+  const isFutureWithSongs = hasSongs && !isPast;
 
   return (
     <div
@@ -45,30 +47,47 @@ export function CalendarDayCell({
           : 'text-muted-foreground/30 cursor-default',
         isToday && !isSelected && 'ring-1 ring-primary/50',
         isSelected && 'bg-primary/10 ring-1 ring-primary/30 font-semibold text-primary',
-        hasSongs && !isSelected && 'practice-day-glow bg-primary/5'
+        // Future events: warm gold glow
+        isFutureWithSongs && !isSelected && 'practice-day-glow bg-primary/5',
+        // Past events: green-tinted completed look with left stripe
+        isPastWithSongs && !isSelected && 'practice-day-completed'
       )}
     >
+      {/* Day number */}
       <span className={cn(
         'relative z-10 text-[15px]',
         isToday && 'font-bold',
-        hasSongs && !isSelected && (isPast ? 'text-primary/60' : 'text-primary')
+        isFutureWithSongs && !isSelected && 'text-primary',
+        isPastWithSongs && !isSelected && 'text-muted-foreground'
       )}>
         {day}
       </span>
 
-      {/* "Próba" indicator for practice days */}
-      {hasSongs && isCurrentMonth && (
+      {/* Completed badge (bottom-right) for past practice days */}
+      {isPastWithSongs && (
+        <div className={cn(
+          'absolute bottom-1 right-1 flex items-center justify-center size-4 rounded-full z-10',
+          'bg-emerald-500/20 ring-1 ring-emerald-500/30',
+          isSelected && 'bg-emerald-500/30 ring-emerald-400/40'
+        )}>
+          <Check className="size-2.5 stroke-[3] text-emerald-400" />
+        </div>
+      )}
+
+      {/* Dot indicator for future/today practice days */}
+      {isFutureWithSongs && (
         <div className={cn(
           'absolute bottom-1.5 size-1.5 rounded-full shadow-sm',
-          isSelected ? (isPast ? 'bg-primary/70' : 'bg-primary') : (isPast ? 'bg-primary/30' : 'bg-primary/70')
+          isSelected ? 'bg-primary' : 'bg-primary/70'
         )} />
       )}
 
-      {/* Glow effect ONLY for future/today practice days */}
-      {hasSongs && isCurrentMonth && !isPast && (
+      {/* Animated glow for future/today practice days */}
+      {isFutureWithSongs && (
         <div className="absolute inset-0 rounded-lg bg-primary/5 animate-glow-pulse pointer-events-none" />
       )}
-      {/* Hover Actions */}
+
+      {/* Hover Actions (desktop only) */}
       {isCurrentMonth && (
         <div className="absolute top-1 right-1 gap-1 z-20 transition-opacity hidden md:group-hover:flex">
           <div

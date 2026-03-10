@@ -191,6 +191,15 @@
     0 0 40px oklch(0.78 0.155 65 / 5%);
 }
 
+/* Completed/past practice day - emerald green accent */
+.practice-day-completed {
+  background: oklch(0.45 0.12 155 / 8%);
+  border-left: 3px solid oklch(0.65 0.18 155 / 50%);
+  box-shadow:
+    inset 0 0 16px oklch(0.55 0.14 155 / 10%),
+    0 0 8px oklch(0.55 0.14 155 / 5%);
+}
+
 /* Shimmer text effect */
 .shimmer-text {
   background: linear-gradient(
