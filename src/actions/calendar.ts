@@ -5,19 +5,13 @@ import { calendarEntries } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { eq, and, gte, lte, asc, sql } from 'drizzle-orm';
+import { format, endOfMonth } from 'date-fns';
 
-export async function getCalendarEntries(year: number, month: number) {
+export async function getCalendarEntries() {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
-  const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-  const endDate = `${year}-${month.toString().padStart(2, '0')}-31`;
-
   return db.query.calendarEntries.findMany({
-    where: and(
-      gte(calendarEntries.date, startDate),
-      lte(calendarEntries.date, endDate)
-    ),
     with: {
       song: true,
       addedBy: true,

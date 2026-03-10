@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useTransition } from 'react';
+import { useState, useMemo, useTransition, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { CalendarHeader } from './calendar-header';
@@ -24,6 +24,12 @@ interface DashboardViewProps {
 export function DashboardView({ initialYear, initialMonth, entries, allSongs }: DashboardViewProps) {
   const [year, setYear] = useState(initialYear);
   const [month, setMonth] = useState(initialMonth);
+
+  // Sync state if props change (e.g. user uses browser back/forward)
+  useEffect(() => {
+    setYear(initialYear);
+    setMonth(initialMonth);
+  }, [initialYear, initialMonth]);
   const [selectedDate, setSelectedDate] = useState<string | null>(
     format(new Date(), 'yyyy-MM-dd')
   );

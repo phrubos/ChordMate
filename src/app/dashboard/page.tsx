@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const month = now.getMonth() + 1;
 
   const [entries, songs, songStats, calendarStats] = await Promise.all([
-    getCalendarEntries(year, month),
+    getCalendarEntries(),
     getSongs(),
     getSongStats(),
     getCalendarStats(),

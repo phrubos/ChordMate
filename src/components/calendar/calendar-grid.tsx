@@ -8,6 +8,8 @@ import {
   eachDayOfInterval,
   isSameMonth,
   isSameDay,
+  isBefore,
+  startOfDay,
   format,
 } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -43,6 +45,7 @@ export function CalendarGrid({
   const calEnd = endOfWeek(monthEnd, { locale: hu });
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
   const today = new Date();
+  const todayStart = startOfDay(today);
 
   return (
     <div className="rounded-xl border border-border/50 bg-card/30 p-3">
@@ -66,6 +69,7 @@ export function CalendarGrid({
               isCurrentMonth={isSameMonth(day, monthDate)}
               isToday={isSameDay(day, today)}
               isSelected={selectedDate === dateStr}
+              isPast={isBefore(day, todayStart)}
               songCount={songCountByDate[dateStr] ?? 0}
               onClick={() => onSelectDate(dateStr)}
               onAddSong={onAddSong ? () => onAddSong(dateStr) : undefined}

@@ -8,6 +8,7 @@ interface CalendarDayCellProps {
   isCurrentMonth: boolean;
   isToday: boolean;
   isSelected: boolean;
+  isPast?: boolean;
   songCount: number;
   onClick: () => void;
   onAddSong?: () => void;
@@ -20,6 +21,7 @@ export function CalendarDayCell({
   isCurrentMonth,
   isToday,
   isSelected,
+  isPast,
   songCount,
   onClick,
   onAddSong,
@@ -49,7 +51,7 @@ export function CalendarDayCell({
       <span className={cn(
         'relative z-10 text-[15px]',
         isToday && 'font-bold',
-        hasSongs && !isSelected && 'text-primary'
+        hasSongs && !isSelected && (isPast ? 'text-primary/60' : 'text-primary')
       )}>
         {day}
       </span>
@@ -57,13 +59,13 @@ export function CalendarDayCell({
       {/* "Próba" indicator for practice days */}
       {hasSongs && isCurrentMonth && (
         <div className={cn(
-          'absolute bottom-1.5 size-1.5 rounded-full',
-          isSelected ? 'bg-primary' : 'bg-primary/70'
+          'absolute bottom-1.5 size-1.5 rounded-full shadow-sm',
+          isSelected ? (isPast ? 'bg-primary/70' : 'bg-primary') : (isPast ? 'bg-primary/30' : 'bg-primary/70')
         )} />
       )}
 
-      {/* Glow effect for practice days */}
-      {hasSongs && isCurrentMonth && (
+      {/* Glow effect ONLY for future/today practice days */}
+      {hasSongs && isCurrentMonth && !isPast && (
         <div className="absolute inset-0 rounded-lg bg-primary/5 animate-glow-pulse pointer-events-none" />
       )}
       {/* Hover Actions */}
