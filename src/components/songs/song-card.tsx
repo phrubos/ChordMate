@@ -21,7 +21,7 @@ function DifficultyStars({ level }: { level: number | null }) {
   if (!level) return null;
   const colors = ['text-green-500', 'text-lime-500', 'text-yellow-500', 'text-orange-500', 'text-red-500'];
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-0.5 shrink-0">
       {Array.from({ length: 5 }, (_, i) => (
         <Star
           key={i}
@@ -39,9 +39,9 @@ export function SongCard({ song, onPlay }: SongCardProps) {
 
   return (
     <>
-      <div className="group relative rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm transition-all hover:border-border hover:bg-card hover:shadow-md hover:shadow-primary/5">
+      <div className="group relative rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm transition-all hover:border-border hover:bg-card hover:shadow-md hover:shadow-primary/5 overflow-hidden">
         {/* Header with album art */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-secondary/50">
             {song.imageUrl ? (
               <ImageLightbox
@@ -66,7 +66,7 @@ export function SongCard({ song, onPlay }: SongCardProps) {
               <DifficultyStars level={song.difficulty} />
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-2 min-w-0">
-              <span className="text-xs text-muted-foreground truncate">
+              <span className="text-xs text-muted-foreground truncate min-w-0 max-w-full shrink">
                 {song.addedBy?.name ?? 'Ismeretlen'} · {formatRelativeDate(song.createdAt)}
               </span>
               {song.tabContent && (
