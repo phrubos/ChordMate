@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Plus, Copy, X, Check } from 'lucide-react';
+import { Plus, Copy, X, Check, Music } from 'lucide-react';
 
 interface CalendarDayCellProps {
   day: number;
@@ -45,11 +45,13 @@ export function CalendarDayCell({
         isCurrentMonth
           ? 'hover:bg-card/80 cursor-pointer'
           : 'text-muted-foreground/30 cursor-default',
-        isToday && !isSelected && 'ring-1 ring-primary/50',
+        // State: Today (subtle bottom bar via CSS class)
+        isToday && !isSelected && 'today-marker',
+        // State: Selected (interaction feedback)
         isSelected && 'bg-primary/10 ring-1 ring-primary/30 font-semibold text-primary',
-        // Future events: warm gold glow
-        isFutureWithSongs && !isSelected && 'practice-day-glow bg-primary/5',
-        // Past events: green-tinted completed look with left stripe
+        // State: Future practice (warm amber right stripe)
+        isFutureWithSongs && !isSelected && 'practice-day-upcoming',
+        // State: Past practice (emerald green left stripe)
         isPastWithSongs && !isSelected && 'practice-day-completed'
       )}
     >
@@ -63,7 +65,18 @@ export function CalendarDayCell({
         {day}
       </span>
 
-      {/* Completed badge (bottom-right) for past practice days */}
+      {/* Upcoming badge: small filled amber dot, top-left */}
+      {isFutureWithSongs && (
+        <div className={cn(
+          'absolute top-1.5 left-1.5 flex items-center justify-center size-4 rounded-full z-10',
+          'bg-primary/15 ring-1 ring-primary/25',
+          isSelected && 'bg-primary/25 ring-primary/40'
+        )}>
+          <Music className="size-2 text-primary" />
+        </div>
+      )}
+
+      {/* Completed badge: emerald check, bottom-right */}
       {isPastWithSongs && (
         <div className={cn(
           'absolute bottom-1 right-1 flex items-center justify-center size-4 rounded-full z-10',
@@ -74,17 +87,9 @@ export function CalendarDayCell({
         </div>
       )}
 
-      {/* Dot indicator for future/today practice days */}
-      {isFutureWithSongs && (
-        <div className={cn(
-          'absolute bottom-1.5 size-1.5 rounded-full shadow-sm',
-          isSelected ? 'bg-primary' : 'bg-primary/70'
-        )} />
-      )}
-
-      {/* Animated glow for future/today practice days */}
-      {isFutureWithSongs && (
-        <div className="absolute inset-0 rounded-lg bg-primary/5 animate-glow-pulse pointer-events-none" />
+      {/* Subtle glow pulse for upcoming events only */}
+      {isFutureWithSongs && !isSelected && (
+        <div className="absolute inset-0 rounded-lg bg-primary/3 animate-glow-pulse pointer-events-none" />
       )}
 
       {/* Hover Actions (desktop only) */}
