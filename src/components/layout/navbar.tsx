@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Guitar, Calendar, ListMusic, LogOut, Menu, X } from 'lucide-react';
+import { Guitar, Calendar, ListMusic, BarChart2, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,11 +21,7 @@ const navLinks = [
   { href: '/songs', label: 'Dalok', icon: ListMusic },
 ];
 
-interface NavbarProps {
-  stats?: React.ReactNode;
-}
-
-export function Navbar({ stats }: NavbarProps) {
+export function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -75,7 +71,19 @@ export function Navbar({ stats }: NavbarProps) {
 
         {/* Theme toggle + User menu (desktop) */}
         <div className="hidden items-center gap-1 md:flex">
-          {stats}
+          <Link href="/analytics">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'size-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors',
+                pathname.startsWith('/analytics') && 'text-primary bg-primary/10'
+              )}
+              title="Analitika"
+            >
+              <BarChart2 className="size-[18px]" />
+            </Button>
+          </Link>
           <ThemeToggle />
         </div>
         <div className="hidden md:block">
@@ -100,7 +108,19 @@ export function Navbar({ stats }: NavbarProps) {
 
         {/* Mobile controls */}
         <div className="flex items-center gap-1 md:hidden">
-          {stats}
+          <Link href="/analytics">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'size-9 text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors',
+                pathname.startsWith('/analytics') && 'text-primary bg-primary/10'
+              )}
+              title="Analitika"
+            >
+              <BarChart2 className="size-[18px]" />
+            </Button>
+          </Link>
           <ThemeToggle />
           <Button
             variant="ghost"

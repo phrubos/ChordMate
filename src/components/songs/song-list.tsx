@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'motion/react';
 import { useState } from 'react';
 import { ListMusic, X } from 'lucide-react';
 import { SongCard } from './song-card';
@@ -9,6 +10,7 @@ import type { SongWithUser } from '@/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 
 interface SongListProps {
   songs: SongWithUser[];
@@ -65,11 +67,18 @@ export function SongList({ songs, searchQuery }: SongListProps) {
           </div>
         </DialogContent>
       </Dialog>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      >
         {songs.map((song) => (
-          <SongCard key={song.id} song={song} onPlay={setPlayingSong} />
+          <motion.div key={song.id} variants={staggerItem}>
+            <SongCard song={song} onPlay={setPlayingSong} />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }

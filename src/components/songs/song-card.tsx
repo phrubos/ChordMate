@@ -39,7 +39,7 @@ export function SongCard({ song, onPlay }: SongCardProps) {
 
   return (
     <>
-      <div className="group relative rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm transition-all hover:border-border hover:bg-card hover:shadow-md hover:shadow-primary/5 overflow-hidden">
+      <div className="group relative rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm transition-all hover:border-border hover:bg-card hover:shadow-md hover:shadow-primary/5 overflow-hidden h-full flex flex-col">
         {/* Header with album art */}
         <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-secondary/50">
@@ -83,7 +83,7 @@ export function SongCard({ song, onPlay }: SongCardProps) {
         )}
 
         {/* Actions */}
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-3 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
+        <div className="mt-auto flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-3 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
           {onPlay && song.youtubeUrl && (
             <Button variant="ghost" size="sm" className="h-9 gap-1.5 px-3" onClick={() => onPlay(song)}>
               <Play className="size-3.5" />

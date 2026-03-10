@@ -3,9 +3,8 @@ import { auth } from '@/lib/auth';
 import { Navbar } from '@/components/layout/navbar';
 import { DashboardView } from '@/components/calendar/dashboard-view';
 import { PracticeHistory } from '@/components/dashboard/practice-history';
-import { HeaderStats } from '@/components/layout/header-stats';
 import { getCalendarEntries, getCalendarStats } from '@/actions/calendar';
-import { getSongs, getSongStats } from '@/actions/songs';
+import { getSongs } from '@/actions/songs';
 import { PageTransition } from '@/components/shared/page-transition';
 
 export default async function DashboardPage() {
@@ -16,16 +15,15 @@ export default async function DashboardPage() {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
-  const [entries, songs, songStats, calendarStats] = await Promise.all([
+  const [entries, songs, calendarStats] = await Promise.all([
     getCalendarEntries(),
     getSongs(),
-    getSongStats(),
     getCalendarStats(),
   ]);
 
   return (
     <>
-      <Navbar stats={<HeaderStats />} />
+      <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
         <PageTransition>
           <div className="flex flex-col gap-6">

@@ -1,8 +1,10 @@
 'use client';
 
+import { motion } from 'motion/react';
 import { format, parseISO, isAfter, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { CalendarCheck, Music } from 'lucide-react';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 
 interface PracticeDay {
   date: string;
@@ -38,11 +40,18 @@ export function PracticeHistory({ history }: PracticeHistoryProps) {
           <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Következő próbák
           </h4>
-          <div className="flex flex-col gap-1.5">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col gap-1.5"
+          >
             {upcoming.reverse().map((day) => (
-              <DayRow key={day.date} day={day} variant="upcoming" />
+              <motion.div key={day.date} variants={staggerItem}>
+                <DayRow day={day} variant="upcoming" />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       )}
 
@@ -52,11 +61,18 @@ export function PracticeHistory({ history }: PracticeHistoryProps) {
           <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Korábbi próbák
           </h4>
-          <div className="flex flex-col gap-1.5">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col gap-1.5"
+          >
             {past.slice(0, 10).map((day) => (
-              <DayRow key={day.date} day={day} variant="past" />
+              <motion.div key={day.date} variants={staggerItem}>
+                <DayRow day={day} variant="past" />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       )}
     </div>

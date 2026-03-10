@@ -10,7 +10,7 @@ import { auth } from '@/lib/auth';
 import { getSongs } from '@/actions/songs';
 import { PageTransition } from '@/components/shared/page-transition';
 import { Suspense } from 'react';
-import { HeaderStats } from '@/components/layout/header-stats';
+
 
 interface SongsPageProps {
   searchParams: Promise<{ search?: string; difficulty?: string; hasTab?: string; fav?: string }>;
@@ -30,7 +30,7 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
 
   return (
     <>
-      <Navbar stats={<HeaderStats />} />
+      <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
         <PageTransition>
           <PageHeader title="Dalok" description="A közös dallistátok">
