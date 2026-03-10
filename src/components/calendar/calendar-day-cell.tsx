@@ -68,10 +68,7 @@ export function CalendarDayCell({
       )}
       {/* Hover Actions */}
       {isCurrentMonth && (
-        <div className={cn(
-          "absolute top-1 right-1 gap-1 z-20 transition-opacity",
-          isSelected ? "flex" : "hidden md:group-hover:flex"
-        )}>
+        <div className="absolute top-1 right-1 gap-1 z-20 transition-opacity hidden md:group-hover:flex">
           <div
             onClick={(e) => {
               e.stopPropagation();
