@@ -73,7 +73,7 @@ function SortableSongItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group/item flex items-center gap-2.5 rounded-lg p-2 transition-colors hover:bg-secondary/30 ${isDragging ? 'z-10 bg-card shadow-lg ring-1 ring-primary/20' : ''}`}
+      className={`group/item min-w-0 flex items-center gap-2.5 rounded-lg p-2 transition-colors hover:bg-secondary/30 ${isDragging ? 'z-10 bg-card shadow-lg ring-1 ring-primary/20' : ''}`}
     >
       <button
         className="shrink-0 cursor-grab touch-none p-2 -ml-2 text-muted-foreground/30 hover:text-muted-foreground active:cursor-grabbing"
@@ -184,7 +184,7 @@ function SortableSongList({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={entries.map((e) => e.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0">
           {entries.map((entry) => (
             <SortableSongItem
               key={entry.id}
@@ -317,7 +317,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
   }
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-border/70 bg-card/50 shadow-sm relative z-0">
+    <div className="flex h-full flex-col rounded-xl border border-border/70 bg-card/50 shadow-sm relative z-0 overflow-hidden min-w-0">
       {/* Header */}
       <div className="border-b border-border/30 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -341,7 +341,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
       </div>
 
       {/* Song list */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 min-w-0">
         {localEntries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
             <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-primary/5">
