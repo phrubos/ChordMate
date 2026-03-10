@@ -54,6 +54,8 @@ export async function assignSongsToDate(songIds: string[], date: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const userId = session.user.id;
+
   if (songIds.length === 0) return;
 
   const maxOrder = await db
@@ -69,7 +71,7 @@ export async function assignSongsToDate(songIds: string[], date: string) {
       songIds.map((songId) => ({
         date,
         songId,
-        addedById: session.user!.id,
+        addedById: userId,
         sortOrder: nextOrder++,
       }))
     )
