@@ -65,12 +65,12 @@ export function SongCard({ song, onPlay }: SongCardProps) {
               </div>
               <DifficultyStars level={song.difficulty} />
             </div>
-            <div className="mt-1.5 flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 min-w-0">
+              <span className="text-xs text-muted-foreground truncate">
                 {song.addedBy?.name ?? 'Ismeretlen'} · {formatRelativeDate(song.createdAt)}
               </span>
               {song.tabContent && (
-                <Badge variant="secondary" className="h-5 px-1.5 text-[11px] font-medium bg-primary/15 text-primary border-0">
+                <Badge variant="secondary" className="h-5 px-1.5 text-[11px] font-medium bg-primary/15 text-primary border-0 shrink-0">
                   TAB
                 </Badge>
               )}
@@ -83,7 +83,7 @@ export function SongCard({ song, onPlay }: SongCardProps) {
         )}
 
         {/* Actions */}
-        <div className="mt-3 flex items-center gap-1 border-t border-border/30 pt-3 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
+        <div className="mt-3 flex flex-wrap items-center gap-1 border-t border-border/30 pt-3 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
           {onPlay && song.youtubeUrl && (
             <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-sm" onClick={() => onPlay(song)}>
               <Play className="size-3.5" />
