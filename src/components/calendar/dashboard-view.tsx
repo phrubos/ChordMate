@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { assignSongsToDate, copySongsToDate, clearSongsFromDate } from '@/actions/calendar';
-import { Plus, Check, ListChecks } from 'lucide-react';
+import { Plus, Check, ListChecks, Copy, X } from 'lucide-react';
 import type { CalendarEntryWithSong, Song } from '@/types';
 
 interface DashboardViewProps {
@@ -31,9 +31,17 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
   const [hoverActionDate, setHoverActionDate] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [mobileActionDate, setMobileActionDate] = useState<string | null>(null);
   const [songSearch, setSongSearch] = useState('');
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
+
+  const handleSelectDate = (date: string) => {
+    setSelectedDate(date);
+    if (window.innerWidth < 768) {
+      setMobileActionDate(date);
+    }
+  };
 
   const handleAddSong = (date: string) => {
     setHoverActionDate(date);
@@ -178,7 +186,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
           month={month}
           selectedDate={selectedDate}
           songCountByDate={songCountByDate}
-          onSelectDate={setSelectedDate}
+          onSelectDate={handleSelectDate}
           onAddSong={handleAddSong}
           onCopyDate={handleCopyDate}
           onDeleteDate={handleDeleteDate}
@@ -295,6 +303,65 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
                   </button>
                 );
               })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile action modal when tapping a day */}
+      <Dialog open={!!mobileActionDate} onOpenChange={(open) => !open && setMobileActionDate(null)}>
+        <DialogContent className="max-w-[320px] rounded-[2rem] p-6 lg:hidden">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-center text-2xl font-bold capitalize">
+              {mobileActionDate ? format(parseISO(mobileActionDate), 'MMMM d.', { locale: hu }) : ''}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <Button
+              variant="outline"
+              className="h-14 justify-start gap-4 rounded-xl px-4 text-base font-medium shadow-sm"
+              onClick={() => {
+                const date = mobileActionDate;
+                setMobileActionDate(null);
+                if (date) handleAddSong(date);
+              }}
+            >
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <Plus className="size-4" />
+              </div>
+              Dal hozzáadása
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="h-14 justify-start gap-4 rounded-xl px-4 text-base font-medium shadow-sm text-foreground/80 hover:text-foreground"
+              onClick={() => {
+                const date = mobileActionDate;
+                setMobileActionDate(null);
+                if (date) handleCopyDate(date);
+              }}
+            >
+              <div className="flex size-8 items-center justify-center rounded-lg bg-secondary/80 text-foreground/70">
+                <Copy className="size-4" />
+              </div>
+              Másolás másik napról
+            </Button>
+
+            {mobileActionDate && (songCountByDate[mobileActionDate] ?? 0) > 0 && (
+              <Button
+                variant="outline"
+                className="h-14 justify-start gap-4 rounded-xl px-4 text-base tracking-wide font-medium shadow-sm border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => {
+                  const date = mobileActionDate;
+                  setMobileActionDate(null);
+                  if (date) handleDeleteDate(date);
+                }}
+              >
+                <div className="flex size-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive">
+                  <X className="size-4" />
+                </div>
+                Próba törlése
+              </Button>
             )}
           </div>
         </DialogContent>
