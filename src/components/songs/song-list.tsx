@@ -74,7 +74,7 @@ export function SongList({ songs, searchQuery }: SongListProps) {
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
         {songs.map((song) => (
-          <motion.div key={song.id} variants={staggerItem}>
+          <motion.div key={song.id} variants={staggerItem} className="min-w-0 h-full">
             <SongCard song={song} onPlay={setPlayingSong} />
           </motion.div>
         ))}

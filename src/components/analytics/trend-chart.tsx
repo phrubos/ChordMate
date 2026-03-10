@@ -82,7 +82,7 @@ export function TrendChart({ data }: TrendChartProps) {
   const maxSongs = Math.max(...data.map((d) => d.songCount), 1);
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/50 p-5 backdrop-blur-md">
+    <div className="rounded-2xl border border-border/60 bg-card/50 p-5 backdrop-blur-md min-w-0">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
           Heti trend
@@ -99,10 +99,10 @@ export function TrendChart({ data }: TrendChartProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="w-full">
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-          className="w-full min-w-[400px]"
+          className="w-full"
           preserveAspectRatio="none"
         >
           {/* Grid lines */}

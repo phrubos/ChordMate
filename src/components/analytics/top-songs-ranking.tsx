@@ -28,7 +28,7 @@ export function TopSongsRanking({ songs }: TopSongsRankingProps) {
   const maxCount = songs[0]?.count ?? 1;
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/50 p-5 backdrop-blur-md">
+    <div className="rounded-2xl border border-border/60 bg-card/50 p-5 backdrop-blur-md min-w-0">
       <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
         Legtöbbet gyakorolt dalok
       </h3>
