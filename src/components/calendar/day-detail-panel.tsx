@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical } from 'lucide-react';
+import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical, Check, ListChecks } from 'lucide-react';
 import { ImageLightbox } from '@/components/shared/image-lightbox';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { YouTubePlayer } from '@/components/youtube/youtube-player';
-import { assignSongToDate, removeSongFromDate, copySongsToDate, reorderCalendarEntries } from '@/actions/calendar';
+import { assignSongsToDate, assignSongToDate, removeSongFromDate, copySongsToDate, reorderCalendarEntries } from '@/actions/calendar';
 import { TabViewerModal } from '@/components/songs/tab-viewer-modal';
 import {
   DndContext,
@@ -91,7 +91,7 @@ function SortableSongItem({
         <p className="text-sm font-medium truncate leading-tight">{entry.song.title}</p>
         <p className="text-xs text-muted-foreground truncate">{entry.song.artist}</p>
       </div>
-      <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0.5 shrink-0 opacity-100 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity">
         {entry.song.tabContent && (
           <TabViewerModal
             songTitle={entry.song.title}
@@ -205,6 +205,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [songSearch, setSongSearch] = useState('');
+  const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [localEntries, setLocalEntries] = useState(entries);
 
   useEffect(() => {
@@ -248,13 +249,32 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
 
   const datesWithSongs = [...new Set(allEntries.map((e) => e.date))].filter((d) => d !== selectedDate).sort();
 
-  function handleAssign(songId: string) {
+  function handleSelectAll() {
+    if (selectedSongIds.size === availableSongs.length && availableSongs.length > 0) {
+      setSelectedSongIds(new Set());
+    } else {
+      setSelectedSongIds(new Set(availableSongs.map((s) => s.id)));
+    }
+  }
+
+  function toggleSongSelection(songId: string) {
+    setSelectedSongIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(songId)) next.delete(songId);
+      else next.add(songId);
+      return next;
+    });
+  }
+
+  function handleAssignSelected() {
+    if (!selectedDate || selectedSongIds.size === 0) return;
     startTransition(async () => {
       try {
-        await assignSongToDate(songId, selectedDate!);
-        toast.success('Dal hozzáadva');
+        await assignSongsToDate(Array.from(selectedSongIds), selectedDate);
+        toast.success(selectedSongIds.size > 1 ? 'Dalok hozzáadva' : 'Dal hozzáadva');
         setAddDialogOpen(false);
         setSongSearch('');
+        setSelectedSongIds(new Set());
       } catch {
         toast.error('Hiba történt');
       }
@@ -337,7 +357,13 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
 
       {/* Actions footer */}
       <div className="border-t border-border/30 p-3 flex flex-col gap-1.5">
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <Dialog open={addDialogOpen} onOpenChange={(open) => {
+          setAddDialogOpen(open);
+          if (open) {
+            setSongSearch('');
+            setSelectedSongIds(new Set());
+          }
+        }}>
           <DialogTrigger
             render={
               <Button variant="ghost" size="sm" className="w-full h-9 justify-start gap-2 text-sm text-muted-foreground hover:text-primary" />
@@ -351,12 +377,25 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
               <DialogTitle>Dal hozzáadása</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-3">
+            <div className="flex gap-2 relative">
               <Input
                 placeholder="Keresés dal vagy előadó alapján..."
                 value={songSearch}
                 onChange={(e) => setSongSearch(e.target.value)}
-                className="h-10 rounded-lg bg-background/50"
+                className="h-10 rounded-lg bg-background/50 flex-1"
               />
+              {availableSongs.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`h-10 w-10 shrink-0 ${selectedSongIds.size === availableSongs.length ? 'bg-primary/10 text-primary border-primary/30' : 'text-muted-foreground'}`}
+                  onClick={handleSelectAll}
+                  title={selectedSongIds.size === availableSongs.length ? "Minden kijelölés törlése" : "Mindent kiválaszt"}
+                >
+                  <ListChecks className="size-4" />
+                </Button>
+              )}
+            </div>
               <div className="max-h-64 overflow-y-auto flex flex-col gap-1">
                 {availableSongs.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted-foreground">
@@ -365,22 +404,39 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
                       : 'Nincs elérhető dal'}
                   </p>
                 ) : (
-                  availableSongs.map((song) => (
-                    <button
-                      key={song.id}
-                      className="flex items-center justify-between rounded-lg p-2.5 text-left transition-colors hover:bg-secondary/30"
-                      onClick={() => handleAssign(song.id)}
-                      disabled={isPending}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{song.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{song.artist}</p>
-                      </div>
-                      <Plus className="size-4 text-muted-foreground/40 shrink-0" />
-                    </button>
-                  ))
+                  availableSongs.map((song) => {
+                    const isSelected = selectedSongIds.has(song.id);
+                    return (
+                      <button
+                        key={song.id}
+                        className={`flex items-center justify-between rounded-lg p-2.5 text-left transition-colors hover:bg-secondary/30 ${isSelected ? 'bg-primary/5 ring-1 ring-primary/30' : ''}`}
+                        onClick={() => toggleSongSelection(song.id)}
+                        disabled={isPending}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm font-medium truncate ${isSelected ? 'text-primary' : ''}`}>{song.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{song.artist}</p>
+                        </div>
+                        {isSelected ? (
+                          <Check className="size-4 text-primary shrink-0" />
+                        ) : (
+                          <Plus className="size-4 text-muted-foreground/40 shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })
                 )}
               </div>
+              {selectedSongIds.size > 0 && (
+                <div className="flex gap-2 pt-2 border-t border-border/50">
+                  <Button variant="outline" className="flex-1" onClick={() => setAddDialogOpen(false)} disabled={isPending}>
+                    Mégse
+                  </Button>
+                  <Button className="flex-1" onClick={handleAssignSelected} disabled={isPending}>
+                    Hozzáadás ({selectedSongIds.size})
+                  </Button>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>

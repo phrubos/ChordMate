@@ -83,11 +83,11 @@ export function SongCard({ song, onPlay }: SongCardProps) {
         )}
 
         {/* Actions */}
-        <div className="mt-3 flex items-center gap-1 border-t border-border/30 pt-3 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="mt-3 flex items-center gap-1 border-t border-border/30 pt-3 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
           {onPlay && song.youtubeUrl && (
             <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-sm" onClick={() => onPlay(song)}>
               <Play className="size-3.5" />
-              Lejátszás
+              <span className="hidden sm:inline">Lejátszás</span>
             </Button>
           )}
           <TabViewerModal
@@ -98,7 +98,7 @@ export function SongCard({ song, onPlay }: SongCardProps) {
             trigger={
               <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground">
                 <FileText className="size-3.5" />
-                Tab
+                <span className="hidden sm:inline">Tab</span>
               </Button>
             }
           />

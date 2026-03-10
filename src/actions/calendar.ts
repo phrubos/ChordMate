@@ -50,11 +50,48 @@ export async function assignSongToDate(songId: string, date: string) {
   revalidatePath('/dashboard');
 }
 
+export async function assignSongsToDate(songIds: string[], date: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  if (songIds.length === 0) return;
+
+  const maxOrder = await db
+    .select({ max: sql<number>`coalesce(max(${calendarEntries.sortOrder}), -1)` })
+    .from(calendarEntries)
+    .where(eq(calendarEntries.date, date));
+
+  let nextOrder = (maxOrder[0]?.max ?? -1) + 1;
+
+  await db
+    .insert(calendarEntries)
+    .values(
+      songIds.map((songId) => ({
+        date,
+        songId,
+        addedById: session.user!.id,
+        sortOrder: nextOrder++,
+      }))
+    )
+    .onConflictDoNothing();
+
+  revalidatePath('/dashboard');
+}
+
 export async function removeSongFromDate(entryId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
   await db.delete(calendarEntries).where(eq(calendarEntries.id, entryId));
+
+  revalidatePath('/dashboard');
+}
+
+export async function clearSongsFromDate(date: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  await db.delete(calendarEntries).where(eq(calendarEntries.date, date));
 
   revalidatePath('/dashboard');
 }

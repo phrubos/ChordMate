@@ -21,6 +21,9 @@ interface CalendarGridProps {
   selectedDate: string | null;
   songCountByDate: Record<string, number>;
   onSelectDate: (dateStr: string) => void;
+  onAddSong?: (dateStr: string) => void;
+  onCopyDate?: (dateStr: string) => void;
+  onDeleteDate?: (dateStr: string) => void;
 }
 
 export function CalendarGrid({
@@ -29,6 +32,9 @@ export function CalendarGrid({
   selectedDate,
   songCountByDate,
   onSelectDate,
+  onAddSong,
+  onCopyDate,
+  onDeleteDate,
 }: CalendarGridProps) {
   const monthDate = new Date(year, month - 1);
   const monthStart = startOfMonth(monthDate);
@@ -62,6 +68,9 @@ export function CalendarGrid({
               isSelected={selectedDate === dateStr}
               songCount={songCountByDate[dateStr] ?? 0}
               onClick={() => onSelectDate(dateStr)}
+              onAddSong={onAddSong ? () => onAddSong(dateStr) : undefined}
+              onCopyDate={onCopyDate ? () => onCopyDate(dateStr) : undefined}
+              onDeleteDate={onDeleteDate ? () => onDeleteDate(dateStr) : undefined}
             />
           );
         })}
