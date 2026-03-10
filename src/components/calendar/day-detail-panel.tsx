@@ -14,6 +14,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { YouTubePlayer } from '@/components/youtube/youtube-player';
 import { assignSongsToDate, assignSongToDate, removeSongFromDate, copySongsToDate, reorderCalendarEntries } from '@/actions/calendar';
@@ -66,11 +76,11 @@ function SortableSongItem({
       className={`group/item flex items-center gap-2.5 rounded-lg p-2 transition-colors hover:bg-secondary/30 ${isDragging ? 'z-10 bg-card shadow-lg ring-1 ring-primary/20' : ''}`}
     >
       <button
-        className="shrink-0 cursor-grab touch-none text-muted-foreground/30 hover:text-muted-foreground active:cursor-grabbing"
+        className="shrink-0 cursor-grab touch-none p-2 -ml-2 text-muted-foreground/30 hover:text-muted-foreground active:cursor-grabbing"
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="size-4" />
+        <GripVertical className="size-5" />
       </button>
       <div className="size-9 shrink-0 overflow-hidden rounded-md bg-secondary/50">
         {entry.song.imageUrl ? (
@@ -91,7 +101,7 @@ function SortableSongItem({
         <p className="text-sm font-medium truncate leading-tight">{entry.song.title}</p>
         <p className="text-xs text-muted-foreground truncate">{entry.song.artist}</p>
       </div>
-      <div className="flex items-center gap-0.5 shrink-0 opacity-100 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 shrink-0 opacity-100 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity">
         {entry.song.tabContent && (
           <TabViewerModal
             songTitle={entry.song.title}
@@ -99,8 +109,8 @@ function SortableSongItem({
             tabContent={entry.song.tabContent}
             tabUrl={entry.song.tabUrl}
             trigger={
-              <Button variant="ghost" size="sm" className="size-6 p-0 text-muted-foreground hover:text-primary">
-                <FileText className="size-3" />
+              <Button variant="ghost" size="sm" className="size-8 p-0 text-muted-foreground hover:text-primary">
+                <FileText className="size-4" />
               </Button>
             }
           />
@@ -109,26 +119,26 @@ function SortableSongItem({
           <Button
             variant="ghost"
             size="sm"
-            className="size-6 p-0 text-muted-foreground hover:text-primary"
+            className="size-8 p-0 text-muted-foreground hover:text-primary"
             onClick={() =>
               setPlayingUrl(playingUrl === entry.song.youtubeUrl ? null : entry.song.youtubeUrl)
             }
           >
             {playingUrl === entry.song.youtubeUrl ? (
-              <Square className="size-3" />
+              <Square className="size-4" />
             ) : (
-              <Play className="size-3" />
+              <Play className="size-4" />
             )}
           </Button>
         )}
         <Button
           variant="ghost"
           size="sm"
-          className="size-6 p-0 text-muted-foreground/50 hover:text-destructive"
+          className="size-8 p-0 text-muted-foreground/50 hover:text-destructive"
           onClick={() => onRemove(entry.id)}
           disabled={isPending}
         >
-          <X className="size-3" />
+          <X className="size-4" />
         </Button>
       </div>
     </div>
@@ -204,6 +214,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
   const [isPending, startTransition] = useTransition();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [songToRemove, setSongToRemove] = useState<string | null>(null);
   const [songSearch, setSongSearch] = useState('');
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [localEntries, setLocalEntries] = useState(entries);
@@ -286,6 +297,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
       try {
         await removeSongFromDate(entryId);
         toast.success('Dal eltávolítva');
+        setSongToRemove(null);
       } catch {
         toast.error('Hiba történt');
       }
@@ -305,7 +317,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
   }
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-border/50 bg-card/30">
+    <div className="flex h-full flex-col rounded-xl border border-border/70 bg-card/50 shadow-sm relative z-0">
       {/* Header */}
       <div className="border-b border-border/30 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -342,17 +354,32 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
             entries={localEntries}
             playingUrl={playingUrl}
             setPlayingUrl={setPlayingUrl}
-            onRemove={handleRemove}
+            onRemove={(id) => setSongToRemove(id)}
             onReorder={handleReorder}
             isPending={isPending}
           />
         )}
 
-        {playingUrl && (
-          <div className="mt-3 overflow-hidden rounded-lg">
-            <YouTubePlayer url={playingUrl} autoplay />
-          </div>
-        )}
+        <Dialog open={!!playingUrl} onOpenChange={(open) => !open && setPlayingUrl(null)}>
+          <DialogContent showCloseButton={false} className="sm:max-w-3xl p-0 overflow-visible bg-transparent border-none shadow-none">
+            <DialogTitle className="sr-only">Videó lejátszása</DialogTitle>
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute -top-12 right-0 rounded-full bg-background/80 hover:bg-background shadow-md border-border/50"
+                onClick={() => setPlayingUrl(null)}
+              >
+                <X className="size-4" />
+              </Button>
+              <div className="aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-border/50 shadow-2xl">
+                {playingUrl && (
+                  <YouTubePlayer url={playingUrl} autoplay />
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Actions footer */}
@@ -490,6 +517,27 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
             </div>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!songToRemove} onOpenChange={(open) => !open && setSongToRemove(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Dal eltávolítása</AlertDialogTitle>
+              <AlertDialogDescription>
+                Biztosan eltávolítod ezt a dalt erről a napról? A dal továbbra is elérhető marad a Dalok listájában.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isPending}>Mégse</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => songToRemove && handleRemove(songToRemove)}
+                disabled={isPending}
+              >
+                Eltávolítás
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

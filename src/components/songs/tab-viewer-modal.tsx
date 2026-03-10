@@ -24,7 +24,7 @@ interface TabViewerModalProps {
 
 // Build regex from known chord names (longest first to match "Cadd9" before "C")
 const chordPattern = new RegExp(
-  `(?<=^|\\s)(${chordNames.map((c) => c.replace(/[#]/g, '\\$&')).join('|')})(?=\\s|$)`,
+  `(?<=^|\\s)(${chordNames.map((c) => c.replace(/[#/]/g, '\\$&')).join('|')})(?=\\s|$)`,
   'gm'
 );
 

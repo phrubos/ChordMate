@@ -54,14 +54,12 @@ export function CalendarDayCell({
         {day}
       </span>
 
-      {/* "Próba" label for practice days */}
+      {/* "Próba" indicator for practice days */}
       {hasSongs && isCurrentMonth && (
-        <span className={cn(
-          'absolute bottom-1 text-[9px] font-semibold uppercase tracking-wide',
-          isSelected ? 'text-primary' : 'text-primary/70'
-        )}>
-          Próba
-        </span>
+        <div className={cn(
+          'absolute bottom-1.5 size-1.5 rounded-full',
+          isSelected ? 'bg-primary' : 'bg-primary/70'
+        )} />
       )}
 
       {/* Glow effect for practice days */}

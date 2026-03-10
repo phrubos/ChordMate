@@ -40,6 +40,7 @@ export const chordDiagrams: Record<string, ChordDiagram> = {
   'Dsus4': { name: 'Dsus4', frets: [-1, -1, 0, 2, 3, 3], fingers: [0, 0, 0, 1, 2, 3], baseFret: 1 },
   'Ddim': { name: 'Ddim', frets: [-1, -1, 0, 1, 3, 1], fingers: [0, 0, 0, 1, 4, 2], baseFret: 1 },
   'Daug': { name: 'Daug', frets: [-1, -1, 0, 3, 3, 2], fingers: [0, 0, 0, 2, 3, 1], baseFret: 1 },
+  'D/F#': { name: 'D/F#', frets: [2, 0, 0, 2, 3, 2], fingers: [1, 0, 0, 2, 4, 3], baseFret: 1 },
 
   // Eb/D# root
   'Eb': { name: 'Eb', frets: [-1, 6, 8, 8, 8, 6], fingers: [0, 1, 2, 3, 4, 1], baseFret: 6 },
@@ -78,6 +79,10 @@ export const chordDiagrams: Record<string, ChordDiagram> = {
   'Gm7': { name: 'Gm7', frets: [3, 5, 3, 3, 3, 3], fingers: [1, 3, 1, 1, 1, 1], baseFret: 3 },
   'Gmaj7': { name: 'Gmaj7', frets: [3, -1, 0, 0, 0, 2], fingers: [2, 0, 0, 0, 0, 1], baseFret: 1 },
   'Gsus4': { name: 'Gsus4', frets: [3, 3, 0, 0, 1, 3], fingers: [3, 4, 0, 0, 1, 3], baseFret: 1 },
+  'G/D': { name: 'G/D', frets: [-1, -1, 0, 0, 0, 3], fingers: [0, 0, 0, 0, 0, 3], baseFret: 1 },
+  'G/E': { name: 'G/E', frets: [0, 2, 0, 0, 0, 3], fingers: [0, 2, 0, 0, 0, 4], baseFret: 1 }, // Em7 conceptually
+  'G/F': { name: 'G/F', frets: [1, 2, 0, 0, 0, 3], fingers: [1, 2, 0, 0, 0, 4], baseFret: 1 }, // G7/F conceptually
+  'G/B': { name: 'G/B', frets: [-1, 2, 0, 0, 3, 3], fingers: [0, 1, 0, 0, 3, 4], baseFret: 1 },
 
   // G#/Ab root
   'G#m': { name: 'G#m', frets: [4, 6, 6, 4, 4, 4], fingers: [1, 3, 4, 1, 1, 1], baseFret: 4 },

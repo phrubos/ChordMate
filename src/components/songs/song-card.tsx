@@ -39,7 +39,7 @@ export function SongCard({ song, onPlay }: SongCardProps) {
 
   return (
     <>
-      <div className="group relative rounded-xl border border-border/50 bg-card/50 p-4 transition-all hover:border-border hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5">
+      <div className="group relative rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm transition-all hover:border-border hover:bg-card hover:shadow-md hover:shadow-primary/5">
         {/* Header with album art */}
         <div className="flex items-start gap-3">
           <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-secondary/50">
@@ -83,9 +83,9 @@ export function SongCard({ song, onPlay }: SongCardProps) {
         )}
 
         {/* Actions */}
-        <div className="mt-3 flex flex-wrap items-center gap-1 border-t border-border/30 pt-3 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-3 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
           {onPlay && song.youtubeUrl && (
-            <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-sm" onClick={() => onPlay(song)}>
+            <Button variant="ghost" size="sm" className="h-9 gap-1.5 px-3" onClick={() => onPlay(song)}>
               <Play className="size-3.5" />
               <span className="hidden sm:inline">Lejátszás</span>
             </Button>
@@ -96,7 +96,7 @@ export function SongCard({ song, onPlay }: SongCardProps) {
             tabContent={song.tabContent}
             tabUrl={song.tabUrl}
             trigger={
-              <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground">
+              <Button variant="ghost" size="sm" className="h-9 gap-1.5 px-3 text-muted-foreground">
                 <FileText className="size-3.5" />
                 <span className="hidden sm:inline">Tab</span>
               </Button>
@@ -106,7 +106,7 @@ export function SongCard({ song, onPlay }: SongCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={`h-8 px-2.5 ${isFav ? 'text-pink-500' : 'text-muted-foreground'}`}
+            className={`h-9 w-9 p-0 ${isFav ? 'text-pink-500' : 'text-muted-foreground'}`}
             onClick={() => {
               setIsFav(!isFav);
               startTransition(() => toggleFavorite(song.id));
@@ -115,14 +115,14 @@ export function SongCard({ song, onPlay }: SongCardProps) {
             <Heart className={`size-3.5 ${isFav ? 'fill-current' : ''}`} />
           </Button>
           <Link href={`/songs/${song.id}/edit`}>
-            <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-sm text-muted-foreground">
+            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-muted-foreground">
               <Pencil className="size-3.5" />
             </Button>
           </Link>
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2.5 text-destructive/70 hover:text-destructive"
+            className="h-9 w-9 p-0 text-destructive/70 hover:text-destructive"
             onClick={() => setDeleteOpen(true)}
           >
             <Trash2 className="size-3.5" />

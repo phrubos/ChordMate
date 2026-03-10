@@ -213,10 +213,10 @@
   line-height: 1.6;
   white-space: pre;
   overflow-x: auto;
-  color: oklch(0.92 0.01 90);
+  color: var(--foreground);
 }
 .tab-content .chord {
-  color: oklch(0.78 0.155 65);
+  color: var(--primary);
   font-weight: 600;
 }
 
