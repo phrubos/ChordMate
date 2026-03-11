@@ -54,20 +54,23 @@ export function ImageLightbox({ src, alt, width, height, className }: ImageLight
           className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in-0 duration-150"
           onClick={close}
         >
-          <button
-            type="button"
-            onClick={close}
-            className="absolute top-4 right-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-          >
-            <X className="size-5" />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={alt}
-            className="max-h-[85vh] max-w-[85vw] object-contain rounded-xl shadow-2xl animate-in zoom-in-90 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="relative flex items-center justify-center animate-in zoom-in-90 duration-200">
+            <button
+              type="button"
+              onClick={close}
+              className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-black/60 text-white/80 hover:text-white hover:bg-black/90 backdrop-blur-md transition-all shadow-lg"
+              aria-label="Bezárás"
+            >
+              <X className="size-5" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt={alt}
+              className="max-h-[85vh] max-w-[85vw] object-contain rounded-xl shadow-2xl block"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>,
         document.body
       )}
