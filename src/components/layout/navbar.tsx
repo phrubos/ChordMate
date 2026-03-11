@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Guitar, Calendar, ListMusic, BarChart2, LogOut, Menu, X } from 'lucide-react';
@@ -40,8 +41,8 @@ export function Navbar() {
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 lg:px-6">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-            <Guitar className="size-4 text-primary" />
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm">
+            <Image src="/icon.svg" alt="ChordMate" width={32} height={32} className="size-full object-cover" />
           </div>
           <span className="shimmer-text text-lg font-bold tracking-tight">ChordMate</span>
         </Link>
