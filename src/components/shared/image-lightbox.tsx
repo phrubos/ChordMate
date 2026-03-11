@@ -58,7 +58,7 @@ export function ImageLightbox({ src, alt, width, height, className }: ImageLight
             <button
               type="button"
               onClick={close}
-              className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-black/60 text-white/80 hover:text-white hover:bg-black/90 backdrop-blur-md transition-all shadow-lg"
+              className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-all shadow-md"
               aria-label="Bezárás"
             >
               <X className="size-5" />
