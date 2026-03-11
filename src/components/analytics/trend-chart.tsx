@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface TrendDataPoint {
-  week: string;
+  month: string;
   practiceDays: number;
   songCount: number;
 }
@@ -85,7 +85,7 @@ export function TrendChart({ data }: TrendChartProps) {
     <div className="rounded-2xl border border-border/60 bg-card/50 p-5 backdrop-blur-md min-w-0">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          Heti trend
+          Havi trend (1 év)
         </h3>
         <div className="flex items-center gap-4 text-[11px]">
           <div className="flex items-center gap-1.5">
@@ -152,9 +152,8 @@ export function TrendChart({ data }: TrendChartProps) {
             );
           })}
 
-          {/* X labels (every 2) */}
+          {/* X labels (every month) */}
           {data.map((d, i) => {
-            if (i % 2 !== 0 && i !== data.length - 1) return null;
             const x = PADDING.left + (i / (data.length - 1)) * w;
             return (
               <text
@@ -162,9 +161,9 @@ export function TrendChart({ data }: TrendChartProps) {
                 x={x}
                 y={CHART_HEIGHT - 4}
                 textAnchor="middle"
-                className="fill-muted-foreground text-[9px]"
+                className="fill-muted-foreground text-[9px] uppercase"
               >
-                {d.week}
+                {d.month}
               </text>
             );
           })}

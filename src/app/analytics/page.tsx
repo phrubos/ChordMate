@@ -13,6 +13,8 @@ import {
   Music,
   ListMusic,
   Flame,
+  CheckCircle2,
+  Circle,
 } from 'lucide-react';
 
 export default async function AnalyticsPage() {
@@ -35,8 +37,25 @@ export default async function AnalyticsPage() {
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               {
-                label: 'Gyakorolt napok',
-                value: data.kpis.totalPracticeDays,
+                label: 'Próba napok',
+                value: (
+                  <span className="flex items-center gap-1.5 text-xs whitespace-nowrap mt-1">
+                    <span className="flex items-center gap-0.5 text-emerald-500 font-medium tracking-tight">
+                      <CheckCircle2 className="size-3.5" />
+                      {data.kpis.pastPracticeDays} volt
+                    </span>
+                    <span className="text-muted-foreground">-</span>
+                    <span className="flex items-center gap-0.5 text-amber-500 font-medium tracking-tight">
+                      <Circle fill="currentColor" className="size-3" />
+                      {data.kpis.futurePracticeDays} lesz
+                    </span>
+                    <span className="text-muted-foreground">=</span>
+                    <span className="font-black text-foreground text-base tabular-nums">
+                      {data.kpis.totalPracticeDays}
+                    </span>
+                  </span>
+                ),
+                isCustomValue: true,
                 icon: CalendarDays,
                 color: 'text-primary',
                 bg: 'bg-primary/10',
@@ -59,26 +78,31 @@ export default async function AnalyticsPage() {
                 border: 'border-blue-500/20',
               },
               {
-                label: 'Aktuális streak',
-                value: `${data.kpis.currentStreak} nap`,
+                label: 'Legutóbbi próba',
+                value: data.kpis.lastPracticeDateFormatted ?? '-',
                 icon: Flame,
                 color: 'text-amber-400',
                 bg: 'bg-amber-500/10',
                 border: 'border-amber-500/20',
               },
-            ].map(({ label, value, icon: Icon, color, bg, border }) => (
+            ].map(({ label, value, subText, icon: Icon, color, bg, border, isCustomValue }: any) => (
               <div
                 key={label}
-                className={`flex flex-col items-center gap-2 rounded-2xl border ${border} bg-card/50 p-4 backdrop-blur-md shadow-sm`}
+                className={`flex flex-col items-center gap-2 rounded-2xl border ${border} bg-card/50 p-4 backdrop-blur-md shadow-sm justify-center`}
               >
                 <div className={`flex size-9 items-center justify-center rounded-xl ${bg} ${color} shadow-inner`}>
                   <Icon className="size-4" />
                 </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl font-black tabular-nums tracking-tight">
+                <div className="flex flex-col items-center w-full min-w-0">
+                  <span className={isCustomValue ? "" : "text-2xl font-black tabular-nums tracking-tight leading-none"}>
                     {value}
                   </span>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center mt-0.5">
+                  {subText && (
+                    <div className="mt-1.5">
+                      {subText}
+                    </div>
+                  )}
+                  <span className={`text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center ${subText || isCustomValue ? 'mt-1.5' : 'mt-1'}`}>
                     {label}
                   </span>
                 </div>
@@ -93,7 +117,7 @@ export default async function AnalyticsPage() {
 
           {/* Trend + Top Songs */}
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <TrendChart data={data.weeklyTrend} />
+            <TrendChart data={data.monthlyTrend} />
             <TopSongsRanking songs={data.topSongs} />
           </div>
 

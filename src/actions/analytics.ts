@@ -5,6 +5,7 @@ import { calendarEntries, songs } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { asc, sql, desc, eq } from 'drizzle-orm';
 import { format, subDays, startOfDay } from 'date-fns';
+import { hu } from 'date-fns/locale';
 
 export async function getAnalyticsData() {
   const session = await auth();
@@ -55,70 +56,80 @@ export async function getAnalyticsData() {
     .slice(0, 10);
 
   // --------------------------------------------------
-  // 3. Weekly trend: last 12 weeks
+  // 3. Monthly trend: last 12 months
   // --------------------------------------------------
-  const weeklyTrend: { week: string; practiceDays: number; songCount: number }[] = [];
-
+  const monthlyTrend: { month: string; practiceDays: number; songCount: number }[] = [];
+  
   for (let i = 11; i >= 0; i--) {
-    const weekStart = subDays(today, i * 7 + 6);
-    const weekEnd = subDays(today, i * 7);
-    const weekStartStr = format(weekStart, 'yyyy-MM-dd');
-    const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
+    const d = new Date(today);
+    d.setMonth(d.getMonth() - i);
+    const monthStartStr = format(new Date(d.getFullYear(), d.getMonth(), 1), 'yyyy-MM-dd');
+    const monthEndStr = format(new Date(d.getFullYear(), d.getMonth() + 1, 0), 'yyyy-MM-dd');
 
-    const weekEntries = allEntries.filter(
-      (e) => e.date >= weekStartStr && e.date <= weekEndStr
+    const monthEntries = allEntries.filter(
+      (e) => e.date >= monthStartStr && e.date <= monthEndStr
     );
 
-    const uniqueDays = new Set(weekEntries.map((e) => e.date));
+    const uniqueDays = new Set(monthEntries.map((e) => e.date));
 
-    weeklyTrend.push({
-      week: format(weekStart, 'MM.dd'),
+    monthlyTrend.push({
+      month: format(d, 'MMM', { locale: hu }).replace('.', ''),
       practiceDays: uniqueDays.size,
-      songCount: weekEntries.length,
+      songCount: monthEntries.length,
     });
   }
 
   // --------------------------------------------------
-  // 4. Neglected songs (30+ days since last practice)
+  // 4. Neglected songs (90+ days since last practice)
   // --------------------------------------------------
-  const thirtyDaysAgo = format(subDays(today, 30), 'yyyy-MM-dd');
+  const ninetyDaysAgo = format(subDays(today, 90), 'yyyy-MM-dd');
   const todayStr = format(today, 'yyyy-MM-dd');
 
   const neglectedSongs = [...songPracticeCounts.values()]
-    .filter((s) => s.lastDate < thirtyDaysAgo)
+    .filter((s) => s.lastDate < ninetyDaysAgo)
     .sort((a, b) => a.lastDate.localeCompare(b.lastDate))
     .slice(0, 10);
 
   // --------------------------------------------------
   // 5. Summary KPIs
   // --------------------------------------------------
-  const totalPracticeDays = new Set(allEntries.map((e) => e.date)).size;
+  const uniqueDates = [...new Set(allEntries.map((e) => e.date))];
+  const pastDates = uniqueDates.filter((d) => d <= todayStr).sort().reverse();
+  const futureDates = uniqueDates.filter((d) => d > todayStr);
+
+  const totalPracticeDays = uniqueDates.length;
+  const pastPracticeDays = pastDates.length;
+  const futurePracticeDays = futureDates.length;
+  
   const totalSongsEverPracticed = songPracticeCounts.size;
   const totalPracticeSessions = allEntries.length;
 
-  // Current streak
-  let streak = 0;
-  let checkDate = todayStr;
-  const allDatesSet = new Set(allEntries.map((e) => e.date));
-  for (let i = 0; i < 365; i++) {
-    const d = format(subDays(today, i), 'yyyy-MM-dd');
-    if (allDatesSet.has(d)) {
-      streak++;
-    } else if (i > 0) {
-      break;
-    }
+  // Last practice (days ago & formatted date)
+  let lastPracticeDaysAgo: number | null = null;
+  let lastPracticeDateFormatted: string | null = null;
+
+  if (pastDates.length > 0) {
+    const lastDate = new Date(pastDates[0] + 'T00:00:00');
+    const diffTime = Math.abs(today.getTime() - lastDate.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    lastPracticeDaysAgo = diffDays;
+    lastPracticeDateFormatted = format(lastDate, 'MMM d.', { locale: hu });
   }
 
   return {
     heatmapData,
     topSongs,
-    weeklyTrend,
+    monthlyTrend,
     neglectedSongs,
     kpis: {
       totalPracticeDays,
+      pastPracticeDays,
+      futurePracticeDays,
       totalSongsEverPracticed,
       totalPracticeSessions,
-      currentStreak: streak,
+      lastPracticeDaysAgo,
+      lastPracticeDateFormatted,
     },
   };
 }
+
