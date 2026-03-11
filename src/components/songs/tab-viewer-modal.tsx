@@ -121,7 +121,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
         </DialogHeader>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-2 border-b border-border/50 pb-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/50 pb-3 shrink-0">
           <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5">
             <Button
               variant="ghost"
@@ -145,7 +145,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
           {hasTab && (
             <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={handleCopy}>
               {copied ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
-              {copied ? 'Másolva' : 'Másolás'}
+              <span className="hidden sm:inline">{copied ? 'Másolva' : 'Másolás'}</span>
             </Button>
           )}
 
@@ -155,7 +155,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
             <a href={tabUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                 <ExternalLink className="size-3.5" />
-                Forrás megnyitása
+                <span className="hidden sm:inline">Forrás megnyitása</span>
               </Button>
             </a>
           )}
@@ -165,7 +165,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
               <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
-              Ultimate Guitar
+              <span className="hidden sm:inline">Ultimate Guitar</span>
             </Button>
           </a>
         </div>
