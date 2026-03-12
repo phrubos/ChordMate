@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import {
   startOfMonth,
   endOfMonth,
@@ -26,6 +27,8 @@ interface CalendarGridProps {
   onAddSong?: (dateStr: string) => void;
   onCopyDate?: (dateStr: string) => void;
   onDeleteDate?: (dateStr: string) => void;
+  onSwipePrev?: () => void;
+  onSwipeNext?: () => void;
 }
 
 export function CalendarGrid({
@@ -37,7 +40,27 @@ export function CalendarGrid({
   onAddSong,
   onCopyDate,
   onDeleteDate,
+  onSwipePrev,
+  onSwipeNext,
 }: CalendarGridProps) {
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx > 0) onSwipePrev?.();
+    else onSwipeNext?.();
+  }
   const monthDate = new Date(year, month - 1);
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
@@ -48,7 +71,11 @@ export function CalendarGrid({
   const todayStart = startOfDay(today);
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card/30 p-3">
+    <div
+      className="rounded-xl border border-border/50 bg-card/30 p-3"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="grid grid-cols-7 gap-0.5 mb-1">
         {WEEKDAY_LABELS.map((label, i) => (
           <div

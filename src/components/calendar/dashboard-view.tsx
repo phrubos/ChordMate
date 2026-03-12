@@ -196,6 +196,8 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
           onAddSong={handleAddSong}
           onCopyDate={handleCopyDate}
           onDeleteDate={handleDeleteDate}
+          onSwipePrev={handlePrev}
+          onSwipeNext={handleNext}
         />
       </div>
       <div ref={dayDetailRef} className="relative min-w-0 overflow-hidden">
