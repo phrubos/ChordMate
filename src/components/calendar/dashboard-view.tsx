@@ -335,10 +335,10 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
                   setMobileActionDate(null);
                   setTimeout(() => {
                     if (dayDetailRef.current) {
-                      const top = dayDetailRef.current.getBoundingClientRect().top + window.scrollY - 8;
+                      const top = dayDetailRef.current.getBoundingClientRect().top + window.scrollY - 56 - 8;
                       window.scrollTo({ top, behavior: 'smooth' });
                     }
-                  }, 50);
+                  }, 300);
                 }}
               >
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
