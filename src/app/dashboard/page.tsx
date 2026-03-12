@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   return (
     <>
       <Navbar />
-      <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+      <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6 overflow-x-hidden">
         <PageTransition>
           <div className="flex flex-col gap-6">
             <DashboardView

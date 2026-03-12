@@ -177,8 +177,8 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div className="flex flex-col gap-4">
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px] overflow-hidden">
+      <div className="flex flex-col gap-4 min-w-0">
         <CalendarHeader
           year={year}
           month={month}
@@ -197,8 +197,8 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
           onDeleteDate={handleDeleteDate}
         />
       </div>
-      <div className="relative">
-        <div className="lg:absolute lg:inset-0 flex flex-col h-[500px] lg:h-full">
+      <div className="relative min-w-0 overflow-hidden">
+        <div className="lg:absolute lg:inset-0 flex flex-col h-[500px] lg:h-full min-w-0">
           <DayDetailPanel
             selectedDate={selectedDate}
             entries={selectedEntries}
