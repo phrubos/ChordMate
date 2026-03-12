@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useTransition, useEffect } from 'react';
+import { useState, useMemo, useTransition, useEffect, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { CalendarHeader } from './calendar-header';
@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { assignSongsToDate, copySongsToDate, clearSongsFromDate } from '@/actions/calendar';
-import { Plus, Check, ListChecks, Copy, X } from 'lucide-react';
+import { Plus, Check, ListChecks, Copy, X, Music } from 'lucide-react';
 import type { CalendarEntryWithSong, Song } from '@/types';
 
 interface DashboardViewProps {
@@ -52,6 +52,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [deleteDateStr, setDeleteDateStr] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const dayDetailRef = useRef<HTMLDivElement>(null);
 
   const handleSelectDate = (date: string) => {
     setSelectedDate(date);
@@ -197,7 +198,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
           onDeleteDate={handleDeleteDate}
         />
       </div>
-      <div className="relative min-w-0 overflow-hidden">
+      <div ref={dayDetailRef} className="relative min-w-0 overflow-hidden">
         <div className="lg:absolute lg:inset-0 flex flex-col h-[500px] lg:h-full min-w-0">
           <DayDetailPanel
             selectedDate={selectedDate}
@@ -326,6 +327,23 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
+            {mobileActionDate && (songCountByDate[mobileActionDate] ?? 0) > 0 && (
+              <Button
+                variant="outline"
+                className="h-14 justify-start gap-4 rounded-xl px-4 text-base font-medium shadow-sm text-primary border-primary/30 hover:bg-primary/10 hover:text-primary"
+                onClick={() => {
+                  setMobileActionDate(null);
+                  setTimeout(() => {
+                    dayDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 50);
+                }}
+              >
+                <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <Music className="size-4" />
+                </div>
+                Ugrás a dalokra
+              </Button>
+            )}
             <Button
               variant="outline"
               className="h-14 justify-start gap-4 rounded-xl px-4 text-base font-medium shadow-sm"
