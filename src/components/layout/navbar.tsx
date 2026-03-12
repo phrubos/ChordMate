@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Calendar, ListMusic, BarChart2, LogOut, Menu, X } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +20,12 @@ import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { springs } from '@/lib/motion';
 
-const navLinks = [
+const desktopNavLinks = [
+  { href: '/dashboard', label: 'Naptár', icon: Calendar },
+  { href: '/songs', label: 'Dalok', icon: ListMusic },
+];
+
+const mobileNavLinks = [
   { href: '/dashboard', label: 'Naptár', icon: Calendar, description: 'Próbák és dallisták' },
   { href: '/songs', label: 'Dalok', icon: ListMusic, description: 'Dalgyűjtemény kezelése' },
   { href: '/analytics', label: 'Analitika', icon: BarChart2, description: 'Statisztikák és áttekintés' },
@@ -53,6 +59,7 @@ export function Navbar() {
     .toUpperCase() ?? '?';
 
   return (
+    <>
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 lg:px-6">
         {/* Logo */}
@@ -65,7 +72,7 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => {
+          {desktopNavLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname.startsWith(link.href);
             return (
@@ -158,11 +165,13 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile full-screen menu overlay */}
+    </header>
+    {/* Mobile full-screen menu overlay — portaled to body to escape header's backdrop-blur containing block */}
+    {typeof document !== 'undefined' && createPortal(
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            className="fixed inset-0 z-50 md:hidden"
+            className="fixed inset-0 z-[100] md:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -170,27 +179,45 @@ export function Navbar() {
           >
             {/* Blurred backdrop */}
             <motion.div
-              className="absolute inset-0 bg-background/80 backdrop-blur-2xl"
+              className="absolute inset-0 bg-background/85 backdrop-blur-3xl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.4 }}
               onClick={closeMobile}
             />
 
+            {/* Top bar area: logo + close button */}
+            <div className="relative z-10 mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+              <Link href="/dashboard" onClick={closeMobile} className="flex items-center gap-2.5">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm">
+                  <Image src="/icon.svg" alt="ChordMate" width={32} height={32} className="size-full object-cover" />
+                </div>
+                <span className="shimmer-text text-lg font-bold tracking-tight">ChordMate</span>
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="size-9 p-0"
+                onClick={closeMobile}
+              >
+                <X className="size-5" />
+              </Button>
+            </div>
+
             {/* Menu content */}
-            <div className="relative flex h-full flex-col justify-between px-8 pt-24 pb-12">
+            <div className="relative z-10 flex flex-col justify-between px-6 pt-8" style={{ height: 'calc(100dvh - 3.5rem)' }}>
               {/* Navigation links */}
-              <nav className="flex flex-col gap-2">
-                {navLinks.map((link, i) => {
+              <nav className="flex flex-col gap-1.5">
+                {mobileNavLinks.map((link, i) => {
                   const Icon = link.icon;
                   const isActive = pathname.startsWith(link.href);
                   return (
                     <motion.div
                       key={link.href}
-                      initial={{ opacity: 0, x: -32 }}
+                      initial={{ opacity: 0, x: -24 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -32 }}
+                      exit={{ opacity: 0, x: -24 }}
                       transition={{
                         ...springs.smooth,
                         delay: 0.05 + i * 0.07,
@@ -199,18 +226,18 @@ export function Navbar() {
                       <Link href={link.href} onClick={closeMobile}>
                         <div
                           className={cn(
-                            'group flex items-center gap-5 rounded-2xl px-5 py-4 transition-all duration-200',
+                            'group flex items-center gap-4 rounded-2xl px-4 py-3.5 transition-all duration-200',
                             isActive
                               ? 'bg-primary/10 ring-1 ring-primary/20'
-                              : 'hover:bg-card/60 active:scale-[0.98]'
+                              : 'active:scale-[0.98]'
                           )}
                         >
                           <div
                             className={cn(
-                              'flex size-12 items-center justify-center rounded-xl transition-colors',
+                              'flex size-11 items-center justify-center rounded-xl transition-colors',
                               isActive
                                 ? 'bg-primary/20 text-primary shadow-sm shadow-primary/10'
-                                : 'bg-card/80 text-muted-foreground group-hover:text-foreground'
+                                : 'bg-card/60 text-muted-foreground group-active:text-foreground'
                             )}
                           >
                             <Icon className="size-5" />
@@ -218,13 +245,13 @@ export function Navbar() {
                           <div>
                             <p
                               className={cn(
-                                'text-lg font-semibold tracking-tight',
+                                'text-[17px] font-semibold tracking-tight',
                                 isActive ? 'text-primary' : 'text-foreground'
                               )}
                             >
                               {link.label}
                             </p>
-                            <p className="text-sm text-muted-foreground/70">
+                            <p className="text-[13px] text-muted-foreground/60">
                               {link.description}
                             </p>
                           </div>
@@ -237,36 +264,36 @@ export function Navbar() {
 
               {/* Bottom section: user + theme + logout */}
               <motion.div
-                className="flex flex-col gap-4"
-                initial={{ opacity: 0, y: 24 }}
+                className="flex flex-col gap-3 pb-8"
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 24 }}
+                exit={{ opacity: 0, y: 20 }}
                 transition={{ ...springs.smooth, delay: 0.25 }}
               >
-                <div className="h-px bg-border/50" />
+                <div className="h-px bg-border/30" />
 
                 {/* Theme toggle row */}
-                <div className="flex items-center justify-between rounded-xl bg-card/40 px-4 py-3">
+                <div className="flex items-center justify-between rounded-xl bg-card/30 px-4 py-3">
                   <span className="text-sm text-muted-foreground">Téma</span>
                   <ThemeToggle />
                 </div>
 
                 {/* User section */}
-                <div className="flex items-center justify-between rounded-xl bg-card/40 px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="size-10 ring-2 ring-border/50">
+                <div className="flex items-center justify-between rounded-xl bg-card/30 px-4 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar className="size-10 shrink-0 ring-2 ring-border/50">
                       <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? ''} />
                       <AvatarFallback className="text-sm bg-primary/10 text-primary font-semibold">{initials}</AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground/60">{user?.email}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{user?.name}</p>
+                      <p className="text-xs text-muted-foreground/60 truncate">{user?.email}</p>
                     </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-2 text-muted-foreground hover:text-destructive"
+                    className="gap-2 shrink-0 text-muted-foreground hover:text-destructive"
                     onClick={() => { closeMobile(); signOut({ callbackUrl: '/login' }); }}
                   >
                     <LogOut className="size-4" />
@@ -277,7 +304,9 @@ export function Navbar() {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
-    </header>
+      </AnimatePresence>,
+      document.body
+    )}
+    </>
   );
 }
