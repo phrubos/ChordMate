@@ -7,6 +7,16 @@ import { CalendarHeader } from './calendar-header';
 import { CalendarGrid } from './calendar-grid';
 import { DayDetailPanel } from './day-detail-panel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -40,6 +50,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
   const [mobileActionDate, setMobileActionDate] = useState<string | null>(null);
   const [songSearch, setSongSearch] = useState('');
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
+  const [deleteDateStr, setDeleteDateStr] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const handleSelectDate = (date: string) => {
@@ -62,19 +73,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
   };
 
   const handleDeleteDate = (date: string) => {
-    if (confirm('Biztosan törlöd a próbát és az összes dalt erről a napról?')) {
-      startTransition(async () => {
-        try {
-          await clearSongsFromDate(date);
-          toast.success('Próba törölve');
-          if (selectedDate === date) {
-            // Optional: reset selectedDate or keep it, it will just show empty
-          }
-        } catch {
-          toast.error('Hiba történt a törlés során');
-        }
-      });
-    }
+    setDeleteDateStr(date);
   };
 
   const songCountByDate = useMemo(() => {
@@ -198,12 +197,16 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
           onDeleteDate={handleDeleteDate}
         />
       </div>
-      <DayDetailPanel
-        selectedDate={selectedDate}
-        entries={selectedEntries}
-        allSongs={allSongs}
-        allEntries={entries}
-      />
+      <div className="relative">
+        <div className="lg:absolute lg:inset-0 flex flex-col h-[500px] lg:h-full">
+          <DayDetailPanel
+            selectedDate={selectedDate}
+            entries={selectedEntries}
+            allSongs={allSongs}
+            allEntries={entries}
+          />
+        </div>
+      </div>
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent>
@@ -372,6 +375,38 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteDateStr} onOpenChange={(open) => !open && setDeleteDateStr(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Biztosan törlöd?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Biztosan törlöd a próbát és az összes dalt erről a napról? Ez a művelet nem vonható vissza.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={isPending}
+              onClick={() => {
+                if (!deleteDateStr) return;
+                startTransition(async () => {
+                  try {
+                    await clearSongsFromDate(deleteDateStr);
+                    toast.success('Próba törölve');
+                    setDeleteDateStr(null);
+                  } catch {
+                    toast.error('Hiba történt a törlés során');
+                  }
+                });
+              }}
+            >
+              {isPending ? 'Törlés...' : 'Törlés'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
