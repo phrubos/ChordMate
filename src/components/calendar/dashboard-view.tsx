@@ -334,8 +334,11 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
                 onClick={() => {
                   setMobileActionDate(null);
                   setTimeout(() => {
-                    dayDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 40);
+                    if (dayDetailRef.current) {
+                      const top = dayDetailRef.current.getBoundingClientRect().top + window.scrollY - 8;
+                      window.scrollTo({ top, behavior: 'smooth' });
+                    }
+                  }, 50);
                 }}
               >
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
