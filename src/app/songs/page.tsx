@@ -1,10 +1,8 @@
 import { redirect } from 'next/navigation';
-import { Plus } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/page-header';
 import { SongList } from '@/components/songs/song-list';
 import { SongFilters } from '@/components/songs/song-filters';
+import { NewSongButton } from '@/components/songs/new-song-button';
 import { Navbar } from '@/components/layout/navbar';
 import { auth } from '@/lib/auth';
 import { getSongs } from '@/actions/songs';
@@ -34,12 +32,7 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
         <PageTransition>
           <PageHeader title="Dalok" description="A közös dallistátok">
-            <Link href="/songs/new">
-              <Button className="gap-2">
-                <Plus className="size-4" />
-                Új dal
-              </Button>
-            </Link>
+            <NewSongButton />
           </PageHeader>
 
           <div className="mt-6 flex flex-col gap-4">

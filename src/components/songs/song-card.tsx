@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Pencil, Trash2, Play, Star, FileText, Music, Heart } from 'lucide-react';
 import { ImageLightbox } from '@/components/shared/image-lightbox';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { SongWithUser } from '@/types';
 import { formatRelativeDate } from '@/lib/utils';
@@ -114,10 +114,8 @@ export function SongCard({ song, onPlay }: SongCardProps) {
           >
             <Heart className={`size-3.5 ${isFav ? 'fill-current' : ''}`} />
           </Button>
-          <Link href={`/songs/${song.id}/edit`}>
-            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-muted-foreground">
-              <Pencil className="size-3.5" />
-            </Button>
+          <Link href={`/songs/${song.id}/edit`} className={buttonVariants({ variant: "ghost", size: "sm", className: "h-9 w-9 p-0 text-muted-foreground" })}>
+            <Pencil className="size-3.5" />
           </Link>
           <Button
             variant="ghost"

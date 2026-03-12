@@ -436,7 +436,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
                     return (
                       <button
                         key={song.id}
-                        className={`flex items-center justify-between rounded-lg p-2.5 text-left transition-colors hover:bg-secondary/30 ${isSelected ? 'bg-primary/5 ring-1 ring-primary/30' : ''}`}
+                        className={`flex items-center justify-between rounded-lg p-2.5 text-left transition-colors cursor-pointer hover:bg-secondary/30 ${isSelected ? 'bg-primary/5 ring-1 ring-primary/30' : ''}`}
                         onClick={() => toggleSongSelection(song.id)}
                         disabled={isPending}
                       >

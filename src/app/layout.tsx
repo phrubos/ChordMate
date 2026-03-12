@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
 import { KeyboardShortcuts } from "@/components/shared/keyboard-shortcuts";
+import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthSessionProvider>
+          <NextTopLoader color="#f59e0b" showSpinner={false} height={3} shadow="0 0 10px #f59e0b, 0 0 5px #f59e0b" />
           <TooltipProvider>
             <KeyboardShortcuts />
             {children}

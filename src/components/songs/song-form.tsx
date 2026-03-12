@@ -79,17 +79,20 @@ export function SongForm({ song }: SongFormProps) {
   const difficultyColors = ['text-green-500', 'text-lime-500', 'text-yellow-500', 'text-orange-500', 'text-red-500'];
 
   return (
-    <div className="mx-auto max-w-lg animate-fade-up">
-      <div className="rounded-xl border border-border/50 bg-card/50 p-6">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {isEdit ? 'Dal szerkesztése' : 'Új dal hozzáadása'}
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isEdit ? 'Módosítsd a dal adatait' : 'Adj hozzá egy új dalt a közös listához'}
-        </p>
+    <div className="mx-auto max-w-lg animate-fade-up h-[calc(100dvh-8rem)]">
+      <div className="flex flex-col h-full rounded-xl border border-border/50 bg-card/50 overflow-hidden shadow-sm">
+        <div className="p-6 pb-4 shrink-0">
+          <h2 className="text-lg font-semibold tracking-tight">
+            {isEdit ? 'Dal szerkesztése' : 'Új dal hozzáadása'}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isEdit ? 'Módosítsd a dal adatait' : 'Adj hozzá egy új dalt a közös listához'}
+          </p>
+        </div>
 
-        <form action={handleSubmit} className="mt-6">
-          <div className="flex flex-col gap-5">
+        <form action={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2">
+            <div className="flex flex-col gap-5">
             {/* Title */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="title" className="text-sm font-medium">Dal címe *</Label>
@@ -239,10 +242,11 @@ export function SongForm({ song }: SongFormProps) {
                 </div>
               )}
             </div>
+            </div>
           </div>
 
           {/* Footer */}
-          <div className="mt-6 flex justify-end gap-2 border-t border-border/30 pt-4">
+          <div className="shrink-0 flex justify-end gap-2 border-t border-border/30 bg-card/50 px-6 py-4">
             <Button type="button" variant="ghost" onClick={handleBack} disabled={isPending}>
               Mégse
             </Button>
