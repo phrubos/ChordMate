@@ -335,7 +335,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
                   setMobileActionDate(null);
                   setTimeout(() => {
                     dayDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 50);
+                  }, 40);
                 }}
               >
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
