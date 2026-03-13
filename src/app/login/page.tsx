@@ -12,14 +12,14 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="login-panel relative flex min-h-screen flex-col lg:flex-row overflow-hidden">
+    <div className="login-panel relative flex min-h-screen flex-col xl:flex-row overflow-hidden">
       {/* Global Background Light Effect (Top Left) */}
-      <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
+      <div className="hidden xl:block pointer-events-none absolute inset-0 z-0">
         <div className="absolute -left-[10%] -top-[10%] size-[600px] rounded-full bg-primary/10 blur-[150px] animate-float opacity-50 [animation-delay:1.5s]" />
       </div>
 
       {/* Left: Remotion Animation Panel */}
-      <div className="hidden lg:flex lg:w-[55%] relative z-10 items-center justify-center">
+      <div className="hidden xl:flex xl:w-[55%] relative z-10 items-center justify-center">
         <LoginPlayer />
         {/* Subtle brand watermark */}
         <div className="absolute bottom-6 left-6 z-10 flex items-center gap-2 opacity-30">
@@ -32,7 +32,7 @@ export default async function LoginPage() {
       {/* Vertical accent divider removed for seamless blend */}
 
       {/* Right: Login Panel */}
-      <div className="relative flex flex-1 items-center justify-center min-h-screen lg:min-h-0">
+      <div className="relative flex flex-1 items-center justify-center min-h-screen xl:min-h-0">
         {/* Background orbs (visible on both mobile and desktop) */}
         <div className="pointer-events-none absolute inset-0 z-0">
           <div className="absolute -right-20 -top-20 size-80 rounded-full bg-primary/8 blur-[100px] animate-float" />

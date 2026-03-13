@@ -56,7 +56,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
 
   const handleSelectDate = (date: string) => {
     setSelectedDate(date);
-    if (window.innerWidth < 768) {
+    if (window.matchMedia('(hover: none)').matches) {
       setMobileActionDate(date);
     }
   };
@@ -322,7 +322,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
 
       {/* Mobile action modal when tapping a day */}
       <Dialog open={!!mobileActionDate} onOpenChange={(open) => !open && setMobileActionDate(null)}>
-        <DialogContent className="max-w-[320px] rounded-[2rem] p-6 lg:hidden">
+        <DialogContent className="max-w-[320px] rounded-[2rem] p-6">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-center text-2xl font-bold capitalize">
               {mobileActionDate ? format(parseISO(mobileActionDate), 'MMMM d.', { locale: hu }) : ''}

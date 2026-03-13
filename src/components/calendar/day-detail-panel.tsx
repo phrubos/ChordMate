@@ -101,7 +101,7 @@ function SortableSongItem({
         <p className="text-sm font-medium truncate leading-tight">{entry.song.title}</p>
         <p className="text-xs text-muted-foreground truncate">{entry.song.artist}</p>
       </div>
-      <div className="flex items-center gap-1 shrink-0 opacity-100 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 shrink-0 opacity-100 transition-opacity hover-device:opacity-0 hover-device:group-hover/item:opacity-100">
         {entry.song.tabContent && (
           <TabViewerModal
             songTitle={entry.song.title}
