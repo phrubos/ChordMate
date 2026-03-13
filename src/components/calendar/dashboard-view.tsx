@@ -56,7 +56,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
 
   const handleSelectDate = (date: string) => {
     setSelectedDate(date);
-    if (window.matchMedia('(hover: none)').matches) {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       setMobileActionDate(date);
     }
   };
