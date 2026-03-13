@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Calendar, ListMusic, BarChart2, LogOut, Menu, X } from 'lucide-react';
+import { Calendar, ListMusic, BarChart2, LogOut, Menu, X, Guitar, Timer, Wrench, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,6 +19,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { springs } from '@/lib/motion';
+import { GuitarTunerModal } from '@/components/tools/guitar-tuner-modal';
+import { MetronomeModal } from '@/components/tools/metronome-modal';
 
 const desktopNavLinks = [
   { href: '/dashboard', label: 'Naptár', icon: Calendar },
@@ -35,6 +37,8 @@ export function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [tunerOpen, setTunerOpen] = useState(false);
+  const [metronomeOpen, setMetronomeOpen] = useState(false);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -91,6 +95,32 @@ export function Navbar() {
               </Link>
             );
           })}
+          {/* Eszközök dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 rounded-lg px-3 text-muted-foreground transition-all"
+                />
+              }
+            >
+              <Wrench className="size-4" />
+              Eszközök
+              <ChevronDown className="size-3 opacity-50" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[180px]">
+              <DropdownMenuItem onClick={() => setTunerOpen(true)}>
+                <Guitar data-icon="inline-start" />
+                Hangoló
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setMetronomeOpen(true)}>
+                <Timer data-icon="inline-start" />
+                Metronóm
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         {/* Theme toggle + User menu (desktop) */}
@@ -262,6 +292,50 @@ export function Navbar() {
                 })}
               </nav>
 
+              {/* Tools section */}
+              <div className="flex flex-col gap-1.5 mt-4">
+                <motion.div
+                  initial={{ opacity: 0, x: -24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -24 }}
+                  transition={{ ...springs.smooth, delay: 0.05 + mobileNavLinks.length * 0.07 }}
+                >
+                  <div className="px-4 pb-2 pt-3">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/40">Eszközök</p>
+                  </div>
+                </motion.div>
+                {[
+                  { label: 'Hangoló', icon: Guitar, description: 'Gitár hangoló', action: () => { closeMobile(); setTunerOpen(true); } },
+                  { label: 'Metronóm', icon: Timer, description: 'Ütemjelző', action: () => { closeMobile(); setMetronomeOpen(true); } },
+                ].map((tool, i) => {
+                  const Icon = tool.icon;
+                  return (
+                    <motion.div
+                      key={tool.label}
+                      initial={{ opacity: 0, x: -24 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -24 }}
+                      transition={{
+                        ...springs.smooth,
+                        delay: 0.05 + (mobileNavLinks.length + 1 + i) * 0.07,
+                      }}
+                    >
+                      <button onClick={tool.action} className="w-full">
+                        <div className="group flex items-center gap-4 rounded-2xl px-4 py-3.5 transition-all duration-200 active:scale-[0.98]">
+                          <div className="flex size-11 items-center justify-center rounded-xl bg-card/60 text-muted-foreground group-active:text-foreground transition-colors">
+                            <Icon className="size-5" />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-[17px] font-semibold tracking-tight text-foreground">{tool.label}</p>
+                            <p className="text-[13px] text-muted-foreground/60">{tool.description}</p>
+                          </div>
+                        </div>
+                      </button>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
               {/* Bottom section: user + theme + logout */}
               <motion.div
                 className="flex flex-col gap-3 pb-8"
@@ -307,6 +381,8 @@ export function Navbar() {
       </AnimatePresence>,
       document.body
     )}
+    <GuitarTunerModal open={tunerOpen} onOpenChange={setTunerOpen} />
+    <MetronomeModal open={metronomeOpen} onOpenChange={setMetronomeOpen} />
     </>
   );
 }
