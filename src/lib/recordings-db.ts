@@ -78,6 +78,19 @@ export async function deleteRecording(id: number): Promise<void> {
   });
 }
 
+export async function getNextCoverNumber(date: string, songTitle: string, artist: string): Promise<number> {
+  const recs = await getRecordingsByDate(date);
+  const prefix = `${songTitle} – ${artist} – cover_`;
+  let max = 0;
+  for (const rec of recs) {
+    if (rec.name.startsWith(prefix)) {
+      const num = parseInt(rec.name.slice(prefix.length), 10);
+      if (!isNaN(num) && num > max) max = num;
+    }
+  }
+  return max + 1;
+}
+
 // ─── Demo seed (remove after testing) ─────────────────────────
 export async function seedDemoRecordings(date: string): Promise<void> {
   const existing = await getRecordingsByDate(date);

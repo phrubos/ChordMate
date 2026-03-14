@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { ExternalLink, FileText, ZoomIn, ZoomOut, Copy, Check, Play, Pause, Minus, Plus, RotateCcw } from 'lucide-react';
+import { ExternalLink, FileText, ZoomIn, ZoomOut, Copy, Check, Play, Pause, Minus, Plus, RotateCcw, Mic, Square, Timer, MoreHorizontal } from 'lucide-react';
 import { ChordTooltip } from '@/components/shared/chord-tooltip';
 import { chordNames } from '@/lib/chord-diagrams';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { MetronomeModal } from '@/components/tools/metronome-modal';
+import { saveRecording, getNextCoverNumber } from '@/lib/recordings-db';
 import { toast } from 'sonner';
 
 interface TabViewerModalProps {
@@ -20,6 +22,7 @@ interface TabViewerModalProps {
   tabContent?: string | null;
   tabUrl?: string | null;
   trigger?: React.ReactNode;
+  date?: string;
 }
 
 // Build regex from known chord names (longest first to match "Cadd9" before "C")
@@ -79,7 +82,13 @@ function TabContentWithChords({ content }: { content: string }) {
 const BASE_PX_PER_SEC = 5;
 const DEFAULT_SPEED = 1;
 
-export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger }: TabViewerModalProps) {
+function formatRecTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger, date }: TabViewerModalProps) {
   const [fontSize, setFontSize] = useState(15);
   const [copied, setCopied] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
@@ -89,6 +98,22 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
   const lastTimeRef = useRef<number>(0);
   const scrollAccumRef = useRef<number>(0);
   const speedRef = useRef(DEFAULT_SPEED);
+
+  // Recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recElapsed, setRecElapsed] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recChunksRef = useRef<Blob[]>([]);
+  const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recStreamRef = useRef<MediaStream | null>(null);
+  const recElapsedRef = useRef(0);
+
+  // Metronome state
+  const [metronomeOpen, setMetronomeOpen] = useState(false);
+  const [metronomeActive, setMetronomeActive] = useState(false);
+
+  // Mobile overflow menu
+  const [showMoreTools, setShowMoreTools] = useState(false);
 
   // Keep speedRef in sync so the rAF loop always reads the latest value
   useEffect(() => {
@@ -158,6 +183,17 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
     return () => stopAutoScroll();
   }, [stopAutoScroll]);
 
+  // Cleanup recording on unmount
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current?.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+      recStreamRef.current?.getTracks().forEach((t) => t.stop());
+      if (recTimerRef.current) clearInterval(recTimerRef.current);
+    };
+  }, []);
+
   function handleResetScroll() {
     const container = scrollContainerRef.current;
     if (container) {
@@ -166,6 +202,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
   }
 
   const hasTab = !!tabContent;
+  const canRecord = !!date;
   const searchUrl = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(`${artist} ${songTitle}`)}`;
 
   function handleCopy() {
@@ -175,6 +212,71 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
       toast.success('Tab kimásolva');
       setTimeout(() => setCopied(false), 2000);
     }
+  }
+
+  async function startRecording() {
+    if (!date) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true },
+      });
+      recStreamRef.current = stream;
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm',
+      });
+      recChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(recChunksRef.current, { type: recorder.mimeType });
+        stream.getTracks().forEach((t) => t.stop());
+        recStreamRef.current = null;
+
+        // Auto-save with cover_N naming
+        try {
+          const coverNum = await getNextCoverNumber(date, songTitle, artist);
+          const name = `${songTitle} – ${artist} – cover_${coverNum}`;
+          await saveRecording({
+            date,
+            name,
+            blob,
+            duration: recElapsedRef.current,
+            createdAt: Date.now(),
+          });
+          toast.success(`Felvétel mentve: cover_${coverNum}`);
+        } catch {
+          toast.error('Hiba a felvétel mentésekor');
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start(1000);
+      setRecElapsed(0);
+      recElapsedRef.current = 0;
+      recTimerRef.current = setInterval(() => {
+        recElapsedRef.current += 1;
+        setRecElapsed(recElapsedRef.current);
+      }, 1000);
+      setIsRecording(true);
+    } catch {
+      toast.error('Mikrofon hozzáférés megtagadva');
+    }
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
+    if (recTimerRef.current) {
+      clearInterval(recTimerRef.current);
+      recTimerRef.current = null;
+    }
+    setIsRecording(false);
+    // Don't reset recElapsed/ref here — onstop callback needs the final value
   }
 
   return (
@@ -198,15 +300,16 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
       <DialogContent className="max-w-[90vw] sm:max-w-5xl max-h-[90vh] landscape:max-h-[95vh] landscape:max-w-[95vw] flex flex-col">
         <DialogHeader className="shrink-0">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <DialogTitle className="text-lg landscape:text-sm">{songTitle}</DialogTitle>
-              <p className="text-sm landscape:text-xs text-muted-foreground mt-0.5 landscape:mt-0">{artist}</p>
+            <div className="min-w-0">
+              <DialogTitle className="text-lg landscape:text-sm truncate">{songTitle}</DialogTitle>
+              <p className="text-sm landscape:text-xs text-muted-foreground mt-0.5 landscape:mt-0 truncate">{artist}</p>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 landscape:gap-1 border-b border-border/50 pb-3 landscape:pb-1.5 shrink-0">
+        {/* Toolbar — Row 1: Tab controls */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 border-b border-border/50 pb-2 sm:pb-3 landscape:pb-1.5 shrink-0">
+          {/* Zoom */}
           <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5">
             <Button
               variant="ghost"
@@ -227,8 +330,9 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
             </Button>
           </div>
 
+          {/* Copy */}
           {hasTab && (
-            <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={handleCopy}>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-7 px-2" onClick={handleCopy}>
               {copied ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
               <span className="hidden sm:inline">{copied ? 'Másolva' : 'Másolás'}</span>
             </Button>
@@ -236,7 +340,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
 
           {/* Auto-scroll controls */}
           {hasTab && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-secondary/50 p-0.5 px-1">
+            <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5 px-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -281,24 +385,138 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
 
           <div className="flex-1" />
 
-          {tabUrl && (
-            <a href={tabUrl} target="_blank" rel="noopener noreferrer">
+          {/* Tools group — desktop: inline, mobile: overflow menu */}
+          <div className="hidden sm:flex items-center gap-1.5">
+            {/* Metronome */}
+            <Button
+              variant={metronomeActive ? 'default' : 'outline'}
+              size="sm"
+              className={`gap-1.5 text-xs ${metronomeActive ? 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30' : ''}`}
+              onClick={() => setMetronomeOpen(!metronomeOpen)}
+            >
+              <Timer className="size-3.5" />
+              Metronóm
+            </Button>
+
+            {/* Recording timer + Record button */}
+            {canRecord && (
+              <div className="flex items-center gap-1.5">
+                {isRecording && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-0.5">
+                    <span className="size-1.5 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-xs font-bold tabular-nums text-red-400">{formatRecTime(recElapsed)}</span>
+                  </div>
+                )}
+                <Button
+                  variant={isRecording ? 'destructive' : 'outline'}
+                  size="sm"
+                  className={`gap-1.5 text-xs ${isRecording ? '' : ''}`}
+                  onClick={isRecording ? stopRecording : startRecording}
+                >
+                  {isRecording ? (
+                    <>
+                      <Square className="size-3 fill-current" />
+                      Leállítás
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="size-3.5" />
+                      REC
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Source link */}
+            {tabUrl && (
+              <a href={tabUrl} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                  <ExternalLink className="size-3.5" />
+                  Forrás
+                </Button>
+              </a>
+            )}
+
+            {/* UG link */}
+            <a href={searchUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                <ExternalLink className="size-3.5" />
-                <span className="hidden sm:inline">Forrás megnyitása</span>
+                <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+                UG
               </Button>
             </a>
-          )}
+          </div>
 
-          <a href={searchUrl} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-              <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-              <span className="hidden sm:inline">Ultimate Guitar</span>
+          {/* Mobile: compact tool buttons */}
+          <div className="flex sm:hidden items-center gap-1">
+            {/* Metronome — always visible on mobile */}
+            <Button
+              variant={metronomeActive ? 'default' : 'outline'}
+              size="sm"
+              className={`size-8 p-0 ${metronomeActive ? 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30' : ''}`}
+              onClick={() => setMetronomeOpen(!metronomeOpen)}
+              title="Metronóm"
+            >
+              <Timer className="size-3.5" />
             </Button>
-          </a>
+
+            {/* Recording timer (mobile) */}
+            {isRecording && (
+              <div className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5">
+                <span className="size-1.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-[11px] font-bold tabular-nums text-red-400">{formatRecTime(recElapsed)}</span>
+              </div>
+            )}
+
+            {/* Record — always visible on mobile */}
+            {canRecord && (
+              <Button
+                variant={isRecording ? 'destructive' : 'outline'}
+                size="sm"
+                className="size-8 p-0"
+                onClick={isRecording ? stopRecording : startRecording}
+                title={isRecording ? 'Leállítás' : 'Felvétel'}
+              >
+                {isRecording ? <Square className="size-3 fill-current" /> : <Mic className="size-3.5" />}
+              </Button>
+            )}
+
+            {/* More menu toggle for links */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`size-8 p-0 ${showMoreTools ? 'text-primary bg-primary/10' : 'text-muted-foreground'}`}
+              onClick={() => setShowMoreTools(!showMoreTools)}
+              title="Több eszköz"
+            >
+              <MoreHorizontal className="size-3.5" />
+            </Button>
+          </div>
         </div>
+
+        {/* Mobile overflow row */}
+        {showMoreTools && (
+          <div className="flex sm:hidden items-center gap-1.5 pb-2 shrink-0 animate-fade-up">
+            {tabUrl && (
+              <a href={tabUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
+                  <ExternalLink className="size-3.5" />
+                  Forrás
+                </Button>
+              </a>
+            )}
+            <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+              <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
+                <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+                Ultimate Guitar
+              </Button>
+            </a>
+          </div>
+        )}
 
         {/* Tab content */}
         <div ref={scrollContainerRef} className="flex-1 overflow-auto rounded-lg bg-background/50 border border-border/30 p-4 landscape:p-2 min-h-0">
@@ -330,6 +548,14 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
           )}
         </div>
       </DialogContent>
+
+      {/* Metronome — independent modal, keeps playing when closed */}
+      <MetronomeModal
+        open={metronomeOpen}
+        onOpenChange={setMetronomeOpen}
+        keepAliveOnClose
+        onPlayingChange={setMetronomeActive}
+      />
     </Dialog>
   );
 }

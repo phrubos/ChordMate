@@ -135,9 +135,12 @@ function Pendulum({ isPlaying, bpm, currentBeat }: { isPlaying: boolean; bpm: nu
 interface MetronomeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  keepAliveOnClose?: boolean;
+  onPlayingChange?: (playing: boolean) => void;
+  onStop?: () => void;
 }
 
-export function MetronomeModal({ open, onOpenChange }: MetronomeModalProps) {
+export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, onPlayingChange, onStop }: MetronomeModalProps) {
   const [bpm, setBpm] = useState(120);
   const [isPlaying, setIsPlaying] = useState(false);
   const [timeSigIdx, setTimeSigIdx] = useState(2); // 4/4 default
@@ -203,16 +206,19 @@ export function MetronomeModal({ open, onOpenChange }: MetronomeModalProps) {
     isPlayingRef.current = true;
     setIsPlaying(true);
     setCurrentBeat(0);
+    onPlayingChange?.(true);
 
     scheduleNextBeat();
-  }, [scheduleNextBeat]);
+  }, [scheduleNextBeat, onPlayingChange]);
 
   const stop = useCallback(() => {
     isPlayingRef.current = false;
     setIsPlaying(false);
     setCurrentBeat(0);
     if (timerRef.current) clearTimeout(timerRef.current);
-  }, []);
+    onPlayingChange?.(false);
+    onStop?.();
+  }, [onPlayingChange, onStop]);
 
   const togglePlay = useCallback(() => {
     if (isPlaying) stop();
@@ -229,14 +235,14 @@ export function MetronomeModal({ open, onOpenChange }: MetronomeModalProps) {
     }
   }, [bpm, timeSigIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cleanup on close
+  // Cleanup on close — only when not keeping alive
   useEffect(() => {
-    if (!open) {
+    if (!open && !keepAliveOnClose) {
       stop();
       audioCtxRef.current?.close();
       audioCtxRef.current = null;
     }
-  }, [open, stop]);
+  }, [open, stop, keepAliveOnClose]);
 
   // Tap tempo
   const handleTap = useCallback(() => {

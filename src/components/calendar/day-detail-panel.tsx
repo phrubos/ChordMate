@@ -55,12 +55,14 @@ function SortableSongItem({
   setPlayingUrl,
   onRemove,
   isPending,
+  date,
 }: {
   entry: CalendarEntryWithSong;
   playingUrl: string | null;
   setPlayingUrl: (url: string | null) => void;
   onRemove: (id: string) => void;
   isPending: boolean;
+  date?: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: entry.id,
@@ -110,6 +112,7 @@ function SortableSongItem({
             artist={entry.song.artist}
             tabContent={entry.song.tabContent}
             tabUrl={entry.song.tabUrl}
+            date={date}
             trigger={
               <Button variant="ghost" size="sm" className="size-8 p-0 text-muted-foreground hover:text-primary">
                 <FileText className="size-4" />
@@ -155,6 +158,7 @@ function SortableSongList({
   onRemove,
   onReorder,
   isPending,
+  date,
 }: {
   entries: CalendarEntryWithSong[];
   playingUrl: string | null;
@@ -162,6 +166,7 @@ function SortableSongList({
   onRemove: (id: string) => void;
   onReorder: (reorderedEntries: CalendarEntryWithSong[], ids: string[]) => void;
   isPending: boolean;
+  date?: string;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -195,6 +200,7 @@ function SortableSongList({
               setPlayingUrl={setPlayingUrl}
               onRemove={onRemove}
               isPending={isPending}
+              date={date}
             />
           ))}
         </div>
@@ -384,6 +390,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
             onRemove={(id) => setSongToRemove(id)}
             onReorder={handleReorder}
             isPending={isPending}
+            date={selectedDate ?? undefined}
           />
         )}
 
