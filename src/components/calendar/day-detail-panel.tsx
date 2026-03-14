@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical, Check, ListChecks } from 'lucide-react';
+import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical, Check, ListChecks, Mic } from 'lucide-react';
 import { ImageLightbox } from '@/components/shared/image-lightbox';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { CalendarEntryWithSong, Song } from '@/types';
+import { RecordingModal } from '@/components/tools/recording-modal';
 
 // --- Sortable song item ---
 function SortableSongItem({
@@ -218,6 +219,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
   const [songSearch, setSongSearch] = useState('');
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [localEntries, setLocalEntries] = useState(entries);
+  const [recordingOpen, setRecordingOpen] = useState(false);
 
   useEffect(() => {
     setLocalEntries(entries);
@@ -383,7 +385,9 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
       </div>
 
       {/* Actions footer */}
-      <div className="border-t border-border/30 p-3 flex flex-col gap-1.5">
+      <div className="border-t border-border/30 px-3 py-2.5 flex items-center gap-2">
+        {/* Left: secondary text actions */}
+        <div className="flex flex-col flex-1 min-w-0">
         <Dialog open={addDialogOpen} onOpenChange={(open) => {
           setAddDialogOpen(open);
           if (open) {
@@ -517,28 +521,58 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
             </div>
           </DialogContent>
         </Dialog>
+        </div>
 
-        <AlertDialog open={!!songToRemove} onOpenChange={(open) => !open && setSongToRemove(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Dal eltávolítása</AlertDialogTitle>
-              <AlertDialogDescription>
-                Biztosan eltávolítod ezt a dalt erről a napról? A dal továbbra is elérhető marad a Dalok listájában.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isPending}>Mégse</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => songToRemove && handleRemove(songToRemove)}
-                disabled={isPending}
-              >
-                Eltávolítás
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Vertical separator */}
+        {entries.length > 0 && (
+          <div className="self-stretch w-px bg-border/30 mx-1 shrink-0" />
+        )}
+
+        {/* Right: Rec primary CTA */}
+        {entries.length > 0 && (
+          <button
+            aria-label="Felvétel indítása"
+            className="shrink-0 flex flex-col items-center gap-1 cursor-pointer group p-1"
+            onClick={() => setRecordingOpen(true)}
+          >
+            <span className="relative flex size-11">
+              <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
+              <span className="absolute inset-1 rounded-full bg-red-500/10 animate-pulse" />
+              <span className="relative flex size-full items-center justify-center rounded-full bg-red-600 shadow-lg shadow-red-600/30 transition-transform duration-150 group-hover:scale-110 group-active:scale-95">
+                <Mic className="size-4 text-white" />
+              </span>
+            </span>
+            <span className="text-[10px] font-semibold tracking-widest text-red-500/70 uppercase leading-none">
+              rec
+            </span>
+          </button>
+        )}
       </div>
+
+      <AlertDialog open={!!songToRemove} onOpenChange={(open) => !open && setSongToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dal eltávolítása</AlertDialogTitle>
+            <AlertDialogDescription>
+              Biztosan eltávolítod ezt a dalt erről a napról? A dal továbbra is elérhető marad a Dalok listájában.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => songToRemove && handleRemove(songToRemove)}
+              disabled={isPending}
+            >
+              Eltávolítás
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {selectedDate && (
+        <RecordingModal open={recordingOpen} onOpenChange={setRecordingOpen} date={selectedDate} />
+      )}
     </div>
   );
 }
