@@ -765,6 +765,7 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
   const [elapsed, setElapsed] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingName, setRecordingName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -829,7 +830,8 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
   }
 
   async function handleSave() {
-    if (!recordedBlob || !recordingName.trim()) return;
+    if (!recordedBlob || !recordingName.trim() || isSaving) return;
+    setIsSaving(true);
     try {
       const audioBase64 = await blobToBase64(recordedBlob);
       await dbSave({
@@ -847,6 +849,8 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
       loadRecordings();
     } catch {
       toast.error('Hiba a mentésnél');
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -984,6 +988,7 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
                       className="flex-1 h-10 rounded-xl gap-2"
                       onClick={handleSave}
                       disabled={!recordingName.trim()}
+                      isLoading={isSaving}
                     >
                       <Save className="size-4" />
                       Mentés
