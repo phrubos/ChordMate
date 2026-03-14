@@ -195,18 +195,18 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
           </>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-[90vw] sm:max-w-5xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[90vw] sm:max-w-5xl max-h-[90vh] landscape:max-h-[95vh] landscape:max-w-[95vw] flex flex-col">
         <DialogHeader className="shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <DialogTitle className="text-lg">{songTitle}</DialogTitle>
-              <p className="text-sm text-muted-foreground mt-0.5">{artist}</p>
+              <DialogTitle className="text-lg landscape:text-sm">{songTitle}</DialogTitle>
+              <p className="text-sm landscape:text-xs text-muted-foreground mt-0.5 landscape:mt-0">{artist}</p>
             </div>
           </div>
         </DialogHeader>
 
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-border/50 pb-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 landscape:gap-1 border-b border-border/50 pb-3 landscape:pb-1.5 shrink-0">
           <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5">
             <Button
               variant="ghost"
@@ -301,7 +301,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
         </div>
 
         {/* Tab content */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-auto rounded-lg bg-background/50 border border-border/30 p-4 min-h-[300px]">
+        <div ref={scrollContainerRef} className="flex-1 overflow-auto rounded-lg bg-background/50 border border-border/30 p-4 landscape:p-2 min-h-0">
           {hasTab ? (
             <pre
               className="tab-content"
