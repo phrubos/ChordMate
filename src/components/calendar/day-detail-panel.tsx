@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isAfter, isSameDay, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical, Check, ListChecks, Mic } from 'lucide-react';
+import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical, Check, ListChecks, Mic, Disc3 } from 'lucide-react';
 import { ImageLightbox } from '@/components/shared/image-lightbox';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { CalendarEntryWithSong, Song } from '@/types';
 import { RecordingModal } from '@/components/tools/recording-modal';
+import { getRecordingsByDate, seedDemoRecordings } from '@/lib/recordings-db';
 
 // --- Sortable song item ---
 function SortableSongItem({
@@ -220,10 +221,34 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [localEntries, setLocalEntries] = useState(entries);
   const [recordingOpen, setRecordingOpen] = useState(false);
+  const [hasRecordings, setHasRecordings] = useState(false);
 
   useEffect(() => {
     setLocalEntries(entries);
   }, [entries]);
+
+  // Check if past dates have recordings in IndexedDB
+  useEffect(() => {
+    if (!selectedDate) { setHasRecordings(false); return; }
+    const today = startOfDay(new Date());
+    const selected = startOfDay(parseISO(selectedDate));
+    const isPastDate = !isSameDay(selected, today) && !isAfter(selected, today);
+    if (!isPastDate) { setHasRecordings(false); return; }
+    let cancelled = false;
+
+    // Demo seed for March 1 (remove after testing)
+    const demoDate = '2026-03-01';
+    const seedPromise = selectedDate === demoDate
+      ? seedDemoRecordings(demoDate)
+      : Promise.resolve();
+
+    seedPromise.then(() => getRecordingsByDate(selectedDate)).then((recs) => {
+      if (!cancelled) setHasRecordings(recs.length > 0);
+    }).catch(() => {
+      if (!cancelled) setHasRecordings(false);
+    });
+    return () => { cancelled = true; };
+  }, [selectedDate]);
 
   function handleReorder(reorderedEntries: CalendarEntryWithSong[], entryIds: string[]) {
     setLocalEntries(reorderedEntries);
@@ -529,24 +554,52 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
         )}
 
         {/* Right: Rec primary CTA */}
-        {entries.length > 0 && (
-          <button
-            aria-label="Felvétel indítása"
-            className="shrink-0 flex flex-col items-center gap-1 cursor-pointer group p-1"
-            onClick={() => setRecordingOpen(true)}
-          >
-            <span className="relative flex size-11">
-              <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
-              <span className="absolute inset-1 rounded-full bg-red-500/10 animate-pulse" />
-              <span className="relative flex size-full items-center justify-center rounded-full bg-red-600 shadow-lg shadow-red-600/30 transition-transform duration-150 group-hover:scale-110 group-active:scale-95">
-                <Mic className="size-4 text-white" />
+        {entries.length > 0 && (() => {
+          const today = startOfDay(new Date());
+          const selected = startOfDay(parseISO(selectedDate));
+          const isPast = !isSameDay(selected, today) && !isAfter(selected, today);
+
+          // Past date: only show memory button if recordings exist
+          if (isPast) {
+            if (!hasRecordings) return null;
+            return (
+              <button
+                aria-label="Felvételek megtekintése"
+                className="shrink-0 flex flex-col items-center gap-1 cursor-pointer group p-1"
+                onClick={() => setRecordingOpen(true)}
+              >
+                <span className="relative flex size-11">
+                  <span className="relative flex size-full items-center justify-center rounded-full bg-amber-900/40 shadow-md shadow-amber-900/10 ring-1 ring-amber-700/20 transition-transform duration-150 group-hover:scale-110 group-active:scale-95">
+                    <Disc3 className="size-4 text-amber-400/80" />
+                  </span>
+                </span>
+                <span className="text-[10px] font-semibold tracking-widest text-amber-500/50 uppercase leading-none">
+                  emlék
+                </span>
+              </button>
+            );
+          }
+
+          // Today or future: show active rec button
+          return (
+            <button
+              aria-label="Felvétel indítása"
+              className="shrink-0 flex flex-col items-center gap-1 cursor-pointer group p-1"
+              onClick={() => setRecordingOpen(true)}
+            >
+              <span className="relative flex size-11">
+                <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
+                <span className="absolute inset-1 rounded-full bg-red-500/10 animate-pulse" />
+                <span className="relative flex size-full items-center justify-center rounded-full bg-red-600 shadow-lg shadow-red-600/30 transition-transform duration-150 group-hover:scale-110 group-active:scale-95">
+                  <Mic className="size-4 text-white" />
+                </span>
               </span>
-            </span>
-            <span className="text-[10px] font-semibold tracking-widest text-red-500/70 uppercase leading-none">
-              rec
-            </span>
-          </button>
-        )}
+              <span className="text-[10px] font-semibold tracking-widest text-red-500/70 uppercase leading-none">
+                rec
+              </span>
+            </button>
+          );
+        })()}
       </div>
 
       <AlertDialog open={!!songToRemove} onOpenChange={(open) => !open && setSongToRemove(null)}>
@@ -570,9 +623,19 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
         </AlertDialogContent>
       </AlertDialog>
 
-      {selectedDate && (
-        <RecordingModal open={recordingOpen} onOpenChange={setRecordingOpen} date={selectedDate} />
-      )}
+      {selectedDate && (() => {
+        const today = startOfDay(new Date());
+        const selected = startOfDay(parseISO(selectedDate));
+        const isPastDate = !isSameDay(selected, today) && !isAfter(selected, today);
+        return (
+          <RecordingModal
+            open={recordingOpen}
+            onOpenChange={setRecordingOpen}
+            date={selectedDate}
+            readOnly={isPastDate}
+          />
+        );
+      })()}
     </div>
   );
 }

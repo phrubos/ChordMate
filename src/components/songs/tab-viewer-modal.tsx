@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { ExternalLink, FileText, ZoomIn, ZoomOut, Copy, Check } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { ExternalLink, FileText, ZoomIn, ZoomOut, Copy, Check, Play, Pause, Minus, Plus, RotateCcw } from 'lucide-react';
 import { ChordTooltip } from '@/components/shared/chord-tooltip';
 import { chordNames } from '@/lib/chord-diagrams';
 import { Button } from '@/components/ui/button';
@@ -76,9 +76,94 @@ function TabContentWithChords({ content }: { content: string }) {
   );
 }
 
+const BASE_PX_PER_SEC = 5;
+const DEFAULT_SPEED = 1;
+
 export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger }: TabViewerModalProps) {
   const [fontSize, setFontSize] = useState(15);
   const [copied, setCopied] = useState(false);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const [scrollSpeed, setScrollSpeed] = useState(DEFAULT_SPEED);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(0);
+  const scrollAccumRef = useRef<number>(0);
+  const speedRef = useRef(DEFAULT_SPEED);
+
+  // Keep speedRef in sync so the rAF loop always reads the latest value
+  useEffect(() => {
+    speedRef.current = scrollSpeed;
+  }, [scrollSpeed]);
+
+  const stopAutoScroll = useCallback(() => {
+    setIsAutoScrolling(false);
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+  }, []);
+
+  const startAutoScroll = useCallback(() => {
+    scrollAccumRef.current = 0;
+    lastTimeRef.current = 0;
+    setIsAutoScrolling(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isAutoScrolling) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    function tick(timestamp: number) {
+      if (!container) return;
+      if (lastTimeRef.current === 0) {
+        lastTimeRef.current = timestamp;
+        animFrameRef.current = requestAnimationFrame(tick);
+        return;
+      }
+      const delta = timestamp - lastTimeRef.current;
+      lastTimeRef.current = timestamp;
+
+      // Accumulate fractional pixels to avoid sub-pixel rounding to 0
+      scrollAccumRef.current += (speedRef.current * BASE_PX_PER_SEC * delta) / 1000;
+
+      const px = Math.floor(scrollAccumRef.current);
+      if (px >= 1) {
+        container.scrollTop += px;
+        scrollAccumRef.current -= px;
+      }
+
+      // Stop if reached the bottom
+      if (container.scrollTop + container.clientHeight >= container.scrollHeight - 1) {
+        stopAutoScroll();
+        return;
+      }
+
+      animFrameRef.current = requestAnimationFrame(tick);
+    }
+
+    animFrameRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+    };
+  }, [isAutoScrolling, stopAutoScroll]);
+
+  // Stop auto-scroll on dialog close
+  useEffect(() => {
+    return () => stopAutoScroll();
+  }, [stopAutoScroll]);
+
+  function handleResetScroll() {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTop = 0;
+    }
+  }
 
   const hasTab = !!tabContent;
   const searchUrl = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(`${artist} ${songTitle}`)}`;
@@ -149,6 +234,51 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
             </Button>
           )}
 
+          {/* Auto-scroll controls */}
+          {hasTab && (
+            <div className="flex items-center gap-1.5 rounded-lg bg-secondary/50 p-0.5 px-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`size-7 p-0 ${isAutoScrolling ? 'text-primary bg-primary/10' : ''}`}
+                onClick={() => isAutoScrolling ? stopAutoScroll() : startAutoScroll()}
+                title={isAutoScrolling ? 'Görgetés megállítása' : 'Auto-görgetés indítása'}
+              >
+                {isAutoScrolling ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
+              </Button>
+              <div className="flex items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="size-6 p-0"
+                  onClick={() => setScrollSpeed((s) => Math.max(0.5, +(s - 0.5).toFixed(1)))}
+                  disabled={scrollSpeed <= 0.5}
+                >
+                  <Minus className="size-3" />
+                </Button>
+                <span className="min-w-[3.5ch] text-center text-xs text-muted-foreground tabular-nums">{scrollSpeed}x</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="size-6 p-0"
+                  onClick={() => setScrollSpeed((s) => Math.min(3, +(s + 0.5).toFixed(1)))}
+                  disabled={scrollSpeed >= 3}
+                >
+                  <Plus className="size-3" />
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="size-6 p-0 text-muted-foreground"
+                onClick={handleResetScroll}
+                title="Vissza az elejére"
+              >
+                <RotateCcw className="size-3" />
+              </Button>
+            </div>
+          )}
+
           <div className="flex-1" />
 
           {tabUrl && (
@@ -171,7 +301,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger 
         </div>
 
         {/* Tab content */}
-        <div className="flex-1 overflow-auto rounded-lg bg-background/50 border border-border/30 p-4 min-h-[300px]">
+        <div ref={scrollContainerRef} className="flex-1 overflow-auto rounded-lg bg-background/50 border border-border/30 p-4 min-h-[300px]">
           {hasTab ? (
             <pre
               className="tab-content"

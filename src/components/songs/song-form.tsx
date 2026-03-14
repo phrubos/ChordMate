@@ -3,7 +3,7 @@
 import { useTransition, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Star, ExternalLink, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { Star, ExternalLink, ChevronDown, ChevronUp, Search, Sparkles, Loader2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +11,27 @@ import { Label } from '@/components/ui/label';
 import { YouTubePlayer } from '@/components/youtube/youtube-player';
 import { createSong, updateSong } from '@/actions/songs';
 import type { Song } from '@/types';
+
+interface YouTubeResult {
+  url: string;
+  title: string;
+  thumbnail: string;
+  channel: string;
+  duration: number;
+  views: number;
+}
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function formatViews(views: number): string {
+  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
+  if (views >= 1_000) return `${(views / 1_000).toFixed(0)}K`;
+  return String(views);
+}
 
 interface SongFormProps {
   song?: Song;
@@ -27,6 +48,10 @@ export function SongForm({ song }: SongFormProps) {
   const isEdit = !!song;
   const [isDirty, setIsDirty] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const [ytResults, setYtResults] = useState<YouTubeResult[]>([]);
+  const [ytSearching, setYtSearching] = useState(false);
+  const [ytShowResults, setYtShowResults] = useState(false);
+  const youtubeInputRef = useRef<HTMLInputElement>(null);
 
   // Track form changes
   const markDirty = useCallback(() => { if (!isDirty) setIsDirty(true); }, [isDirty]);
@@ -52,6 +77,42 @@ export function SongForm({ song }: SongFormProps) {
   const searchUrl = title && artist
     ? `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(`${artist} ${title}`)}`
     : '';
+
+  async function handleYoutubeSearch() {
+    if (!title.trim() || !artist.trim()) {
+      toast.error('Először add meg a dal címét és az előadót');
+      return;
+    }
+    setYtSearching(true);
+    setYtShowResults(true);
+    try {
+      const query = `${title} ${artist} guitar tutorial`;
+      const res = await fetch(`/api/youtube-search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.results) {
+        setYtResults(data.results);
+      } else {
+        toast.error('Nem sikerült a keresés');
+        setYtResults([]);
+      }
+    } catch {
+      toast.error('Hiba a YouTube keresésnél');
+      setYtResults([]);
+    } finally {
+      setYtSearching(false);
+    }
+  }
+
+  function selectYoutubeResult(url: string) {
+    setYoutubeUrl(url);
+    // Update the hidden/visible input
+    if (youtubeInputRef.current) {
+      youtubeInputRef.current.value = url;
+    }
+    setYtShowResults(false);
+    markDirty();
+    toast.success('YouTube link kiválasztva');
+  }
 
   function handleSubmit(formData: FormData) {
     formData.set('difficulty', String(difficulty));
@@ -126,14 +187,105 @@ export function SongForm({ song }: SongFormProps) {
               <Label htmlFor="youtubeUrl" className="text-sm font-medium">
                 YouTube link <span className="text-muted-foreground">(opcionális)</span>
               </Label>
-              <Input
-                id="youtubeUrl"
-                name="youtubeUrl"
-                defaultValue={song?.youtubeUrl ?? ''}
-                placeholder="https://youtube.com/watch?v=..."
-                onChange={(e) => { setYoutubeUrl(e.target.value); markDirty(); }}
-                className="h-10 rounded-lg bg-background/50"
-              />
+              <div className="flex gap-2">
+                <Input
+                  ref={youtubeInputRef}
+                  id="youtubeUrl"
+                  name="youtubeUrl"
+                  value={youtubeUrl}
+                  placeholder="https://youtube.com/watch?v=..."
+                  onChange={(e) => { setYoutubeUrl(e.target.value); markDirty(); }}
+                  className="h-10 rounded-lg bg-background/50 flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 gap-1.5 shrink-0 text-xs"
+                  onClick={handleYoutubeSearch}
+                  disabled={ytSearching || !title.trim() || !artist.trim()}
+                >
+                  {ytSearching ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5" />
+                  )}
+                  <span className="hidden sm:inline">Ajánló</span>
+                </Button>
+              </div>
+
+              {/* YouTube search results */}
+              {ytShowResults && (
+                <div className="mt-2 rounded-lg border border-border/50 bg-background/80 overflow-hidden animate-fade-up">
+                  {ytSearching ? (
+                    <div className="flex items-center justify-center gap-2 py-6">
+                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Keresés...</span>
+                    </div>
+                  ) : ytResults.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      Nem találtam eredményt
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b border-border/30">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Guitar tutorial ajánlatok ({ytResults.length})
+                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-muted-foreground"
+                          onClick={() => setYtShowResults(false)}
+                        >
+                          Mégse
+                        </Button>
+                      </div>
+                      <div className="max-h-[264px] overflow-y-auto divide-y divide-border/30">
+                        {ytResults.map((result, i) => (
+                          <div
+                            key={i}
+                            className="flex items-start gap-3 p-3 transition-colors hover:bg-secondary/20"
+                          >
+                            <div className="relative shrink-0 w-24 aspect-video rounded-md overflow-hidden bg-secondary">
+                              {result.thumbnail && (
+                                <img
+                                  src={result.thumbnail}
+                                  alt={result.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                <Play className="size-4 text-white fill-white" />
+                              </div>
+                              {result.duration > 0 && (
+                                <span className="absolute bottom-0.5 right-0.5 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white tabular-nums">
+                                  {formatDuration(result.duration)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium leading-tight line-clamp-2">{result.title}</p>
+                              <p className="mt-1 text-xs text-muted-foreground truncate">{result.channel}</p>
+                              {result.views > 0 && (
+                                <p className="text-xs text-muted-foreground/60">{formatViews(result.views)} megtekintés</p>
+                              )}
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="mt-2 h-7 px-3 text-xs gap-1.5"
+                                onClick={() => selectYoutubeResult(result.url)}
+                              >
+                                Video beállítása
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {youtubeUrl && youtubeUrl.includes('youtu') && (

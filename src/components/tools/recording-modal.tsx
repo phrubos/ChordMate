@@ -185,6 +185,207 @@ function TurntableSVG({ isRecording }: { isRecording: boolean }) {
   );
 }
 
+// ─── SVG 80s Retro Radio (for memory/playback-only mode) ──────
+function RetroRadioSVG({ isPlaying }: { isPlaying: boolean }) {
+  return (
+    <div className="relative w-full max-w-[260px] mx-auto select-none">
+      {/* Warm ambient glow when playing */}
+      {isPlaying && (
+        <div className="absolute inset-0 -m-4 rounded-3xl bg-amber-500/5 blur-xl animate-pulse pointer-events-none" />
+      )}
+      <svg viewBox="0 0 260 200" className="w-full drop-shadow-2xl">
+        <defs>
+          <linearGradient id="rd-body" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3d2b1a" />
+            <stop offset="50%" stopColor="#2a1e10" />
+            <stop offset="100%" stopColor="#1a1008" />
+          </linearGradient>
+          <linearGradient id="rd-body-edge" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#4d3820" />
+            <stop offset="100%" stopColor="#2a1e10" />
+          </linearGradient>
+          <linearGradient id="rd-speaker-mesh" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#1a1208" />
+            <stop offset="100%" stopColor="#0f0a04" />
+          </linearGradient>
+          <radialGradient id="rd-dial-face" cx="50%" cy="40%">
+            <stop offset="0%" stopColor="#f5e6c8" />
+            <stop offset="100%" stopColor="#c8a878" />
+          </radialGradient>
+          <linearGradient id="rd-chrome" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#d8d0c0" />
+            <stop offset="50%" stopColor="#a89878" />
+            <stop offset="100%" stopColor="#786850" />
+          </linearGradient>
+          <filter id="rd-glow-amber">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="rd-inset">
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000" floodOpacity="0.5" />
+          </filter>
+        </defs>
+
+        {/* Body / chassis — warm wood cabinet */}
+        <rect x="10" y="10" width="240" height="180" rx="12" fill="url(#rd-body-edge)" />
+        <rect x="12" y="12" width="236" height="176" rx="10" fill="url(#rd-body)" />
+
+        {/* Wood grain texture */}
+        {Array.from({ length: 8 }, (_, i) => (
+          <line key={i} x1="20" y1={25 + i * 22} x2="240" y2={23 + i * 22} stroke="#ffffff" strokeWidth="0.3" opacity="0.03" />
+        ))}
+
+        {/* Top decorative chrome strip */}
+        <rect x="30" y="18" width="200" height="3" rx="1.5" fill="url(#rd-chrome)" opacity="0.6" />
+
+        {/* ── Speaker grille — left side ── */}
+        <rect x="22" y="32" width="100" height="100" rx="8" fill="url(#rd-speaker-mesh)" filter="url(#rd-inset)" />
+        <rect x="24" y="34" width="96" height="96" rx="6" fill="none" stroke="#3a2818" strokeWidth="0.5" />
+
+        {/* Speaker grille horizontal lines */}
+        {Array.from({ length: 14 }, (_, i) => (
+          <line key={i} x1="28" y1={40 + i * 6.5} x2="116" y2={40 + i * 6.5} stroke="#2a1c0e" strokeWidth="0.8" opacity="0.6" />
+        ))}
+
+        {/* Speaker cone (visible through grille) */}
+        <circle cx="72" cy="82" r="38" fill="none" stroke="#1a1008" strokeWidth="0.5" opacity="0.4" />
+        <circle cx="72" cy="82" r="28" fill="none" stroke="#1a1008" strokeWidth="0.4" opacity="0.3" />
+        <circle cx="72" cy="82" r="12" fill="none" stroke="#2a1c0e" strokeWidth="0.5" opacity="0.4" />
+        <circle cx="72" cy="82" r="5" fill="#1a1008" opacity="0.5" />
+
+        {/* Speaker pulse animation when playing */}
+        {isPlaying && (
+          <>
+            <circle cx="72" cy="82" r="28" fill="none" stroke="#d4960a" strokeWidth="0.5" opacity="0.15">
+              <animate attributeName="r" values="28;32;28" dur="0.8s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.15;0.05;0.15" dur="0.8s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="72" cy="82" r="38" fill="none" stroke="#d4960a" strokeWidth="0.3" opacity="0.08">
+              <animate attributeName="r" values="38;42;38" dur="0.8s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.08;0.02;0.08" dur="0.8s" repeatCount="indefinite" />
+            </circle>
+          </>
+        )}
+
+        {/* ── Dial / tuner panel — right side ── */}
+        <rect x="132" y="32" width="108" height="60" rx="6" fill="url(#rd-dial-face)" filter="url(#rd-inset)" />
+        <rect x="134" y="34" width="104" height="56" rx="4" fill="none" stroke="#a89060" strokeWidth="0.5" opacity="0.5" />
+
+        {/* Frequency markings */}
+        <text x="142" y="48" fontSize="4" fill="#5a4a30" fontFamily="serif">AM</text>
+        <text x="142" y="58" fontSize="4" fill="#5a4a30" fontFamily="serif">FM</text>
+        {Array.from({ length: 9 }, (_, i) => (
+          <g key={i}>
+            <line x1={155 + i * 9} y1={44} x2={155 + i * 9} y2={50} stroke="#8a7a5a" strokeWidth="0.4" />
+            <text x={155 + i * 9} y={42} textAnchor="middle" fontSize="3" fill="#8a7a5a">
+              {53 + i * 2}
+            </text>
+          </g>
+        ))}
+        {Array.from({ length: 9 }, (_, i) => (
+          <g key={i}>
+            <line x1={155 + i * 9} y1={54} x2={155 + i * 9} y2={60} stroke="#8a7a5a" strokeWidth="0.4" />
+            <text x={155 + i * 9} y={63} textAnchor="middle" fontSize="2.5" fill="#8a7a5a">
+              {88 + i * 2}
+            </text>
+          </g>
+        ))}
+
+        {/* Tuner needle — animated when playing */}
+        <line
+          x1="185" y1="67" x2="185" y2="78"
+          stroke="#c44" strokeWidth="0.8" strokeLinecap="round"
+        >
+          {isPlaying && (
+            <animate attributeName="x1" values="170;200;175;195;185" dur="4s" repeatCount="indefinite" />
+          )}
+          {isPlaying && (
+            <animate attributeName="x2" values="170;200;175;195;185" dur="4s" repeatCount="indefinite" />
+          )}
+        </line>
+
+        {/* Dial glass reflection */}
+        <rect x="134" y="34" width="40" height="30" rx="2" fill="white" opacity="0.04" />
+
+        {/* ── Brand text ── */}
+        <text x="186" y="82" textAnchor="middle" fontSize="5" fill="#c8a060" fontFamily="serif" fontWeight="bold" opacity="0.7">ChordMate</text>
+        <text x="186" y="88" textAnchor="middle" fontSize="3" fill="#a08040" fontFamily="serif" opacity="0.4">STEREO</text>
+
+        {/* ── Knobs row — bottom ── */}
+        {/* Volume knob */}
+        <circle cx="152" cy="115" r="12" fill="#1a1008" stroke="#3a2818" strokeWidth="1" />
+        <circle cx="152" cy="115" r="10" fill="#2a1c10" />
+        <circle cx="152" cy="115" r="8" fill="none" stroke="#4a3828" strokeWidth="0.5" />
+        <line x1="152" y1="107" x2="152" y2="111" stroke="url(#rd-chrome)" strokeWidth="1.5" strokeLinecap="round">
+          {isPlaying && (
+            <animateTransform attributeName="transform" type="rotate" values="0 152 115;45 152 115" dur="2s" fill="freeze" />
+          )}
+        </line>
+        <text x="152" y="132" textAnchor="middle" fontSize="3.5" fill="#7a6a4a" fontFamily="serif">VOL</text>
+
+        {/* Tuning knob */}
+        <circle cx="218" cy="115" r="12" fill="#1a1008" stroke="#3a2818" strokeWidth="1" />
+        <circle cx="218" cy="115" r="10" fill="#2a1c10" />
+        <circle cx="218" cy="115" r="8" fill="none" stroke="#4a3828" strokeWidth="0.5" />
+        <line x1="218" y1="107" x2="218" y2="111" stroke="url(#rd-chrome)" strokeWidth="1.5" strokeLinecap="round" />
+        <text x="218" y="132" textAnchor="middle" fontSize="3.5" fill="#7a6a4a" fontFamily="serif">TUNE</text>
+
+        {/* ── Cassette deck slot — bottom center ── */}
+        <rect x="40" y="142" width="80" height="38" rx="4" fill="#0f0a04" stroke="#2a1c10" strokeWidth="0.8" />
+        <rect x="44" y="146" width="72" height="30" rx="2" fill="#1a1208" />
+
+        {/* Cassette window */}
+        <rect x="52" y="149" width="56" height="18" rx="2" fill="#0a0804" stroke="#2a1c10" strokeWidth="0.4" />
+
+        {/* Tape reels */}
+        <circle cx="68" cy="158" r="6" fill="none" stroke="#3a2818" strokeWidth="0.5" />
+        <circle cx="68" cy="158" r="3" fill="#2a1c10">
+          {isPlaying && (
+            <animateTransform attributeName="transform" type="rotate" values="0 68 158;360 68 158" dur="2s" repeatCount="indefinite" />
+          )}
+        </circle>
+        <circle cx="92" cy="158" r="6" fill="none" stroke="#3a2818" strokeWidth="0.5" />
+        <circle cx="92" cy="158" r="3" fill="#2a1c10">
+          {isPlaying && (
+            <animateTransform attributeName="transform" type="rotate" values="0 92 158;360 92 158" dur="1.5s" repeatCount="indefinite" />
+          )}
+        </circle>
+
+        {/* Tape between reels */}
+        <line x1="74" y1="158" x2="86" y2="158" stroke="#5a3a18" strokeWidth="0.5" opacity="0.6" />
+
+        {/* ── Power LED ── */}
+        <circle cx="135" cy="155" r="2.5" fill={isPlaying ? '#f59e0b' : '#2a1c10'} className="transition-colors duration-500">
+          {isPlaying && (
+            <animate attributeName="opacity" values="1;0.6;1" dur="2s" repeatCount="indefinite" />
+          )}
+        </circle>
+        {isPlaying && (
+          <circle cx="135" cy="155" r="2.5" fill="#f59e0b" filter="url(#rd-glow-amber)" opacity="0.4">
+            <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2s" repeatCount="indefinite" />
+          </circle>
+        )}
+        <text x="135" y="164" textAnchor="middle" fontSize="2.5" fill={isPlaying ? '#d4960a' : '#3a2818'} className="transition-colors duration-300">POWER</text>
+
+        {/* ── Playback buttons — bottom right ── */}
+        {[0, 1, 2].map((i) => (
+          <rect key={i} x={140 + i * 20} y="170" width="14" height="8" rx="2" fill="#1a1008" stroke="#3a2818" strokeWidth="0.5" />
+        ))}
+        <text x="147" y="176" textAnchor="middle" fontSize="3" fill="#7a6a4a">◀◀</text>
+        <text x="167" y="176.5" textAnchor="middle" fontSize="4" fill={isPlaying ? '#f59e0b' : '#7a6a4a'} className="transition-colors duration-300">▶</text>
+        <text x="187" y="176" textAnchor="middle" fontSize="3" fill="#7a6a4a">▶▶</text>
+
+        {/* Feet — bottom corners */}
+        <rect x="20" y="190" width="16" height="4" rx="2" fill="#2a1c10" />
+        <rect x="224" y="190" width="16" height="4" rx="2" fill="#2a1c10" />
+      </svg>
+    </div>
+  );
+}
+
 // ─── Seekable Progress Bar ─────────────────────────────────────
 function SeekableProgress({
   progress,
@@ -533,9 +734,10 @@ interface RecordingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   date: string;
+  readOnly?: boolean;
 }
 
-export function RecordingModal({ open, onOpenChange, date }: RecordingModalProps) {
+export function RecordingModal({ open, onOpenChange, date, readOnly = false }: RecordingModalProps) {
   const [state, setState] = useState<RecState>('idle');
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [elapsed, setElapsed] = useState(0);
@@ -655,112 +857,131 @@ export function RecordingModal({ open, onOpenChange, date }: RecordingModalProps
         <div className="flex flex-col px-5 pt-5 pb-4 gap-4 overflow-y-auto">
           {/* Header */}
           <div className="text-center">
-            <h2 className="text-lg font-bold tracking-tight">Hangfelvétel</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Próba rögzítése</p>
+            <h2 className="text-lg font-bold tracking-tight">
+              {readOnly ? 'Emlékek' : 'Hangfelvétel'}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {readOnly ? 'Korábbi próbafelvételek' : 'Próba rögzítése'}
+            </p>
           </div>
 
-          {/* Turntable */}
-          <TurntableSVG isRecording={state === 'recording'} />
+          {/* Visual: Radio for readOnly, Turntable for recording */}
+          {readOnly ? (
+            <RetroRadioSVG isPlaying={recordings.length > 0} />
+          ) : (
+            <TurntableSVG isRecording={state === 'recording'} />
+          )}
 
-          {/* Timer (recording state) */}
-          <AnimatePresence mode="wait">
-            {state === 'recording' && (
-              <motion.div
-                key="timer"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="text-center"
-              >
-                <div className="inline-flex items-center gap-2 rounded-full bg-destructive/10 px-4 py-1.5">
-                  <span className="size-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-lg font-bold tabular-nums text-red-400">{formatTime(elapsed)}</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Controls */}
-          <AnimatePresence mode="wait">
-            {state === 'idle' && (
-              <motion.div
-                key="idle"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-              >
-                <Button
-                  size="lg"
-                  className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white"
-                  onClick={startRecording}
+          {/* Timer (recording state) — only when not readOnly */}
+          {!readOnly && (
+            <AnimatePresence mode="wait">
+              {state === 'recording' && (
+                <motion.div
+                  key="timer"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="text-center"
                 >
-                  <Mic className="size-4" />
-                  Felvétel indítása
-                </Button>
-              </motion.div>
-            )}
+                  <div className="inline-flex items-center gap-2 rounded-full bg-destructive/10 px-4 py-1.5">
+                    <span className="size-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-lg font-bold tabular-nums text-red-400">{formatTime(elapsed)}</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
 
-            {state === 'recording' && (
-              <motion.div
-                key="recording"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-              >
-                <Button
-                  size="lg"
-                  className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20"
-                  onClick={stopRecording}
+          {/* Controls — only when not readOnly */}
+          {!readOnly && (
+            <AnimatePresence mode="wait">
+              {state === 'idle' && (
+                <motion.div
+                  key="idle"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
                 >
-                  <Square className="size-4 fill-current" />
-                  Leállítás
-                </Button>
-              </motion.div>
-            )}
-
-            {state === 'naming' && (
-              <motion.div
-                key="naming"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="flex flex-col gap-3"
-              >
-                <div className="text-center">
-                  <p className="text-sm font-medium">Felvétel kész!</p>
-                  <p className="text-xs text-muted-foreground">Időtartam: {formatTime(elapsed)}</p>
-                </div>
-                <Input
-                  placeholder="Add meg a felvétel nevét..."
-                  value={recordingName}
-                  onChange={(e) => setRecordingName(e.target.value)}
-                  className="h-10 rounded-lg"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && recordingName.trim()) handleSave();
-                  }}
-                />
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 h-10 rounded-xl" onClick={handleDiscard}>
-                    Elvetés
-                  </Button>
                   <Button
-                    className="flex-1 h-10 rounded-xl gap-2"
-                    onClick={handleSave}
-                    disabled={!recordingName.trim()}
+                    size="lg"
+                    className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white"
+                    onClick={startRecording}
                   >
-                    <Save className="size-4" />
-                    Mentés
+                    <Mic className="size-4" />
+                    Felvétel indítása
                   </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+
+              {state === 'recording' && (
+                <motion.div
+                  key="recording"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                >
+                  <Button
+                    size="lg"
+                    className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20"
+                    onClick={stopRecording}
+                  >
+                    <Square className="size-4 fill-current" />
+                    Leállítás
+                  </Button>
+                </motion.div>
+              )}
+
+              {state === 'naming' && (
+                <motion.div
+                  key="naming"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="flex flex-col gap-3"
+                >
+                  <div className="text-center">
+                    <p className="text-sm font-medium">Felvétel kész!</p>
+                    <p className="text-xs text-muted-foreground">Időtartam: {formatTime(elapsed)}</p>
+                  </div>
+                  <Input
+                    placeholder="Add meg a felvétel nevét..."
+                    value={recordingName}
+                    onChange={(e) => setRecordingName(e.target.value)}
+                    className="h-10 rounded-lg"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && recordingName.trim()) handleSave();
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1 h-10 rounded-xl" onClick={handleDiscard}>
+                      Elvetés
+                    </Button>
+                    <Button
+                      className="flex-1 h-10 rounded-xl gap-2"
+                      onClick={handleSave}
+                      disabled={!recordingName.trim()}
+                    >
+                      <Save className="size-4" />
+                      Mentés
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
 
           {/* Recordings list */}
           {recordings.length > 0 && (
             <div className="border-t border-border/30 pt-4">
               <RecordingsList recordings={recordings} onUpdate={loadRecordings} />
+            </div>
+          )}
+
+          {/* Empty state for readOnly when no recordings */}
+          {readOnly && recordings.length === 0 && (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">Nincsenek felvételek ezen a napon</p>
             </div>
           )}
         </div>
