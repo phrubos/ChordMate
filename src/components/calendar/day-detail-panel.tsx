@@ -46,7 +46,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { CalendarEntryWithSong, Song } from '@/types';
 import { RecordingModal } from '@/components/tools/recording-modal';
-import { getRecordingsByDate, seedDemoRecordings } from '@/lib/recordings-db';
+import { hasRecordingsForDate } from '@/actions/recordings';
 
 // --- Sortable song item ---
 function SortableSongItem({
@@ -233,7 +233,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
     setLocalEntries(entries);
   }, [entries]);
 
-  // Check if past dates have recordings in IndexedDB
+  // Check if past dates have recordings in server DB
   useEffect(() => {
     if (!selectedDate) { setHasRecordings(false); return; }
     const today = startOfDay(new Date());
@@ -242,14 +242,8 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
     if (!isPastDate) { setHasRecordings(false); return; }
     let cancelled = false;
 
-    // Demo seed for March 1 (remove after testing)
-    const demoDate = '2026-03-01';
-    const seedPromise = selectedDate === demoDate
-      ? seedDemoRecordings(demoDate)
-      : Promise.resolve();
-
-    seedPromise.then(() => getRecordingsByDate(selectedDate)).then((recs) => {
-      if (!cancelled) setHasRecordings(recs.length > 0);
+    hasRecordingsForDate(selectedDate).then((has) => {
+      if (!cancelled) setHasRecordings(has);
     }).catch(() => {
       if (!cancelled) setHasRecordings(false);
     });

@@ -19,11 +19,24 @@ import { Mic, Square, Play, Pause, Trash2, Pencil, Check, X, Save } from 'lucide
 import {
   saveRecording as dbSave,
   getRecordingsByDate,
+  getRecordingAudio,
   updateRecordingName,
   deleteRecording,
-  type Recording,
-} from '@/lib/recordings-db';
+} from '@/actions/recordings';
+import type { RecordingMeta } from '@/types';
 import { toast } from 'sonner';
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1]); // strip data:...;base64, prefix
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -473,17 +486,17 @@ function RecordingsList({
   recordings,
   onUpdate,
 }: {
-  recordings: Recording[];
+  recordings: RecordingMeta[];
   onUpdate: () => void;
 }) {
-  const [playingId, setPlayingId] = useState<number | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
   const rafRef = useRef<number>(0);
@@ -524,7 +537,7 @@ function RecordingsList({
     return () => stopAudio();
   }, [stopAudio]);
 
-  function togglePlay(rec: Recording) {
+  async function togglePlay(rec: RecordingMeta) {
     if (playingId === rec.id) {
       if (!audioRef.current) return;
       if (isPaused) {
@@ -541,26 +554,35 @@ function RecordingsList({
 
     stopAudio();
 
-    const url = URL.createObjectURL(rec.blob);
-    urlRef.current = url;
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    knownDurRef.current = rec.duration;
-    setAudioDuration(rec.duration);
+    try {
+      const { audioData, mimeType } = await getRecordingAudio(rec.id);
+      const binary = atob(audioData);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      urlRef.current = url;
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      knownDurRef.current = rec.duration;
+      setAudioDuration(rec.duration);
 
-    audio.addEventListener('durationchange', () => {
-      if (audio.duration && isFinite(audio.duration)) {
-        knownDurRef.current = audio.duration;
-        setAudioDuration(audio.duration);
-      }
-    });
+      audio.addEventListener('durationchange', () => {
+        if (audio.duration && isFinite(audio.duration)) {
+          knownDurRef.current = audio.duration;
+          setAudioDuration(audio.duration);
+        }
+      });
 
-    audio.addEventListener('ended', () => stopAudio());
+      audio.addEventListener('ended', () => stopAudio());
 
-    audio.play();
-    setPlayingId(rec.id!);
-    setIsPaused(false);
-    startTick();
+      audio.play();
+      setPlayingId(rec.id);
+      setIsPaused(false);
+      startTick();
+    } catch {
+      toast.error('Hiba a lejátszásnál');
+    }
   }
 
   function handleSeek(fraction: number) {
@@ -575,7 +597,7 @@ function RecordingsList({
     }
   }
 
-  async function handleRename(id: number) {
+  async function handleRename(id: string) {
     if (!editName.trim()) return;
     try {
       await updateRecordingName(id, editName.trim());
@@ -620,7 +642,7 @@ function RecordingsList({
               <div className="flex items-center gap-2">
                 {/* Play button */}
                 <button
-                  onClick={() => togglePlay(rec)}
+                  onClick={() => { togglePlay(rec); }}
                   className={`flex size-9 shrink-0 items-center justify-center rounded-full transition-all ${
                     isPlaying
                       ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
@@ -640,11 +662,11 @@ function RecordingsList({
                         className="h-7 text-xs"
                         autoFocus
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleRename(rec.id!);
+                          if (e.key === 'Enter') handleRename(rec.id);
                           if (e.key === 'Escape') setEditingId(null);
                         }}
                       />
-                      <Button variant="ghost" size="icon" className="size-6" onClick={() => handleRename(rec.id!)}>
+                      <Button variant="ghost" size="icon" onClick={() => handleRename(rec.id)}>
                         <Check className="size-3" />
                       </Button>
                       <Button variant="ghost" size="icon" className="size-6" onClick={() => setEditingId(null)}>
@@ -664,7 +686,7 @@ function RecordingsList({
                       size="icon"
                       className="size-7 text-muted-foreground/50 hover:text-foreground"
                       onClick={() => {
-                        setEditingId(rec.id!);
+                        setEditingId(rec.id);
                         setEditName(rec.name);
                       }}
                     >
@@ -674,7 +696,7 @@ function RecordingsList({
                       variant="ghost"
                       size="icon"
                       className="size-7 text-muted-foreground/50 hover:text-destructive"
-                      onClick={() => setDeleteConfirmId(rec.id!)}
+                      onClick={() => setDeleteConfirmId(rec.id)}
                     >
                       <Trash2 className="size-3" />
                     </Button>
@@ -739,7 +761,7 @@ interface RecordingModalProps {
 
 export function RecordingModal({ open, onOpenChange, date, readOnly = false }: RecordingModalProps) {
   const [state, setState] = useState<RecState>('idle');
-  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [recordings, setRecordings] = useState<RecordingMeta[]>([]);
   const [elapsed, setElapsed] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingName, setRecordingName] = useState('');
@@ -752,7 +774,7 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
   const loadRecordings = useCallback(async () => {
     try {
       const recs = await getRecordingsByDate(date);
-      setRecordings(recs.sort((a, b) => b.createdAt - a.createdAt));
+      setRecordings(recs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch {
       // IndexedDB not available
     }
@@ -809,12 +831,13 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
   async function handleSave() {
     if (!recordedBlob || !recordingName.trim()) return;
     try {
+      const audioBase64 = await blobToBase64(recordedBlob);
       await dbSave({
         date,
         name: recordingName.trim(),
-        blob: recordedBlob,
+        audioBase64,
+        mimeType: recordedBlob.type,
         duration: elapsed,
-        createdAt: Date.now(),
       });
       toast.success('Felvétel mentve');
       setRecordedBlob(null);

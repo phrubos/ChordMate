@@ -113,6 +113,19 @@ export const calendarEntries = pgTable(
   })
 );
 
+export const recordings = pgTable('recordings', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  date: date('date', { mode: 'string' }).notNull(),
+  name: text('name').notNull(),
+  audioData: text('audio_data').notNull(),
+  mimeType: text('mime_type').notNull(),
+  duration: integer('duration').notNull(),
+  addedById: text('added_by_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
 // ============================================================
 // Relációk
 // ============================================================
@@ -120,6 +133,7 @@ export const calendarEntries = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   songs: many(songs),
   calendarEntries: many(calendarEntries),
+  recordings: many(recordings),
 }));
 
 export const songsRelations = relations(songs, ({ one, many }) => ({
@@ -137,6 +151,13 @@ export const calendarEntriesRelations = relations(calendarEntries, ({ one }) => 
   }),
   addedBy: one(users, {
     fields: [calendarEntries.addedById],
+    references: [users.id],
+  }),
+}));
+
+export const recordingsRelations = relations(recordings, ({ one }) => ({
+  addedBy: one(users, {
+    fields: [recordings.addedById],
     references: [users.id],
   }),
 }));

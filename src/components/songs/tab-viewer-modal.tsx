@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { MetronomeModal } from '@/components/tools/metronome-modal';
-import { saveRecording, getNextCoverNumber } from '@/lib/recordings-db';
+import { saveRecording, getNextCoverNumber } from '@/actions/recordings';
 import { toast } from 'sonner';
 
 interface TabViewerModalProps {
@@ -238,16 +238,22 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
         stream.getTracks().forEach((t) => t.stop());
         recStreamRef.current = null;
 
-        // Auto-save with cover_N naming
+        // Convert blob to base64 and auto-save with cover_N naming
         try {
+          const audioBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
           const coverNum = await getNextCoverNumber(date, songTitle, artist);
           const name = `${songTitle} – ${artist} – cover_${coverNum}`;
           await saveRecording({
             date,
             name,
-            blob,
+            audioBase64,
+            mimeType: blob.type,
             duration: recElapsedRef.current,
-            createdAt: Date.now(),
           });
           toast.success(`Felvétel mentve: cover_${coverNum}`);
         } catch {
