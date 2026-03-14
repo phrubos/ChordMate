@@ -8,6 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { YouTubePlayer } from '@/components/youtube/youtube-player';
 import { createSong, updateSong } from '@/actions/songs';
 import type { Song } from '@/types';
@@ -284,79 +290,6 @@ export function SongForm({ song }: SongFormProps) {
                 </Button>
               </div>
 
-              {/* YouTube search results */}
-              {ytShowResults && (
-                <div className="mt-2 rounded-lg border border-border/50 bg-background/80 overflow-hidden animate-fade-up">
-                  {ytSearching ? (
-                    <div className="flex items-center justify-center gap-2 py-6">
-                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Keresés...</span>
-                    </div>
-                  ) : ytResults.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      Nem találtam eredményt
-                    </div>
-                  ) : (
-                    <div className="flex flex-col">
-                      <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b border-border/30">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          Guitar tutorial ajánlatok ({ytResults.length})
-                        </p>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs text-muted-foreground"
-                          onClick={() => setYtShowResults(false)}
-                        >
-                          Mégse
-                        </Button>
-                      </div>
-                      <div className="max-h-[264px] overflow-y-auto divide-y divide-border/30">
-                        {ytResults.map((result, i) => (
-                          <div
-                            key={i}
-                            className="flex items-start gap-3 p-3 transition-colors hover:bg-secondary/20"
-                          >
-                            <div className="relative shrink-0 w-24 aspect-video rounded-md overflow-hidden bg-secondary">
-                              {result.thumbnail && (
-                                <img
-                                  src={result.thumbnail}
-                                  alt={result.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              )}
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                <Play className="size-4 text-white fill-white" />
-                              </div>
-                              {result.duration > 0 && (
-                                <span className="absolute bottom-0.5 right-0.5 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white tabular-nums">
-                                  {formatDuration(result.duration)}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium leading-tight line-clamp-2">{result.title}</p>
-                              <p className="mt-1 text-xs text-muted-foreground truncate">{result.channel}</p>
-                              {result.views > 0 && (
-                                <p className="text-xs text-muted-foreground/60">{formatViews(result.views)} megtekintés</p>
-                              )}
-                              <Button
-                                type="button"
-                                size="sm"
-                                className="mt-2 h-7 px-3 text-xs gap-1.5"
-                                onClick={() => selectYoutubeResult(result.url)}
-                              >
-                                Video beállítása
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             {youtubeUrl && youtubeUrl.includes('youtu') && (
@@ -450,91 +383,6 @@ export function SongForm({ song }: SongFormProps) {
                 </div>
               </div>
 
-              {/* Tab search results */}
-              {tabShowResults && (
-                <div className="mt-3 rounded-lg border border-border/50 bg-background/80 overflow-hidden animate-fade-up">
-                  {tabSearching ? (
-                    <div className="flex items-center justify-center gap-2 py-6">
-                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Keresés az Ultimate Guitar-on...</span>
-                    </div>
-                  ) : tabResults.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      Nem találtam tabot ehhez a dalhoz
-                    </div>
-                  ) : (
-                    <div className="flex flex-col">
-                      <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b border-border/30">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          Tab találatok ({tabResults.length})
-                        </p>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs text-muted-foreground"
-                          onClick={() => setTabShowResults(false)}
-                        >
-                          Mégse
-                        </Button>
-                      </div>
-                      <div className="max-h-[240px] overflow-y-auto divide-y divide-border/30">
-                        {tabResults.map((tab) => (
-                          <div
-                            key={tab.id}
-                            className="flex items-center gap-3 p-3 transition-colors hover:bg-secondary/20"
-                          >
-                            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/5 ring-1 ring-primary/10">
-                              <FileText className="size-4 text-primary/60" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium truncate">{tab.songName}</p>
-                                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                  {tab.type}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground truncate">{tab.artist}</p>
-                              <div className="flex items-center gap-3 mt-0.5">
-                                <span className="text-[11px] text-muted-foreground/70">
-                                  ★ {tab.rating.toFixed(1)}
-                                </span>
-                                <span className="text-[11px] text-muted-foreground/70">
-                                  {tab.votes.toLocaleString()} szavazat
-                                </span>
-                                {tab.version > 1 && (
-                                  <span className="text-[11px] text-muted-foreground/70">
-                                    v{tab.version}
-                                  </span>
-                                )}
-                                {tab.tonality && (
-                                  <span className="text-[11px] text-muted-foreground/70">
-                                    {tab.tonality}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              size="sm"
-                              className="shrink-0 h-7 px-3 text-xs gap-1.5"
-                              onClick={() => selectTabResult(tab)}
-                              disabled={tabFetching === tab.id}
-                            >
-                              {tabFetching === tab.id ? (
-                                <Loader2 className="size-3 animate-spin" />
-                              ) : (
-                                <FileText className="size-3" />
-                              )}
-                              Betöltés
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
 
               {showTabSection && (
                 <div className="mt-4 flex flex-col gap-4 animate-fade-up">
@@ -574,6 +422,172 @@ export function SongForm({ song }: SongFormProps) {
             </div>
             </div>
           </div>
+
+          {/* YouTube Recommendations Dialog */}
+          <Dialog open={ytShowResults} onOpenChange={setYtShowResults}>
+            <DialogContent className="max-w-[92vw] sm:max-w-lg max-h-[85vh] flex flex-col" showCloseButton={false}>
+              <DialogHeader className="shrink-0">
+                <div className="flex items-center justify-between">
+                  <DialogTitle className="text-base">YouTube ajánló</DialogTitle>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground"
+                    onClick={() => setYtShowResults(false)}
+                  >
+                    Mégse
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {title} – {artist}
+                </p>
+              </DialogHeader>
+
+              {ytSearching ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-12">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Keresés...</span>
+                </div>
+              ) : ytResults.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-12">
+                  <Play className="size-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">Nem találtam eredményt</p>
+                </div>
+              ) : (
+                <div className="flex-1 min-h-0 overflow-y-auto -mx-4 divide-y divide-border/30">
+                  {ytResults.map((result, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-secondary/20"
+                    >
+                      <div className="relative shrink-0 w-28 aspect-video rounded-md overflow-hidden bg-secondary">
+                        {result.thumbnail && (
+                          <img
+                            src={result.thumbnail}
+                            alt={result.title}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <Play className="size-5 text-white fill-white" />
+                        </div>
+                        {result.duration > 0 && (
+                          <span className="absolute bottom-0.5 right-0.5 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white tabular-nums">
+                            {formatDuration(result.duration)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-tight line-clamp-2">{result.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground truncate">{result.channel}</p>
+                        {result.views > 0 && (
+                          <p className="text-[11px] text-muted-foreground/60">{formatViews(result.views)} megtekintés</p>
+                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="mt-2 h-7 px-3 text-xs gap-1.5"
+                          onClick={() => selectYoutubeResult(result.url)}
+                        >
+                          Video beállítása
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Tab Recommendations Dialog */}
+          <Dialog open={tabShowResults} onOpenChange={setTabShowResults}>
+            <DialogContent className="max-w-[92vw] sm:max-w-lg max-h-[85vh] flex flex-col" showCloseButton={false}>
+              <DialogHeader className="shrink-0">
+                <div className="flex items-center justify-between">
+                  <DialogTitle className="text-base">Tab ajánló</DialogTitle>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground"
+                    onClick={() => setTabShowResults(false)}
+                  >
+                    Mégse
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {title} – {artist}
+                </p>
+              </DialogHeader>
+
+              {tabSearching ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-12">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Keresés az Ultimate Guitar-on...</span>
+                </div>
+              ) : tabResults.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-12">
+                  <FileText className="size-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">Nem találtam tabot ehhez a dalhoz</p>
+                </div>
+              ) : (
+                <div className="flex-1 min-h-0 overflow-y-auto -mx-4 divide-y divide-border/30">
+                  {tabResults.map((tab) => (
+                    <div
+                      key={tab.id}
+                      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/20"
+                    >
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/5 ring-1 ring-primary/10">
+                        <FileText className="size-4 text-primary/60" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">{tab.songName}</p>
+                          <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {tab.type}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{tab.artist}</p>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="text-[11px] text-muted-foreground/70">
+                            ★ {tab.rating.toFixed(1)}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground/70">
+                            {tab.votes.toLocaleString()} szavazat
+                          </span>
+                          {tab.version > 1 && (
+                            <span className="text-[11px] text-muted-foreground/70">
+                              v{tab.version}
+                            </span>
+                          )}
+                          {tab.tonality && (
+                            <span className="text-[11px] text-muted-foreground/70">
+                              {tab.tonality}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="shrink-0 h-8 px-3 text-xs gap-1.5"
+                        onClick={() => selectTabResult(tab)}
+                        disabled={tabFetching === tab.id}
+                      >
+                        {tabFetching === tab.id ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <FileText className="size-3" />
+                        )}
+                        Betöltés
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* Footer */}
           <div className="shrink-0 flex justify-end gap-2 border-t border-border/30 bg-card/50 px-6 py-4">
