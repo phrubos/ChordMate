@@ -3,7 +3,7 @@
 import { useTransition, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Star, ExternalLink, ChevronDown, ChevronUp, Search, Sparkles, Loader2, Play } from 'lucide-react';
+import { Star, ExternalLink, ChevronDown, ChevronUp, Search, Sparkles, Loader2, Play, FileText, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +11,17 @@ import { Label } from '@/components/ui/label';
 import { YouTubePlayer } from '@/components/youtube/youtube-player';
 import { createSong, updateSong } from '@/actions/songs';
 import type { Song } from '@/types';
+
+interface TabResult {
+  id: number;
+  songName: string;
+  artist: string;
+  type: string;
+  version: number;
+  votes: number;
+  rating: number;
+  tonality: string;
+}
 
 interface YouTubeResult {
   url: string;
@@ -52,6 +63,12 @@ export function SongForm({ song }: SongFormProps) {
   const [ytSearching, setYtSearching] = useState(false);
   const [ytShowResults, setYtShowResults] = useState(false);
   const youtubeInputRef = useRef<HTMLInputElement>(null);
+  const [tabResults, setTabResults] = useState<TabResult[]>([]);
+  const [tabSearching, setTabSearching] = useState(false);
+  const [tabShowResults, setTabShowResults] = useState(false);
+  const [tabFetching, setTabFetching] = useState<number | null>(null);
+  const tabContentRef = useRef<HTMLTextAreaElement>(null);
+  const tabUrlRef = useRef<HTMLInputElement>(null);
 
   // Track form changes
   const markDirty = useCallback(() => { if (!isDirty) setIsDirty(true); }, [isDirty]);
@@ -112,6 +129,60 @@ export function SongForm({ song }: SongFormProps) {
     setYtShowResults(false);
     markDirty();
     toast.success('YouTube link kiválasztva');
+  }
+
+  async function handleTabSearch() {
+    if (!title.trim() || !artist.trim()) {
+      toast.error('Először add meg a dal címét és az előadót');
+      return;
+    }
+    setTabSearching(true);
+    setTabShowResults(true);
+    setShowTabSection(true);
+    try {
+      const query = `${title} ${artist}`;
+      const res = await fetch(`/api/tab-search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.results) {
+        setTabResults(data.results);
+      } else {
+        toast.error('Nem sikerült a keresés');
+        setTabResults([]);
+      }
+    } catch {
+      toast.error('Hiba a tab keresésnél');
+      setTabResults([]);
+    } finally {
+      setTabSearching(false);
+    }
+  }
+
+  async function selectTabResult(tab: TabResult) {
+    setTabFetching(tab.id);
+    try {
+      const res = await fetch(`/api/tab-fetch?id=${tab.id}`);
+      const data = await res.json();
+      if (data.content) {
+        // Populate tab content textarea
+        if (tabContentRef.current) {
+          tabContentRef.current.value = data.content;
+        }
+        // Set the UG web URL in tabUrl input
+        const ugUrl = `https://tabs.ultimate-guitar.com/tab/${tab.artist.toLowerCase().replace(/\s+/g, '-')}/${tab.songName.toLowerCase().replace(/\s+/g, '-')}-${tab.type.toLowerCase()}-${tab.id}`;
+        if (tabUrlRef.current) {
+          tabUrlRef.current.value = ugUrl;
+        }
+        setTabShowResults(false);
+        markDirty();
+        toast.success('Tab betöltve!');
+      } else {
+        toast.error('Nem sikerült a tab letöltése');
+      }
+    } catch {
+      toast.error('Hiba a tab letöltésnél');
+    } finally {
+      setTabFetching(null);
+    }
   }
 
   function handleSubmit(formData: FormData) {
@@ -338,7 +409,7 @@ export function SongForm({ song }: SongFormProps) {
 
             {/* Tab section (collapsible) */}
             <div className="border-t border-border/30 pt-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={() => setShowTabSection(!showTabSection)}
@@ -347,18 +418,123 @@ export function SongForm({ song }: SongFormProps) {
                   <span>Gitár tab / akkordok</span>
                   {showTabSection ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
                 </button>
-                {searchUrl && (
-                  <a
-                    href={searchUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                  >
-                    <Search className="size-3.5" />
-                    Keresés az Ultimate Guitar-on
-                  </a>
-                )}
+                <div className="flex items-center gap-2">
+                  {title && artist && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs h-8"
+                      onClick={handleTabSearch}
+                      disabled={tabSearching}
+                    >
+                      {tabSearching ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-3.5" />
+                      )}
+                      Tab ajánló
+                    </Button>
+                  )}
+                  {searchUrl && (
+                    <a
+                      href={searchUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                    >
+                      <Search className="size-3.5" />
+                      <span className="hidden sm:inline">Ultimate Guitar</span>
+                    </a>
+                  )}
+                </div>
               </div>
+
+              {/* Tab search results */}
+              {tabShowResults && (
+                <div className="mt-3 rounded-lg border border-border/50 bg-background/80 overflow-hidden animate-fade-up">
+                  {tabSearching ? (
+                    <div className="flex items-center justify-center gap-2 py-6">
+                      <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Keresés az Ultimate Guitar-on...</span>
+                    </div>
+                  ) : tabResults.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      Nem találtam tabot ehhez a dalhoz
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      <div className="flex items-center justify-between px-3 py-2 bg-secondary/30 border-b border-border/30">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Tab találatok ({tabResults.length})
+                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-muted-foreground"
+                          onClick={() => setTabShowResults(false)}
+                        >
+                          Mégse
+                        </Button>
+                      </div>
+                      <div className="max-h-[240px] overflow-y-auto divide-y divide-border/30">
+                        {tabResults.map((tab) => (
+                          <div
+                            key={tab.id}
+                            className="flex items-center gap-3 p-3 transition-colors hover:bg-secondary/20"
+                          >
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/5 ring-1 ring-primary/10">
+                              <FileText className="size-4 text-primary/60" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium truncate">{tab.songName}</p>
+                                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                  {tab.type}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">{tab.artist}</p>
+                              <div className="flex items-center gap-3 mt-0.5">
+                                <span className="text-[11px] text-muted-foreground/70">
+                                  ★ {tab.rating.toFixed(1)}
+                                </span>
+                                <span className="text-[11px] text-muted-foreground/70">
+                                  {tab.votes.toLocaleString()} szavazat
+                                </span>
+                                {tab.version > 1 && (
+                                  <span className="text-[11px] text-muted-foreground/70">
+                                    v{tab.version}
+                                  </span>
+                                )}
+                                {tab.tonality && (
+                                  <span className="text-[11px] text-muted-foreground/70">
+                                    {tab.tonality}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="shrink-0 h-7 px-3 text-xs gap-1.5"
+                              onClick={() => selectTabResult(tab)}
+                              disabled={tabFetching === tab.id}
+                            >
+                              {tabFetching === tab.id ? (
+                                <Loader2 className="size-3 animate-spin" />
+                              ) : (
+                                <FileText className="size-3" />
+                              )}
+                              Betöltés
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {showTabSection && (
                 <div className="mt-4 flex flex-col gap-4 animate-fade-up">
@@ -369,6 +545,7 @@ export function SongForm({ song }: SongFormProps) {
                       </Label>
                     </div>
                     <Input
+                      ref={tabUrlRef}
                       id="tabUrl"
                       name="tabUrl"
                       defaultValue={song?.tabUrl ?? ''}
@@ -382,6 +559,7 @@ export function SongForm({ song }: SongFormProps) {
                       Tab tartalom <span className="text-muted-foreground">(másold be ide)</span>
                     </Label>
                     <Textarea
+                      ref={tabContentRef}
                       id="tabContent"
                       name="tabContent"
                       defaultValue={song?.tabContent ?? ''}
