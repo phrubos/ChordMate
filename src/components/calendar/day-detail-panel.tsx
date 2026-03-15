@@ -5,6 +5,7 @@ import { format, parseISO, isAfter, isSameDay, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical, Check, ListChecks, Mic, Disc3 } from 'lucide-react';
 import { ImageLightbox } from '@/components/shared/image-lightbox';
+import { TruncatedText } from '@/components/shared/truncated-text';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -102,8 +103,8 @@ function SortableSongItem({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium truncate leading-tight">{entry.song.title}</p>
-        <p className="text-xs text-muted-foreground truncate">{entry.song.artist}</p>
+        <TruncatedText as="p" className="text-sm font-medium leading-tight">{entry.song.title}</TruncatedText>
+        <TruncatedText as="p" className="text-xs text-muted-foreground">{entry.song.artist}</TruncatedText>
       </div>
       <div className="flex items-center gap-1 shrink-0 opacity-100 transition-opacity hover-device:opacity-0 hover-device:group-hover/item:opacity-100">
         {entry.song.tabContent && (

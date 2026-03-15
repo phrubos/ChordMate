@@ -5,6 +5,7 @@ import { format, parseISO, isAfter, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { CalendarCheck, Music } from 'lucide-react';
 import { staggerContainer, staggerItem } from '@/lib/motion';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 interface PracticeDay {
   date: string;
@@ -93,9 +94,9 @@ function DayRow({ day, variant }: { day: PracticeDay; variant: 'upcoming' | 'pas
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium capitalize">{label}</p>
-        <p className="text-xs text-muted-foreground truncate">
+        <TruncatedText as="p" className="text-xs text-muted-foreground">
           {day.songs.join(', ')}
-        </p>
+        </TruncatedText>
       </div>
       <span className="shrink-0 rounded-full bg-secondary/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
         {day.songCount} dal
