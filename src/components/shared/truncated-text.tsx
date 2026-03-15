@@ -16,11 +16,11 @@ interface TruncatedTextProps {
  * - Mobile/Tablet: shows full text in a tooltip on tap
  */
 export function TruncatedText({ children, className, as: Tag = 'span' }: TruncatedTextProps) {
-  const ref = useRef<HTMLElement>(null);
+  const elRef = useRef<HTMLElement | null>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
   const checkTruncation = useCallback(() => {
-    const el = ref.current;
+    const el = elRef.current;
     if (el) {
       setIsTruncated(el.scrollWidth > el.clientWidth + 1);
     }
@@ -29,13 +29,17 @@ export function TruncatedText({ children, className, as: Tag = 'span' }: Truncat
   useEffect(() => {
     checkTruncation();
     const observer = new ResizeObserver(checkTruncation);
-    if (ref.current) observer.observe(ref.current);
+    if (elRef.current) observer.observe(elRef.current);
     return () => observer.disconnect();
   }, [checkTruncation, children]);
 
+  const refCallback = useCallback((node: HTMLParagraphElement | HTMLSpanElement | HTMLHeadingElement | null) => {
+    elRef.current = node;
+  }, []);
+
   const element = (
     <Tag
-      ref={ref as React.Ref<HTMLElement>}
+      ref={refCallback}
       className={cn('truncate', isTruncated && 'cursor-default', className)}
     >
       {children}
