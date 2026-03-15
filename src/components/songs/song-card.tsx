@@ -12,6 +12,7 @@ import { useState, useTransition } from 'react';
 import { toggleFavorite } from '@/actions/songs';
 import { DeleteSongDialog } from './delete-song-dialog';
 import { TabViewerModal } from './tab-viewer-modal';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 interface SongCardProps {
   song: SongWithUser;
@@ -71,9 +72,9 @@ export function SongCard({ song, onPlay }: SongCardProps) {
               <DifficultyStars level={song.difficulty} />
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-2 min-w-0">
-              <span className="text-xs text-muted-foreground truncate min-w-0 max-w-full shrink">
-                {song.addedBy?.name ?? 'Ismeretlen'} · {formatRelativeDate(song.createdAt)}
-              </span>
+              <TruncatedText className="text-xs text-muted-foreground min-w-0 max-w-full shrink">
+                {`${song.addedBy?.name ?? 'Ismeretlen'} · ${formatRelativeDate(song.createdAt)}`}
+              </TruncatedText>
               {song.tabContent && (
                 <Badge variant="secondary" className="h-5 px-1.5 text-[11px] font-medium bg-primary/15 text-primary border-0 shrink-0">
                   TAB

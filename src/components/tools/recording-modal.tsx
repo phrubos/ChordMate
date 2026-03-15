@@ -25,6 +25,7 @@ import {
 } from '@/actions/recordings';
 import type { RecordingMeta } from '@/types';
 import { toast } from 'sonner';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -674,7 +675,7 @@ function RecordingsList({
                       </Button>
                     </div>
                   ) : (
-                    <p className="text-sm font-medium truncate leading-tight">{rec.name}</p>
+                    <TruncatedText as="p" className="text-sm font-medium leading-tight">{rec.name}</TruncatedText>
                   )}
                 </div>
 
@@ -765,6 +766,7 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
   const [elapsed, setElapsed] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingName, setRecordingName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -829,7 +831,8 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
   }
 
   async function handleSave() {
-    if (!recordedBlob || !recordingName.trim()) return;
+    if (!recordedBlob || !recordingName.trim() || isSaving) return;
+    setIsSaving(true);
     try {
       const audioBase64 = await blobToBase64(recordedBlob);
       await dbSave({
@@ -847,6 +850,8 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
       loadRecordings();
     } catch {
       toast.error('Hiba a mentésnél');
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -984,6 +989,7 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
                       className="flex-1 h-10 rounded-xl gap-2"
                       onClick={handleSave}
                       disabled={!recordingName.trim()}
+                      isLoading={isSaving}
                     >
                       <Save className="size-4" />
                       Mentés

@@ -5,6 +5,7 @@ import { format, parseISO, isAfter, isSameDay, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical, Check, ListChecks, Mic, Disc3 } from 'lucide-react';
 import { ImageLightbox } from '@/components/shared/image-lightbox';
+import { TruncatedText } from '@/components/shared/truncated-text';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {

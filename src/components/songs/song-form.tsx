@@ -17,6 +17,7 @@ import {
 import { YouTubePlayer } from '@/components/youtube/youtube-player';
 import { createSong, updateSong } from '@/actions/songs';
 import type { Song } from '@/types';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 interface TabResult {
   id: number;
@@ -480,7 +481,7 @@ export function SongForm({ song }: SongFormProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium leading-tight line-clamp-2">{result.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground truncate">{result.channel}</p>
+                        <TruncatedText as="p" className="mt-1 text-xs text-muted-foreground">{result.channel}</TruncatedText>
                         {result.views > 0 && (
                           <p className="text-[11px] text-muted-foreground/60">{formatViews(result.views)} megtekintés</p>
                         )}
@@ -543,12 +544,12 @@ export function SongForm({ song }: SongFormProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium truncate">{tab.songName}</p>
+                          <TruncatedText as="p" className="text-sm font-medium">{tab.songName}</TruncatedText>
                           <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                             {tab.type}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{tab.artist}</p>
+                        <TruncatedText as="p" className="text-xs text-muted-foreground">{tab.artist}</TruncatedText>
                         <div className="flex items-center gap-3 mt-0.5">
                           <span className="text-[11px] text-muted-foreground/70">
                             ★ {tab.rating.toFixed(1)}

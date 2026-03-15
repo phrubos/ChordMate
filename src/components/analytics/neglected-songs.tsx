@@ -5,6 +5,7 @@ import { staggerContainer, staggerItem } from '@/lib/motion';
 import { AlertTriangle, Calendar, Plus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { hu } from 'date-fns/locale';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 interface NeglectedSong {
   title: string;
@@ -64,8 +65,8 @@ export function NeglectedSongs({ songs }: NeglectedSongsProps) {
               className="flex items-center gap-3 rounded-xl border border-border/30 bg-card/30 p-3 transition-colors hover:bg-card/60"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{song.title}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{song.artist}</p>
+                <TruncatedText as="p" className="text-sm font-semibold">{song.title}</TruncatedText>
+                <TruncatedText as="p" className="text-[11px] text-muted-foreground">{song.artist}</TruncatedText>
               </div>
               <div className="shrink-0 text-right">
                 <p className="text-[11px] font-medium text-amber-400">{lastPracticed}</p>
