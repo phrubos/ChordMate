@@ -9,21 +9,24 @@ interface ExpandableTextProps {
   className?: string;
   /** CSS class applied when collapsed (e.g. 'truncate', 'line-clamp-2') */
   clampClassName?: string;
-  /** Only enable expand on mobile (< md breakpoint). Default: true */
-  mobileOnly?: boolean;
 }
 
 export function ExpandableText({
   children,
   className,
   clampClassName = 'truncate',
-  mobileOnly = true,
 }: ExpandableTextProps) {
   const [expanded, setExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
-  const [tooltipOpen, setTooltipOpen] = useState(false);
+  const [isHoverDevice, setIsHoverDevice] = useState(false);
   const textRef = useRef<HTMLSpanElement>(null);
 
+  // Detect hover-capable device (desktop) vs touch (mobile)
+  useEffect(() => {
+    setIsHoverDevice(window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  }, []);
+
+  // Check if text actually overflows
   useEffect(() => {
     const el = textRef.current;
     if (!el) return;
@@ -41,10 +44,10 @@ export function ExpandableText({
     return () => ro.disconnect();
   }, [children, expanded]);
 
+  // Mobile: tap to expand/collapse
   const handleClick = (e: React.MouseEvent) => {
+    if (isHoverDevice) return;
     if (!isTruncated && !expanded) return;
-    // Mobile only: tap to expand/collapse
-    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     e.stopPropagation();
     setExpanded(!expanded);
   };
@@ -56,22 +59,26 @@ export function ExpandableText({
       className={cn(
         className,
         !expanded && clampClassName,
-        isTruncated && 'cursor-default',
-        expanded && 'whitespace-normal break-words cursor-pointer'
+        !isHoverDevice && (isTruncated || expanded) && 'cursor-pointer',
+        expanded && 'whitespace-normal break-words'
       )}
     >
       {children}
     </span>
   );
 
-  if (!isTruncated && !expanded) return span;
+  // Desktop: wrap in tooltip when text is truncated
+  if (isHoverDevice && isTruncated) {
+    return (
+      <Tooltip>
+        <TooltipTrigger render={span} />
+        <TooltipContent side="top" className="max-w-xs break-words whitespace-normal">
+          {children}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
-  return (
-    <Tooltip open={tooltipOpen} onOpenChange={setTooltipOpen}>
-      <TooltipTrigger render={span} />
-      <TooltipContent side="top" className="max-w-xs break-words whitespace-normal">
-        {children}
-      </TooltipContent>
-    </Tooltip>
-  );
+  // Mobile: just the span (tap handles expand/collapse)
+  return span;
 }
