@@ -25,6 +25,7 @@ import {
 } from '@/actions/recordings';
 import type { RecordingMeta } from '@/types';
 import { toast } from 'sonner';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -674,7 +675,7 @@ function RecordingsList({
                       </Button>
                     </div>
                   ) : (
-                    <p className="text-sm font-medium truncate leading-tight">{rec.name}</p>
+                    <TruncatedText as="p" className="text-sm font-medium leading-tight">{rec.name}</TruncatedText>
                   )}
                 </div>
 

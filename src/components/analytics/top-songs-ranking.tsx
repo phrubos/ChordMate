@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { staggerContainer, staggerItem } from '@/lib/motion';
 import { Medal, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 interface TopSong {
   title: string;
@@ -66,15 +67,15 @@ export function TopSongsRanking({ songs }: TopSongsRankingProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <div className="min-w-0 flex-1">
-                    <span className={cn(
-                      'text-sm font-semibold truncate block',
+                    <TruncatedText className={cn(
+                      'text-sm font-semibold block',
                       isTop3 && 'text-foreground'
                     )}>
                       {song.title}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground truncate block">
+                    </TruncatedText>
+                    <TruncatedText className="text-[11px] text-muted-foreground block">
                       {song.artist}
-                    </span>
+                    </TruncatedText>
                   </div>
                   <span className="text-sm font-black tabular-nums text-primary shrink-0">
                     {song.count}×

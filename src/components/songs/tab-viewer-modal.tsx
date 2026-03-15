@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { ExternalLink, FileText, ZoomIn, ZoomOut, Copy, Check, Play, Pause, Minus, Plus, RotateCcw, Mic, Square, Timer, MoreHorizontal } from 'lucide-react';
+import { ExternalLink, FileText, ZoomIn, ZoomOut, Copy, Check, Play, Pause, Minus, Plus, RotateCcw, Mic, Square, Timer, MoreHorizontal, Loader2 } from 'lucide-react';
 import { ChordTooltip } from '@/components/shared/chord-tooltip';
 import { chordNames } from '@/lib/chord-diagrams';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
 import { MetronomeModal } from '@/components/tools/metronome-modal';
 import { saveRecording, getNextCoverNumber } from '@/actions/recordings';
 import { toast } from 'sonner';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 interface TabViewerModalProps {
   songTitle: string;
@@ -101,6 +102,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
 
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingRecording, setIsProcessingRecording] = useState(false);
   const [recElapsed, setRecElapsed] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recChunksRef = useRef<Blob[]>([]);
@@ -237,6 +239,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
         const blob = new Blob(recChunksRef.current, { type: recorder.mimeType });
         stream.getTracks().forEach((t) => t.stop());
         recStreamRef.current = null;
+        setIsProcessingRecording(true);
 
         // Convert blob to base64 and auto-save with cover_N naming
         try {
@@ -258,6 +261,8 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
           toast.success(`Felvétel mentve: cover_${coverNum}`);
         } catch {
           toast.error('Hiba a felvétel mentésekor');
+        } finally {
+          setIsProcessingRecording(false);
         }
       };
 
@@ -308,7 +313,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <DialogTitle className="text-lg landscape:text-sm truncate">{songTitle}</DialogTitle>
-              <p className="text-sm landscape:text-xs text-muted-foreground mt-0.5 landscape:mt-0 truncate">{artist}</p>
+              <TruncatedText as="p" className="text-sm landscape:text-xs text-muted-foreground mt-0.5 landscape:mt-0">{artist}</TruncatedText>
             </div>
           </div>
         </DialogHeader>
@@ -418,8 +423,14 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
                   size="sm"
                   className={`gap-1.5 text-xs ${isRecording ? '' : ''}`}
                   onClick={isRecording ? stopRecording : startRecording}
+                  disabled={isProcessingRecording}
                 >
-                  {isRecording ? (
+                  {isProcessingRecording ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      Mentés...
+                    </>
+                  ) : isRecording ? (
                     <>
                       <Square className="size-3 fill-current" />
                       Leállítás
@@ -483,9 +494,10 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
                 size="sm"
                 className="size-8 p-0"
                 onClick={isRecording ? stopRecording : startRecording}
-                title={isRecording ? 'Leállítás' : 'Felvétel'}
+                title={isProcessingRecording ? 'Mentés...' : isRecording ? 'Leállítás' : 'Felvétel'}
+                disabled={isProcessingRecording}
               >
-                {isRecording ? <Square className="size-3 fill-current" /> : <Mic className="size-3.5" />}
+                {isProcessingRecording ? <Loader2 className="size-3.5 animate-spin" /> : isRecording ? <Square className="size-3 fill-current" /> : <Mic className="size-3.5" />}
               </Button>
             )}
 

@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { assignSongsToDate, copySongsToDate, clearSongsFromDate } from '@/actions/calendar';
 import { Plus, Check, ListChecks, Copy, X, Music } from 'lucide-react';
 import type { CalendarEntryWithSong, Song } from '@/types';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 interface DashboardViewProps {
   initialYear: number;
@@ -252,8 +253,8 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
                       disabled={isPending}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className={`text-sm font-medium truncate ${isSelected ? 'text-primary' : ''}`}>{song.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{song.artist}</p>
+                        <TruncatedText as="p" className={`text-sm font-medium ${isSelected ? 'text-primary' : ''}`}>{song.title}</TruncatedText>
+                        <TruncatedText as="p" className="text-xs text-muted-foreground">{song.artist}</TruncatedText>
                       </div>
                       {isSelected ? (
                         <Check className="size-4 text-primary shrink-0" />

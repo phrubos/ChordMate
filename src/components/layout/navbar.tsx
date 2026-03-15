@@ -21,6 +21,7 @@ import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { springs } from '@/lib/motion';
 import { GuitarTunerModal } from '@/components/tools/guitar-tuner-modal';
 import { MetronomeModal } from '@/components/tools/metronome-modal';
+import { TruncatedText } from '@/components/shared/truncated-text';
 
 const desktopNavLinks = [
   { href: '/dashboard', label: 'Naptár', icon: Calendar },
@@ -149,7 +150,7 @@ export function Navbar() {
                 <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? ''} />
                 <AvatarFallback className="text-xs bg-primary/10 text-primary">{initials}</AvatarFallback>
               </Avatar>
-              <span className="max-w-[100px] truncate text-sm text-muted-foreground">{user?.name}</span>
+              <TruncatedText className="max-w-[100px] text-sm text-muted-foreground">{user?.name ?? ''}</TruncatedText>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[160px]">
               <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/login' })}>
@@ -360,8 +361,8 @@ export function Navbar() {
                       <AvatarFallback className="text-sm bg-primary/10 text-primary font-semibold">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground/60 truncate">{user?.email}</p>
+                      <TruncatedText as="p" className="text-sm font-medium">{user?.name ?? ''}</TruncatedText>
+                      <TruncatedText as="p" className="text-xs text-muted-foreground/60">{user?.email ?? ''}</TruncatedText>
                     </div>
                   </div>
                   <Button
