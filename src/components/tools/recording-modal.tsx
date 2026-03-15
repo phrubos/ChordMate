@@ -26,6 +26,7 @@ import {
 import type { RecordingMeta } from '@/types';
 import { toast } from 'sonner';
 import { TruncatedText } from '@/components/shared/truncated-text';
+import { ExpandableText } from '@/components/shared/expandable-text';
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -675,7 +676,9 @@ function RecordingsList({
                       </Button>
                     </div>
                   ) : (
-                    <TruncatedText as="p" className="text-sm font-medium leading-tight">{rec.name}</TruncatedText>
+                    <p className="text-sm font-medium leading-tight">
+                      <ExpandableText className="block" clampClassName="truncate">{rec.name}</ExpandableText>
+                    </p>
                   )}
                 </div>
 

@@ -18,6 +18,7 @@ import { YouTubePlayer } from '@/components/youtube/youtube-player';
 import { createSong, updateSong } from '@/actions/songs';
 import type { Song } from '@/types';
 import { TruncatedText } from '@/components/shared/truncated-text';
+import { ExpandableText } from '@/components/shared/expandable-text';
 
 interface TabResult {
   id: number;
@@ -480,8 +481,12 @@ export function SongForm({ song }: SongFormProps) {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-tight line-clamp-2">{result.title}</p>
-                        <TruncatedText as="p" className="mt-1 text-xs text-muted-foreground">{result.channel}</TruncatedText>
+                        <p className="text-sm font-medium leading-tight">
+                          <ExpandableText className="block" clampClassName="line-clamp-2">{result.title}</ExpandableText>
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          <ExpandableText className="block" clampClassName="truncate">{result.channel}</ExpandableText>
+                        </p>
                         {result.views > 0 && (
                           <p className="text-[11px] text-muted-foreground/60">{formatViews(result.views)} megtekintés</p>
                         )}
@@ -544,12 +549,16 @@ export function SongForm({ song }: SongFormProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <TruncatedText as="p" className="text-sm font-medium">{tab.songName}</TruncatedText>
+                          <p className="text-sm font-medium min-w-0">
+                            <ExpandableText className="block" clampClassName="truncate">{tab.songName}</ExpandableText>
+                          </p>
                           <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                             {tab.type}
                           </span>
                         </div>
-                        <TruncatedText as="p" className="text-xs text-muted-foreground">{tab.artist}</TruncatedText>
+                        <p className="text-xs text-muted-foreground">
+                          <ExpandableText className="block" clampClassName="truncate">{tab.artist}</ExpandableText>
+                        </p>
                         <div className="flex items-center gap-3 mt-0.5">
                           <span className="text-[11px] text-muted-foreground/70">
                             ★ {tab.rating.toFixed(1)}
