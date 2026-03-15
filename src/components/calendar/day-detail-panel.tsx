@@ -45,6 +45,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { CalendarEntryWithSong, Song } from '@/types';
+import { ExpandableText } from '@/components/shared/expandable-text';
 import { RecordingModal } from '@/components/tools/recording-modal';
 import { hasRecordingsForDate } from '@/actions/recordings';
 
@@ -102,8 +103,12 @@ function SortableSongItem({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium truncate leading-tight">{entry.song.title}</p>
-        <p className="text-xs text-muted-foreground truncate">{entry.song.artist}</p>
+        <p className="text-sm font-medium leading-tight">
+          <ExpandableText className="block" clampClassName="truncate">{entry.song.title}</ExpandableText>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          <ExpandableText className="block" clampClassName="truncate">{entry.song.artist}</ExpandableText>
+        </p>
       </div>
       <div className="flex items-center gap-1 shrink-0 opacity-100 transition-opacity hover-device:opacity-0 hover-device:group-hover/item:opacity-100">
         {entry.song.tabContent && (

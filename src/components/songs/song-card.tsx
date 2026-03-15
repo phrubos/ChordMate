@@ -7,6 +7,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { SongWithUser } from '@/types';
 import { formatRelativeDate } from '@/lib/utils';
+import { ExpandableText } from '@/components/shared/expandable-text';
 import { useState, useTransition } from 'react';
 import { toggleFavorite } from '@/actions/songs';
 import { DeleteSongDialog } from './delete-song-dialog';
@@ -60,8 +61,12 @@ export function SongCard({ song, onPlay }: SongCardProps) {
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-semibold truncate leading-tight">{song.title}</h3>
-                <p className="text-sm text-muted-foreground mt-0.5 truncate">{song.artist}</p>
+                <h3 className="text-base font-semibold leading-tight">
+                  <ExpandableText className="block" clampClassName="truncate">{song.title}</ExpandableText>
+                </h3>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  <ExpandableText className="block" clampClassName="truncate">{song.artist}</ExpandableText>
+                </p>
               </div>
               <DifficultyStars level={song.difficulty} />
             </div>
@@ -79,7 +84,9 @@ export function SongCard({ song, onPlay }: SongCardProps) {
         </div>
 
         {song.notes && (
-          <p className="mt-2 text-sm text-muted-foreground italic line-clamp-2">{song.notes}</p>
+          <p className="mt-2 text-sm text-muted-foreground italic">
+            <ExpandableText className="block" clampClassName="line-clamp-2">{song.notes}</ExpandableText>
+          </p>
         )}
 
         {/* Actions */}
