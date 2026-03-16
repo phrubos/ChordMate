@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
@@ -18,67 +18,68 @@ export function ExpandableText({
 }: ExpandableTextProps) {
   const [expanded, setExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
-  const [isHoverDevice, setIsHoverDevice] = useState(false);
-  const textRef = useRef<HTMLSpanElement>(null);
+  const [open, setOpen] = useState(false);
+  const textRef = useRef<HTMLElement | null>(null);
 
-  // Detect hover-capable device (desktop) vs touch (mobile)
-  useEffect(() => {
-    setIsHoverDevice(window.matchMedia('(hover: hover) and (pointer: fine)').matches);
-  }, []);
-
-  // Check if text actually overflows
-  useEffect(() => {
+  const checkTruncation = useCallback(() => {
     const el = textRef.current;
     if (!el) return;
+    const overflowX = el.scrollWidth > el.clientWidth + 1;
+    const overflowY = el.scrollHeight > el.clientHeight + 1;
+    setIsTruncated(overflowX || overflowY);
+  }, []);
 
-    function check() {
-      if (!el) return;
-      const overflowX = el.scrollWidth > el.clientWidth + 1;
-      const overflowY = el.scrollHeight > el.clientHeight + 1;
-      setIsTruncated(overflowX || overflowY);
-    }
-
-    check();
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
+  useEffect(() => {
+    checkTruncation();
+    const ro = new ResizeObserver(checkTruncation);
+    if (textRef.current) ro.observe(textRef.current);
     return () => ro.disconnect();
-  }, [children, expanded]);
+  }, [checkTruncation, children, expanded]);
 
-  // Mobile: tap to expand/collapse
-  const handleClick = (e: React.MouseEvent) => {
-    if (isHoverDevice) return;
+  // Mobile tap: expand/collapse; Desktop tap on tooltip trigger: toggle tooltip
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (!('ontouchstart' in window)) return;
     if (!isTruncated && !expanded) return;
+    e.preventDefault();
     e.stopPropagation();
-    setExpanded(!expanded);
-  };
+    setExpanded(prev => !prev);
+  }, [isTruncated, expanded]);
 
-  const span = (
+  // Close tooltip on scroll (mobile tooltip use case)
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    document.addEventListener('scroll', close, { capture: true });
+    return () => document.removeEventListener('scroll', close, { capture: true });
+  }, [open]);
+
+  const refCallback = useCallback((node: HTMLSpanElement | null) => {
+    textRef.current = node;
+  }, []);
+
+  const element = (
     <span
-      ref={textRef}
+      ref={refCallback}
       onClick={handleClick}
       className={cn(
         className,
         !expanded && clampClassName,
-        !isHoverDevice && (isTruncated || expanded) && 'cursor-pointer',
-        expanded && 'whitespace-normal break-words'
+        isTruncated && 'cursor-default',
+        expanded && 'whitespace-normal break-words cursor-pointer'
       )}
     >
       {children}
     </span>
   );
 
-  // Desktop: wrap in tooltip when text is truncated
-  if (isHoverDevice && isTruncated) {
-    return (
-      <Tooltip>
-        <TooltipTrigger render={span} />
-        <TooltipContent side="top" className="max-w-xs break-words whitespace-normal">
-          {children}
-        </TooltipContent>
-      </Tooltip>
-    );
-  }
+  if (!isTruncated && !expanded) return element;
 
-  // Mobile: just the span (tap handles expand/collapse)
-  return span;
+  return (
+    <Tooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger render={element} />
+      <TooltipContent side="top" className="max-w-xs break-words whitespace-normal">
+        {children}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
