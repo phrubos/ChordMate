@@ -24,6 +24,7 @@ export async function getRecordingsByDate(date: string) {
       name: recordings.name,
       mimeType: recordings.mimeType,
       duration: recordings.duration,
+      bandId: recordings.bandId,
       addedById: recordings.addedById,
       createdAt: recordings.createdAt,
     })
