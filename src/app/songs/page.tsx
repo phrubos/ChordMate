@@ -11,19 +11,20 @@ import { Suspense } from 'react';
 
 
 interface SongsPageProps {
-  searchParams: Promise<{ search?: string; difficulty?: string; hasTab?: string; fav?: string }>;
+  searchParams: Promise<{ search?: string; difficulty?: string; hasTab?: string; fav?: string; sort?: string }>;
 }
 
 export default async function SongsPage({ searchParams }: SongsPageProps) {
   const session = await auth();
   if (!session?.user) redirect('/login');
 
-  const { search, difficulty, hasTab, fav } = await searchParams;
+  const { search, difficulty, hasTab, fav, sort } = await searchParams;
   const songs = await getSongs({
     search,
     difficulty: difficulty ? Number(difficulty) : undefined,
     hasTab: hasTab === '1',
     favOnly: fav === '1',
+    sort: sort === 'date' ? 'date' : 'artist',
   });
 
   return (

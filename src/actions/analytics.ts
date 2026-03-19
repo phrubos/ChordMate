@@ -3,16 +3,23 @@
 import { db } from '@/lib/db';
 import { calendarEntries, songs } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
-import { asc, sql, desc, eq } from 'drizzle-orm';
+import { asc, sql, desc, eq, and, isNull } from 'drizzle-orm';
 import { format, subDays, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
+import { getUserBandId } from './bands';
 
 export async function getAnalyticsData() {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? eq(calendarEntries.bandId, bandId)
+    : and(isNull(calendarEntries.bandId), eq(calendarEntries.addedById, session.user.id));
+
   // All entries with song info
   const allEntries = await db.query.calendarEntries.findMany({
+    where: scope,
     with: { song: true },
     orderBy: [asc(calendarEntries.date)],
   });

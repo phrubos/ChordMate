@@ -4,25 +4,36 @@ import { db } from '@/lib/db';
 import { songs } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { eq, or, and, ilike, desc, isNotNull } from 'drizzle-orm';
+import { eq, or, and, ilike, desc, asc, isNotNull, isNull } from 'drizzle-orm';
 import { songSchema } from '@/lib/validators';
 import { fetchAlbumArt } from '@/lib/fetch-album-art';
+import { getUserBandId } from './bands';
 
 interface SongFilters {
   search?: string;
   difficulty?: number;
   hasTab?: boolean;
   favOnly?: boolean;
+  sort?: 'artist' | 'date';
 }
 
 export async function getSongs(filters?: string | SongFilters) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+
   // Support legacy string search param
   const f: SongFilters = typeof filters === 'string' ? { search: filters } : (filters ?? {});
 
   const conditions = [];
+  // Scope to band
+  if (bandId) {
+    conditions.push(eq(songs.bandId, bandId));
+  } else {
+    conditions.push(isNull(songs.bandId));
+    conditions.push(eq(songs.addedById, session.user.id));
+  }
 
   if (f.search) {
     conditions.push(
@@ -42,10 +53,14 @@ export async function getSongs(filters?: string | SongFilters) {
     conditions.push(eq(songs.isFavorite, true));
   }
 
+  const sortOrder = f.sort === 'date'
+    ? [desc(songs.isFavorite), desc(songs.createdAt)]
+    : [desc(songs.isFavorite), asc(songs.artist), asc(songs.title)];
+
   return db.query.songs.findMany({
     where: conditions.length > 0 ? and(...conditions) : undefined,
     with: { addedBy: true },
-    orderBy: [desc(songs.isFavorite), desc(songs.createdAt)],
+    orderBy: sortOrder,
   });
 }
 
@@ -78,12 +93,15 @@ export async function createSong(formData: FormData) {
   // Auto-fetch album artwork
   const imageUrl = await fetchAlbumArt(data.artist, data.title);
 
+  const bandId = await getUserBandId();
+
   await db.insert(songs).values({
     ...data,
     youtubeUrl: data.youtubeUrl || null,
     tabContent: data.tabContent || null,
     tabUrl: data.tabUrl || null,
     imageUrl,
+    bandId,
     addedById: session.user.id,
   });
 
@@ -167,7 +185,9 @@ export async function getSongStats() {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
-  const allSongs = await db.select().from(songs);
+  const bandId = await getUserBandId();
+  const condition = bandId ? eq(songs.bandId, bandId) : eq(songs.addedById, session.user.id);
+  const allSongs = await db.select().from(songs).where(condition);
   const totalSongs = allSongs.length;
   const withTabs = allSongs.filter((s) => s.tabContent).length;
   const favorites = allSongs.filter((s) => s.isFavorite).length;

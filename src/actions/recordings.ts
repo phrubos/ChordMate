@@ -4,12 +4,18 @@ import { db } from '@/lib/db';
 import { recordings } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, isNull } from 'drizzle-orm';
+import { getUserBandId } from './bands';
 
 // ─── List recordings by date (metadata only, no audio blob) ───
 export async function getRecordingsByDate(date: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? and(eq(recordings.date, date), eq(recordings.bandId, bandId))
+    : and(eq(recordings.date, date), isNull(recordings.bandId), eq(recordings.addedById, session.user.id));
 
   const rows = await db
     .select({
@@ -22,7 +28,7 @@ export async function getRecordingsByDate(date: string) {
       createdAt: recordings.createdAt,
     })
     .from(recordings)
-    .where(and(eq(recordings.date, date), eq(recordings.addedById, session.user.id)))
+    .where(scope)
     .orderBy(desc(recordings.createdAt));
 
   return rows;
@@ -33,10 +39,15 @@ export async function hasRecordingsForDate(date: string): Promise<boolean> {
   const session = await auth();
   if (!session?.user?.id) return false;
 
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? and(eq(recordings.date, date), eq(recordings.bandId, bandId))
+    : and(eq(recordings.date, date), isNull(recordings.bandId), eq(recordings.addedById, session.user.id));
+
   const rows = await db
     .select({ id: recordings.id })
     .from(recordings)
-    .where(and(eq(recordings.date, date), eq(recordings.addedById, session.user.id)))
+    .where(scope)
     .limit(1);
 
   return rows.length > 0;
@@ -71,6 +82,8 @@ export async function saveRecording(data: {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+
   const [inserted] = await db
     .insert(recordings)
     .values({
@@ -79,6 +92,7 @@ export async function saveRecording(data: {
       audioData: data.audioBase64,
       mimeType: data.mimeType,
       duration: data.duration,
+      bandId,
       addedById: session.user.id,
     })
     .returning({ id: recordings.id });
@@ -117,10 +131,15 @@ export async function getNextCoverNumber(date: string, songTitle: string, artist
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? and(eq(recordings.date, date), eq(recordings.bandId, bandId))
+    : and(eq(recordings.date, date), isNull(recordings.bandId), eq(recordings.addedById, session.user.id));
+
   const recs = await db
     .select({ name: recordings.name })
     .from(recordings)
-    .where(and(eq(recordings.date, date), eq(recordings.addedById, session.user.id)));
+    .where(scope);
 
   const prefix = `${songTitle} – ${artist} – cover_`;
   let max = 0;

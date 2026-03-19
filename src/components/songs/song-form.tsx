@@ -77,9 +77,27 @@ export function SongForm({ song }: SongFormProps) {
   const [tabFetching, setTabFetching] = useState<number | null>(null);
   const tabContentRef = useRef<HTMLTextAreaElement>(null);
   const tabUrlRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollHint, setShowScrollHint] = useState(true);
 
   // Track form changes
   const markDirty = useCallback(() => { if (!isDirty) setIsDirty(true); }, [isDirty]);
+
+  // Track scroll position to show/hide scroll indicator
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    function checkScroll() {
+      if (!el) return;
+      const hasMore = el.scrollHeight - el.scrollTop - el.clientHeight > 40;
+      setShowScrollHint(hasMore);
+    }
+    checkScroll();
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', checkScroll); ro.disconnect(); };
+  }, [showTabSection]);
 
   // Warn before browser close/refresh
   useEffect(() => {
@@ -149,7 +167,7 @@ export function SongForm({ song }: SongFormProps) {
     setShowTabSection(true);
     try {
       const query = `${title} ${artist}`;
-      const res = await fetch(`/api/tab-search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/tab-search?q=${encodeURIComponent(query)}&artist=${encodeURIComponent(artist)}`);
       const data = await res.json();
       if (data.results) {
         setTabResults(data.results);
@@ -231,7 +249,7 @@ export function SongForm({ song }: SongFormProps) {
         </div>
 
         <form action={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2">
+          <div ref={scrollRef} className="relative flex-1 overflow-y-auto px-6 pb-6 pt-2">
             <div className="flex flex-col gap-5">
             {/* Title */}
             <div className="flex flex-col gap-1.5">
@@ -598,6 +616,19 @@ export function SongForm({ song }: SongFormProps) {
               )}
             </DialogContent>
           </Dialog>
+
+          {/* Scroll indicator */}
+          {showScrollHint && (
+            <div className="shrink-0 relative">
+              <div className="absolute -top-10 left-0 right-0 h-10 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+              <div className="flex justify-center py-2 border-t border-border/30">
+                <div className="flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 animate-bounce">
+                  <ChevronDown className="size-4 text-primary" />
+                  <span className="text-xs font-medium text-primary">Görgess lejjebb</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="shrink-0 flex justify-end gap-2 border-t border-border/30 bg-card/50 px-6 py-4">

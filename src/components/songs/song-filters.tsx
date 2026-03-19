@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { Search, Star, FileText, Heart, X, SlidersHorizontal } from 'lucide-react';
+import { Search, Star, FileText, Heart, X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ export function SongFilters() {
   const difficulty = searchParams.get('difficulty');
   const hasTab = searchParams.get('hasTab') === '1';
   const favOnly = searchParams.get('fav') === '1';
+  const sortBy = searchParams.get('sort') ?? 'artist';
 
   const hasFilters = !!difficulty || hasTab || favOnly;
   const activeCount = (difficulty ? 1 : 0) + (hasTab ? 1 : 0) + (favOnly ? 1 : 0);
@@ -109,6 +110,22 @@ export function SongFilters() {
           Törlés
         </Button>
       )}
+
+      <div className="h-4 w-px bg-border/50" />
+
+      {/* Sort toggle */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className={cn(
+          'h-7 gap-1 rounded-full border px-2.5 text-xs transition-all',
+          'border-border/50 text-muted-foreground hover:border-border'
+        )}
+        onClick={() => updateParams({ sort: sortBy === 'artist' ? 'date' : null })}
+      >
+        <ArrowUpDown className="size-3" />
+        {sortBy === 'date' ? 'Dátum szerint' : 'Előadó szerint'}
+      </Button>
     </div>
   );
 

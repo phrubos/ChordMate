@@ -8,6 +8,13 @@
       "when": 1773089530972,
       "tag": "0000_special_captain_midlands",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773907600397,
+      "tag": "0001_faulty_joseph",
+      "breakpoints": true
     }
   ]
 }

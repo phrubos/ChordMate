@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
 import { KeyboardShortcuts } from "@/components/shared/keyboard-shortcuts";
+import { OnboardingCheck } from "@/components/band/onboarding-check";
 import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 
@@ -59,6 +60,7 @@ export default function RootLayout({
           <NextTopLoader color="#f59e0b" showSpinner={false} height={3} shadow="0 0 10px #f59e0b, 0 0 5px #f59e0b" />
           <TooltipProvider>
             <KeyboardShortcuts />
+            <OnboardingCheck />
             {children}
             <Toaster richColors position="bottom-right" visibleToasts={1} />
           </TooltipProvider>

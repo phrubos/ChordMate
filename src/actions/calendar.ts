@@ -4,14 +4,21 @@ import { db } from '@/lib/db';
 import { calendarEntries } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { eq, and, gte, lte, asc, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, asc, sql, isNull } from 'drizzle-orm';
 import { format, endOfMonth } from 'date-fns';
+import { getUserBandId } from './bands';
 
 export async function getCalendarEntries() {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? eq(calendarEntries.bandId, bandId)
+    : and(isNull(calendarEntries.bandId), eq(calendarEntries.addedById, session.user.id));
+
   return db.query.calendarEntries.findMany({
+    where: scope,
     with: {
       song: true,
       addedBy: true,
@@ -23,6 +30,8 @@ export async function getCalendarEntries() {
 export async function assignSongToDate(songId: string, date: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const bandId = await getUserBandId();
 
   const maxOrder = await db
     .select({ max: sql<number>`coalesce(max(${calendarEntries.sortOrder}), -1)` })
@@ -36,6 +45,7 @@ export async function assignSongToDate(songId: string, date: string) {
     .values({
       date,
       songId,
+      bandId,
       addedById: session.user.id,
       sortOrder: nextOrder,
     })
@@ -49,6 +59,7 @@ export async function assignSongsToDate(songIds: string[], date: string) {
   if (!session?.user?.id) throw new Error('Unauthorized');
 
   const userId = session.user.id;
+  const bandId = await getUserBandId();
 
   if (songIds.length === 0) return;
 
@@ -65,6 +76,7 @@ export async function assignSongsToDate(songIds: string[], date: string) {
       songIds.map((songId) => ({
         date,
         songId,
+        bandId,
         addedById: userId,
         sortOrder: nextOrder++,
       }))
@@ -110,7 +122,13 @@ export async function getCalendarStats() {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? eq(calendarEntries.bandId, bandId)
+    : and(isNull(calendarEntries.bandId), eq(calendarEntries.addedById, session.user.id));
+
   const allEntries = await db.query.calendarEntries.findMany({
+    where: scope,
     with: { song: true },
     orderBy: [asc(calendarEntries.date)],
   });
@@ -157,12 +175,15 @@ export async function copySongsToDate(fromDate: string, toDate: string) {
 
   let nextOrder = (maxOrder[0]?.max ?? -1) + 1;
 
+  const bandId = await getUserBandId();
+
   for (const entry of sourceEntries) {
     await db
       .insert(calendarEntries)
       .values({
         date: toDate,
         songId: entry.songId,
+        bandId,
         addedById: session.user.id,
         sortOrder: nextOrder++,
       })

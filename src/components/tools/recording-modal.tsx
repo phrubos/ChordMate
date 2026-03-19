@@ -493,6 +493,7 @@ function RecordingsList({
 }) {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [progress, setProgress] = useState(0);
@@ -540,6 +541,9 @@ function RecordingsList({
   }, [stopAudio]);
 
   async function togglePlay(rec: RecordingMeta) {
+    // If already loading this recording, ignore repeated clicks
+    if (loadingId === rec.id) return;
+
     if (playingId === rec.id) {
       if (!audioRef.current) return;
       if (isPaused) {
@@ -555,16 +559,25 @@ function RecordingsList({
     }
 
     stopAudio();
+    setLoadingId(rec.id);
 
     try {
       const { audioData, mimeType } = await getRecordingAudio(rec.id);
+
+      // If user clicked something else while we were fetching, bail out
+      if (loadingId !== null && loadingId !== rec.id) {
+        setLoadingId(null);
+        return;
+      }
+
       const binary = atob(audioData);
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       const blob = new Blob([bytes], { type: mimeType });
       const url = URL.createObjectURL(blob);
       urlRef.current = url;
-      const audio = new Audio(url);
+      const audio = new Audio();
+      audio.preload = 'auto';
       audioRef.current = audio;
       knownDurRef.current = rec.duration;
       setAudioDuration(rec.duration);
@@ -578,11 +591,15 @@ function RecordingsList({
 
       audio.addEventListener('ended', () => stopAudio());
 
-      audio.play();
+      // Start playback as soon as enough data is buffered
+      audio.src = url;
+      await audio.play();
+      setLoadingId(null);
       setPlayingId(rec.id);
       setIsPaused(false);
       startTick();
     } catch {
+      setLoadingId(null);
       toast.error('Hiba a lejátszásnál');
     }
   }
@@ -645,13 +662,22 @@ function RecordingsList({
                 {/* Play button */}
                 <button
                   onClick={() => { togglePlay(rec); }}
+                  disabled={loadingId === rec.id}
                   className={`flex size-9 shrink-0 items-center justify-center rounded-full transition-all ${
-                    isPlaying
-                      ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                      : 'bg-primary/10 text-primary hover:bg-primary/20'
+                    loadingId === rec.id
+                      ? 'bg-primary/20 text-primary animate-pulse shadow-md shadow-primary/10'
+                      : isPlaying
+                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                        : 'bg-primary/10 text-primary hover:bg-primary/20'
                   }`}
                 >
-                  {isPlaying && !isPaused ? <Pause className="size-3.5" /> : <Play className="size-3.5 ml-0.5" />}
+                  {loadingId === rec.id ? (
+                    <span className="size-2 rounded-full bg-primary animate-ping" />
+                  ) : isPlaying && !isPaused ? (
+                    <Pause className="size-3.5" />
+                  ) : (
+                    <Play className="size-3.5 ml-0.5" />
+                  )}
                 </button>
 
                 {/* Info */}

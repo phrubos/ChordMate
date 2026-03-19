@@ -42,43 +42,145 @@ interface UGTab {
   tonality_name?: string;
 }
 
+// Normalize a string for fuzzy matching: strip accents, lowercase, trim
+function normalize(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+// Extract significant words (len>=2, no stop words) from a string
+const STOP_WORDS = new Set(['a', 'az', 'és', 'egy', 'the', 'on', 'in', 'at', 'is', 'of', 'to', 'im', "i'm", 'my', 'me']);
+function significantWords(s: string): string[] {
+  return normalize(s)
+    .replace(/[-–''`]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+}
+
+// Compute how many significant words from the search title appear in the song name
+function titleWordOverlap(searchTitle: string, songName: string): number {
+  const searchWords = significantWords(searchTitle);
+  const songWords = significantWords(songName);
+  if (searchWords.length === 0) return 0;
+  let matches = 0;
+  for (const sw of searchWords) {
+    if (songWords.some(w => w.includes(sw) || sw.includes(w))) matches++;
+  }
+  return matches / searchWords.length; // 0..1 ratio
+}
+
+// Generate title-focused search query variations
+function generateQueryVariations(title: string, artist: string): string[] {
+  const queries = new Set<string>();
+
+  // 1. Original: "title artist"
+  queries.add(`${title} ${artist}`);
+
+  // 2. Strip Hungarian/English articles from title
+  const strippedTitle = title.replace(/^(a\s+|az\s+|the\s+)/i, '').trim();
+  if (strippedTitle !== title) {
+    queries.add(`${strippedTitle} ${artist}`);
+  }
+
+  // 3. Extract core words (strip suffixes like "-es", "-on", etc.)
+  const coreWords = title
+    .replace(/[-–]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 1)
+    .filter(w => !STOP_WORDS.has(w.toLowerCase()));
+  if (coreWords.length > 0) {
+    const coreQuery = `${coreWords.join(' ')} ${artist}`;
+    if (coreQuery !== `${title} ${artist}`) {
+      queries.add(coreQuery);
+    }
+  }
+
+  return Array.from(queries);
+}
+
+async function searchUG(query: string): Promise<UGTab[]> {
+  const params = new URLSearchParams({
+    title: query,
+    'type[]': '300',
+    page: '1',
+  });
+  const url = `${UG_API}/tab/search?${params.toString()}&type[]=200`;
+
+  const res = await fetch(url, {
+    headers: getHeaders(),
+    signal: AbortSignal.timeout(8000),
+  });
+
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  return (data?.tabs || []) as UGTab[];
+}
+
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get('q');
   if (!query) {
     return NextResponse.json({ error: 'Missing query' }, { status: 400 });
   }
 
+  const artist = req.nextUrl.searchParams.get('artist') ?? '';
+  const title = artist
+    ? query.replace(new RegExp(`\\s*${artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'i'), '').trim() || query
+    : query;
+
   try {
-    // Search for Chords (300) and Tabs (200)
-    const params = new URLSearchParams({
-      title: query,
-      'type[]': '300',
-      page: '1',
-    });
-    // Add second type[] param
-    const url = `${UG_API}/tab/search?${params.toString()}&type[]=200`;
+    const variations = artist
+      ? generateQueryVariations(title, artist)
+      : [query];
 
-    const res = await fetch(url, {
-      headers: getHeaders(),
-      signal: AbortSignal.timeout(8000),
-    });
+    // Run searches in parallel (max 3)
+    const searches = variations.slice(0, 3).map(q => searchUG(q));
+    const allResults = await Promise.all(searches);
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.error('UG API error:', res.status, text);
-      return NextResponse.json({ error: `UG API returned ${res.status}` }, { status: 502 });
+    // Merge & deduplicate by tab id
+    const seen = new Set<number>();
+    const merged: UGTab[] = [];
+    for (const tabs of allResults) {
+      for (const tab of tabs) {
+        if ((tab.type === 'Chords' || tab.type === 'Tab') && !seen.has(tab.id)) {
+          seen.add(tab.id);
+          merged.push(tab);
+        }
+      }
     }
 
-    const data = await res.json();
-    const tabs: UGTab[] = data?.tabs || [];
+    // Score results: heavily weight title relevance
+    const normalizedArtist = artist ? normalize(artist) : '';
+    const scored = merged.map(t => {
+      const overlap = titleWordOverlap(title, t.song_name);
+      const artistMatch = normalizedArtist && normalize(t.artist_name).includes(normalizedArtist);
 
-    // Sort by rating (descending), take top 10
-    const sorted = tabs
-      .filter((t: UGTab) => t.type === 'Chords' || t.type === 'Tab')
-      .sort((a: UGTab, b: UGTab) => b.rating - a.rating || b.votes - a.votes)
-      .slice(0, 10);
+      // Title relevance is king — overlap 0..1 mapped to 0..2000
+      let score = overlap * 2000;
+      // Bonus for exact/near-exact title match
+      const nTitle = normalize(title);
+      const nSong = normalize(t.song_name);
+      if (nSong === nTitle) score += 1000;
+      else if (nSong.includes(nTitle) || nTitle.includes(nSong)) score += 500;
+      // Artist match bonus
+      if (artistMatch) score += 300;
+      // Quality tiebreaker
+      score += t.rating * 5 + Math.min(t.votes, 5000) * 0.01;
 
-    const results = sorted.map((t: UGTab) => ({
+      return { tab: t, score, overlap, artistMatch };
+    });
+
+    // Filter: require at least SOME title word overlap OR exact substring match
+    const filtered = scored.filter(({ overlap, tab }) => {
+      if (overlap > 0) return true;
+      const nTitle = normalize(title);
+      const nSong = normalize(tab.song_name);
+      return nSong.includes(nTitle) || nTitle.includes(nSong);
+    });
+
+    filtered.sort((a, b) => b.score - a.score);
+    const top = filtered.slice(0, 10);
+
+    const results = top.map(({ tab: t }) => ({
       id: t.id,
       songName: t.song_name,
       artist: t.artist_name,
