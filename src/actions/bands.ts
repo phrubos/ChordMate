@@ -244,3 +244,34 @@ export async function updateBandName(name: string) {
 
   revalidatePath('/');
 }
+
+// ─── Update band images (admin only) ──────────────────────────
+export async function updateBandImages(
+  bandId: string,
+  logoData?: string,
+  backgroundData?: string
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const membership = await db.query.bandMembers.findFirst({
+    where: eq(bandMembers.userId, session.user.id),
+  });
+  if (!membership || membership.role !== 'admin' || membership.bandId !== bandId) {
+    throw new Error('Nincs jogosultságod');
+  }
+
+  const updates: Partial<{ logoData: string; backgroundData: string }> = {};
+  if (logoData !== undefined) updates.logoData = logoData;
+  if (backgroundData !== undefined) updates.backgroundData = backgroundData;
+
+  if (Object.keys(updates).length > 0) {
+    await db.update(bands)
+      .set(updates)
+      .where(eq(bands.id, bandId));
+      
+    revalidatePath('/');
+    revalidatePath('/band');
+  }
+}
+

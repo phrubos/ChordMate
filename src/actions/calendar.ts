@@ -80,10 +80,9 @@ export async function assignSongsToDate(songIds: string[], date: string) {
         addedById: userId,
         sortOrder: nextOrder++,
       }))
-    )
-    .onConflictDoNothing();
+    );
 
-  revalidatePath('/dashboard');
+  revalidatePath('/');
 }
 
 export async function removeSongFromDate(entryId: string) {
@@ -161,8 +160,13 @@ export async function copySongsToDate(fromDate: string, toDate: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? eq(calendarEntries.bandId, bandId)
+    : and(isNull(calendarEntries.bandId), eq(calendarEntries.addedById, session.user.id));
+
   const sourceEntries = await db.query.calendarEntries.findMany({
-    where: eq(calendarEntries.date, fromDate),
+    where: and(eq(calendarEntries.date, fromDate), scope),
     orderBy: [asc(calendarEntries.sortOrder)],
   });
 
@@ -171,11 +175,9 @@ export async function copySongsToDate(fromDate: string, toDate: string) {
   const maxOrder = await db
     .select({ max: sql<number>`coalesce(max(${calendarEntries.sortOrder}), -1)` })
     .from(calendarEntries)
-    .where(eq(calendarEntries.date, toDate));
+    .where(and(eq(calendarEntries.date, toDate), scope));
 
   let nextOrder = (maxOrder[0]?.max ?? -1) + 1;
-
-  const bandId = await getUserBandId();
 
   for (const entry of sourceEntries) {
     await db
@@ -186,9 +188,8 @@ export async function copySongsToDate(fromDate: string, toDate: string) {
         bandId,
         addedById: session.user.id,
         sortOrder: nextOrder++,
-      })
-      .onConflictDoNothing();
+      });
   }
 
-  revalidatePath('/dashboard');
+  revalidatePath('/');
 }

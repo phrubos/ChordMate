@@ -1,9 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
-import { Users, Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield } from 'lucide-react';
+import { Users, Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield, Camera, Image as ImageIcon, Eye } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,11 +23,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { updateBandName, regenerateInviteCode, removeBandMember, leaveBand } from '@/actions/bands';
+import { updateBandName, regenerateInviteCode, removeBandMember, leaveBand, updateBandImages } from '@/actions/bands';
 import { toast } from 'sonner';
 import type { BandWithMembers } from '@/types';
 import { TruncatedText } from '@/components/shared/truncated-text';
-import { PageHeader } from '@/components/shared/page-header';
+import { compressImageBase64 } from '@/lib/image-utils';
 
 interface BandProfileProps {
   band: BandWithMembers;
@@ -36,6 +42,10 @@ export function BandProfile({ band, currentUserId }: BandProfileProps) {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [viewImage, setViewImage] = useState<string | null>(null);
+
+  const bgInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const myRole = band.members.find(m => m.userId === currentUserId)?.role;
   const isAdmin = myRole === 'admin';
@@ -103,57 +113,162 @@ export function BandProfile({ band, currentUserId }: BandProfileProps) {
     }
   }
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const base64 = await compressImageBase64(file, { maxWidth: 800, maxHeight: 800 });
+      await updateBandImages(band.id, base64, undefined);
+      toast.success('Logó frissítve');
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Hiba történt a logó feltöltésekor');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleBackgroundUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const base64 = await compressImageBase64(file, { maxWidth: 1920, maxHeight: 1080 });
+      await updateBandImages(band.id, undefined, base64);
+      toast.success('Háttérkép frissítve');
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Hiba történt a háttérkép feltöltésekor');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-lg">
-      <PageHeader title="Banda profil" description={isSolo ? 'Solo mód – hívj meg másokat!' : 'A bandád beállításai'} />
+      {/* Band Hero Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative mb-8 overflow-hidden rounded-2xl border border-border/50 bg-card/30 shadow-lg"
+      >
+        <div className="relative h-48 w-full bg-secondary/30">
+          {band.backgroundData ? (
+            <img src={band.backgroundData} alt="Cover" className="h-full w-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/5 to-background" />
+          )}
 
-      <div className="mt-6 flex flex-col gap-5">
-        {/* Band name */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-border/50 bg-card/50 p-5"
-        >
-          <div className="flex items-center justify-between gap-3">
+          {(isAdmin || band.backgroundData) && (
+            <div className="absolute right-4 top-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex cursor-pointer items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-black/80">
+                  <ImageIcon className="size-4" />
+                  <span className="hidden sm:inline">Háttér</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {band.backgroundData && (
+                    <DropdownMenuItem onClick={() => setViewImage(band.backgroundData!)}>
+                      <Eye className="mr-2 size-4" />
+                      Megtekintés
+                    </DropdownMenuItem>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => bgInputRef.current?.click()}>
+                      <Camera className="mr-2 size-4" />
+                      Új feltöltése
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <input type="file" ref={bgInputRef} accept="image/*" className="hidden" onChange={handleBackgroundUpload} disabled={loading} />
+            </div>
+          )}
+        </div>
+
+        <div className="relative p-6 pt-4">
+          <div className="absolute -top-12 left-6">
+            <div className="group relative">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="relative cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 rounded-full">
+                  <Avatar className="size-24 rounded-full border-4 border-background bg-secondary shadow-md transition-opacity hover:opacity-90">
+                    {band.logoData ? (
+                      <AvatarImage src={band.logoData} alt="Logo" className="object-cover" />
+                    ) : (
+                      <AvatarFallback className="text-3xl font-bold bg-primary/20 text-primary">
+                        {band.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  
+                  {(isAdmin || band.logoData) && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                      <Camera className="mb-1 size-6 text-white" />
+                      <span className="text-[10px] font-medium text-white">{band.logoData ? 'Kezelés' : 'Új logó'}</span>
+                    </div>
+                  )}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  {band.logoData && (
+                    <DropdownMenuItem onClick={() => setViewImage(band.logoData!)}>
+                      <Eye className="mr-2 size-4" />
+                      Megtekintés
+                    </DropdownMenuItem>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => logoInputRef.current?.click()}>
+                      <Camera className="mr-2 size-4" />
+                      Új feltöltése
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <input type="file" ref={logoInputRef} accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={loading} />
+            </div>
+          </div>
+          
+          <div className="h-14" /> {/* Spacer to respect negative margin of avatar */}
+
+          <div className="flex flex-col">
             {isEditingName ? (
-              <div className="flex items-center gap-2 flex-1">
+              <div className="flex max-w-[300px] items-center gap-2 mt-2">
                 <Input
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="h-9 text-sm"
+                  className="h-10 text-base font-semibold"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveName();
-                    if (e.key === 'Escape') setIsEditingName(false);
+                    if (e.key === 'Escape') {
+                      setIsEditingName(false);
+                      setNewName(band.name);
+                    }
                   }}
                 />
-                <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={handleSaveName} disabled={loading}>
-                  <Check className="size-4" />
+                <Button variant="ghost" size="icon" className="size-10 shrink-0 text-primary" onClick={handleSaveName} disabled={loading}>
+                  <Check className="size-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => { setIsEditingName(false); setNewName(band.name); }}>
-                  <X className="size-4" />
+                <Button variant="ghost" size="icon" className="size-10 shrink-0" onClick={() => { setIsEditingName(false); setNewName(band.name); }}>
+                  <X className="size-5" />
                 </Button>
               </div>
             ) : (
-              <>
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Users className="size-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <TruncatedText as="h3" className="text-lg font-semibold">{band.name}</TruncatedText>
-                    <p className="text-xs text-muted-foreground">{band.members.length} tag</p>
-                  </div>
-                </div>
+              <div className="flex items-center gap-3 mt-2">
+                <h1 className="text-2xl font-bold tracking-tight">{band.name}</h1>
                 {isAdmin && (
-                  <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={() => setIsEditingName(true)}>
+                  <Button variant="outline" size="icon" className="size-8 rounded-full shadow-sm" onClick={() => setIsEditingName(true)}>
                     <Pencil className="size-3.5" />
                   </Button>
                 )}
-              </>
+              </div>
             )}
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {band.members.length} tag {isSolo && ' • Solo mód – hívj meg másokat!'}
+            </p>
           </div>
-        </motion.div>
+        </div>
+      </motion.div>
+
+      <div className="mt-2 flex flex-col gap-5">
 
         {/* Invite code */}
         <motion.div
@@ -307,6 +422,30 @@ export function BandProfile({ band, currentUserId }: BandProfileProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Fullscreen Image Viewer */}
+      {viewImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in-0 duration-150"
+          onClick={() => setViewImage(null)}
+        >
+          <div className="relative flex items-center justify-center animate-in zoom-in-90 duration-200">
+            <button
+              onClick={() => setViewImage(null)}
+              className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-all shadow-md cursor-pointer"
+            >
+              <X className="size-5" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={viewImage}
+              alt="Nagyított megtekintés"
+              className="max-h-[85vh] max-w-[85vw] object-contain rounded-xl shadow-2xl block"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

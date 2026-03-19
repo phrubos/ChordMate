@@ -80,6 +80,8 @@ export const bands = pgTable('bands', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
   inviteCode: text('invite_code').notNull().unique(),
+  logoData: text('logo_data'),
+  backgroundData: text('background_data'),
   createdById: text('created_by_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
@@ -136,10 +138,7 @@ export const calendarEntries = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     sortOrder: integer('sort_order').default(0),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
-  },
-  (entry) => ({
-    uniqueSongDate: uniqueIndex('unique_song_date').on(entry.songId, entry.date),
-  })
+  }
 );
 
 export const recordings = pgTable('recordings', {
