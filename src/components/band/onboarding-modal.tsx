@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 
 type Step = 'choose' | 'create' | 'join';
 
-export function OnboardingModal({ open }: { open: boolean }) {
+export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?: () => void }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('choose');
   const [bandName, setBandName] = useState('');
@@ -25,6 +25,7 @@ export function OnboardingModal({ open }: { open: boolean }) {
     try {
       await createBand(bandName);
       toast.success('Banda létrehozva!');
+      onSuccess?.();
       router.refresh();
     } catch (err: any) {
       toast.error(err?.message ?? 'Hiba történt');
@@ -39,6 +40,7 @@ export function OnboardingModal({ open }: { open: boolean }) {
     try {
       const band = await joinBand(inviteCode);
       toast.success(`Csatlakoztál: ${band.name}`);
+      onSuccess?.();
       router.refresh();
     } catch (err: any) {
       toast.error(err?.message ?? 'Hiba történt');
@@ -52,6 +54,7 @@ export function OnboardingModal({ open }: { open: boolean }) {
     try {
       await startSolo();
       toast.success('Solo mód aktiválva!');
+      onSuccess?.();
       router.refresh();
     } catch (err: any) {
       toast.error(err?.message ?? 'Hiba történt');

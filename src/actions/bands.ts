@@ -93,7 +93,7 @@ export async function createBand(name: string) {
   });
 
   revalidatePath('/');
-  return band;
+  return { id: band.id, name: band.name };
 }
 
 // ─── Join a band with invite code ───────────────────────────
@@ -122,7 +122,7 @@ export async function joinBand(code: string) {
   });
 
   revalidatePath('/');
-  return band;
+  return { id: band.id, name: band.name };
 }
 
 // ─── Start solo (create a personal "solo band") ─────────────
@@ -152,7 +152,7 @@ export async function startSolo() {
   });
 
   revalidatePath('/');
-  return band;
+  return { id: band.id, name: band.name };
 }
 
 // ─── Leave a band ───────────────────────────────────────────

@@ -1,29 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
-import { needsOnboarding } from '@/actions/bands';
 import { OnboardingModal } from './onboarding-modal';
 
-export function OnboardingCheck() {
-  const { data: session } = useSession();
-  const pathname = usePathname();
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [checked, setChecked] = useState(false);
+export function OnboardingCheck({ needsOnboardingServer }: { needsOnboardingServer: boolean }) {
+  const [show, setShow] = useState(needsOnboardingServer);
 
+  // Sync state if server prop changes (e.g., after revalidatePath)
   useEffect(() => {
-    if (!session?.user || checked) return;
-    // Don't show on login page
-    if (pathname === '/login') return;
+    setShow(needsOnboardingServer);
+  }, [needsOnboardingServer]);
 
-    needsOnboarding().then((needs) => {
-      setShowOnboarding(needs);
-      setChecked(true);
-    });
-  }, [session, pathname, checked]);
+  if (!show) return null;
 
-  if (!showOnboarding) return null;
-
-  return <OnboardingModal open={showOnboarding} />;
+  return <OnboardingModal open={show} onSuccess={() => setShow(false)} />;
 }
