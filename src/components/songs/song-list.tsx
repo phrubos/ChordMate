@@ -3,9 +3,11 @@
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { ListMusic, X } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { SongCard } from './song-card';
 import { EmptyState } from '@/components/shared/empty-state';
-import { YouTubePlayer } from '@/components/youtube/youtube-player';
+
+const YouTubePlayer = dynamic(() => import('@/components/youtube/youtube-player').then(m => ({ default: m.YouTubePlayer })), { ssr: false });
 import type { SongWithUser } from '@/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';

@@ -12,7 +12,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { MetronomeModal } from '@/components/tools/metronome-modal';
+import dynamic from 'next/dynamic';
+
+const MetronomeModal = dynamic(() => import('@/components/tools/metronome-modal').then(m => ({ default: m.MetronomeModal })), { ssr: false });
 import { saveRecording, getNextCoverNumber } from '@/actions/recordings';
 import { toast } from 'sonner';
 import { TruncatedText } from '@/components/shared/truncated-text';

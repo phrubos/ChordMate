@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useTransition, useEffect, useRef } from 'react';
+import { useState, useMemo, useTransition, useEffect, useRef, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { CalendarHeader } from './calendar-header';
@@ -55,28 +55,28 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
   const [isPending, startTransition] = useTransition();
   const dayDetailRef = useRef<HTMLDivElement>(null);
 
-  const handleSelectDate = (date: string) => {
+  const handleSelectDate = useCallback((date: string) => {
     setSelectedDate(date);
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       setMobileActionDate(date);
     }
-  };
+  }, []);
 
-  const handleAddSong = (date: string) => {
+  const handleAddSong = useCallback((date: string) => {
     setHoverActionDate(date);
     setAddDialogOpen(true);
     setSongSearch('');
     setSelectedSongIds(new Set());
-  };
+  }, []);
 
-  const handleCopyDate = (date: string) => {
+  const handleCopyDate = useCallback((date: string) => {
     setHoverActionDate(date);
     setCopyDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteDate = (date: string) => {
+  const handleDeleteDate = useCallback((date: string) => {
     setDeleteDateStr(date);
-  };
+  }, []);
 
   const songCountByDate = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -91,44 +91,52 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
     [entries, selectedDate]
   );
 
-  function handlePrev() {
-    if (month === 1) {
-      setYear(year - 1);
-      setMonth(12);
-    } else {
-      setMonth(month - 1);
-    }
-  }
+  const handlePrev = useCallback(() => {
+    setMonth(prev => {
+      if (prev === 1) {
+        setYear(y => y - 1);
+        return 12;
+      }
+      return prev - 1;
+    });
+  }, []);
 
-  function handleNext() {
-    if (month === 12) {
-      setYear(year + 1);
-      setMonth(1);
-    } else {
-      setMonth(month + 1);
-    }
-  }
+  const handleNext = useCallback(() => {
+    setMonth(prev => {
+      if (prev === 12) {
+        setYear(y => y + 1);
+        return 1;
+      }
+      return prev + 1;
+    });
+  }, []);
 
-  function handleToday() {
+  const handleToday = useCallback(() => {
     const now = new Date();
     setYear(now.getFullYear());
     setMonth(now.getMonth() + 1);
     setSelectedDate(format(now, 'yyyy-MM-dd'));
-  }
+  }, []);
 
   // Dialog data
   const actionDateEntries = useMemo(
     () => entries.filter((e) => e.date === hoverActionDate),
     [entries, hoverActionDate]
   );
-  const actionAssignedSongIds = new Set(actionDateEntries.map((e) => e.songId));
-  const availableSongs = allSongs.filter(
-    (s) => !actionAssignedSongIds.has(s.id) && (
-      s.title.toLowerCase().includes(songSearch.toLowerCase()) ||
-      s.artist.toLowerCase().includes(songSearch.toLowerCase())
-    )
+  const availableSongs = useMemo(() => {
+    const actionAssignedSongIds = new Set(actionDateEntries.map((e) => e.songId));
+    const searchLower = songSearch.toLowerCase();
+    return allSongs.filter(
+      (s) => !actionAssignedSongIds.has(s.id) && (
+        s.title.toLowerCase().includes(searchLower) ||
+        s.artist.toLowerCase().includes(searchLower)
+      )
+    );
+  }, [allSongs, actionDateEntries, songSearch]);
+  const datesWithSongs = useMemo(
+    () => [...new Set(entries.map((e) => e.date))].filter((d) => d !== hoverActionDate).sort(),
+    [entries, hoverActionDate]
   );
-  const datesWithSongs = [...new Set(entries.map((e) => e.date))].filter((d) => d !== hoverActionDate).sort();
 
   function handleSelectAll() {
     if (selectedSongIds.size === availableSongs.length && availableSongs.length > 0) {

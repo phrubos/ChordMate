@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   startOfMonth,
@@ -69,15 +69,22 @@ export function CalendarGrid({
     }
   }
 
-  const monthDate = new Date(year, month - 1);
-  const monthStart = startOfMonth(monthDate);
-  const monthEnd = endOfMonth(monthDate);
-  const calStart = startOfWeek(monthStart, { locale: hu });
-  const calEnd = endOfWeek(monthEnd, { locale: hu });
-  const days = eachDayOfInterval({ start: calStart, end: calEnd });
-  const today = new Date();
-  const todayStart = startOfDay(today);
   const monthKey = `${year}-${month}`;
+
+  const { days, monthDate, today, todayStart } = useMemo(() => {
+    const md = new Date(year, month - 1);
+    const monthStart = startOfMonth(md);
+    const monthEnd = endOfMonth(md);
+    const calStart = startOfWeek(monthStart, { locale: hu });
+    const calEnd = endOfWeek(monthEnd, { locale: hu });
+    const t = new Date();
+    return {
+      days: eachDayOfInterval({ start: calStart, end: calEnd }),
+      monthDate: md,
+      today: t,
+      todayStart: startOfDay(t),
+    };
+  }, [year, month]);
 
   return (
     <div
