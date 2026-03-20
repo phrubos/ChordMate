@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { Plus, Copy, X, Check, Music } from 'lucide-react';
 
@@ -16,7 +17,7 @@ interface CalendarDayCellProps {
   onDeleteDate?: () => void;
 }
 
-export function CalendarDayCell({
+export const CalendarDayCell = memo(function CalendarDayCell({
   day,
   isCurrentMonth,
   isToday,
@@ -155,4 +156,4 @@ export function CalendarDayCell({
       )}
     </div>
   );
-}
+});

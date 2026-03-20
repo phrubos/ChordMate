@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo, useCallback } from 'react';
 import { format, parseISO, isAfter, isSameDay, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { Plus, X, Play, Music, Copy, FileText, Square, GripVertical, Check, ListChecks, Mic, Disc3 } from 'lucide-react';
@@ -26,9 +26,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { YouTubePlayer } from '@/components/youtube/youtube-player';
+import dynamic from 'next/dynamic';
 import { assignSongsToDate, assignSongToDate, removeSongFromDate, copySongsToDate, reorderCalendarEntries } from '@/actions/calendar';
-import { TabViewerModal } from '@/components/songs/tab-viewer-modal';
 import {
   DndContext,
   closestCenter,
@@ -47,7 +46,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { CalendarEntryWithSong, Song } from '@/types';
 import { ExpandableText } from '@/components/shared/expandable-text';
-import { RecordingModal } from '@/components/tools/recording-modal';
+
+const YouTubePlayer = dynamic(() => import('@/components/youtube/youtube-player').then(m => ({ default: m.YouTubePlayer })), { ssr: false });
+const TabViewerModal = dynamic(() => import('@/components/songs/tab-viewer-modal').then(m => ({ default: m.TabViewerModal })), { ssr: false });
+const RecordingModal = dynamic(() => import('@/components/tools/recording-modal').then(m => ({ default: m.RecordingModal })), { ssr: false });
 import { hasRecordingsForDate } from '@/actions/recordings';
 
 // --- Sortable song item ---
@@ -281,17 +283,23 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
     );
   }
 
-  const dateLabel = format(parseISO(selectedDate), 'MMMM d.', { locale: hu });
-  const dayName = format(parseISO(selectedDate), 'EEEE', { locale: hu });
-  const assignedSongIds = new Set(entries.map((e) => e.songId));
-  const availableSongs = allSongs.filter(
-    (s) => !assignedSongIds.has(s.id) && (
-      s.title.toLowerCase().includes(songSearch.toLowerCase()) ||
-      s.artist.toLowerCase().includes(songSearch.toLowerCase())
-    )
-  );
+  const dateLabel = useMemo(() => format(parseISO(selectedDate), 'MMMM d.', { locale: hu }), [selectedDate]);
+  const dayName = useMemo(() => format(parseISO(selectedDate), 'EEEE', { locale: hu }), [selectedDate]);
+  const availableSongs = useMemo(() => {
+    const assignedSongIds = new Set(entries.map((e) => e.songId));
+    const searchLower = songSearch.toLowerCase();
+    return allSongs.filter(
+      (s) => !assignedSongIds.has(s.id) && (
+        s.title.toLowerCase().includes(searchLower) ||
+        s.artist.toLowerCase().includes(searchLower)
+      )
+    );
+  }, [entries, allSongs, songSearch]);
 
-  const datesWithSongs = [...new Set(allEntries.map((e) => e.date))].filter((d) => d !== selectedDate).sort();
+  const datesWithSongs = useMemo(
+    () => [...new Set(allEntries.map((e) => e.date))].filter((d) => d !== selectedDate).sort(),
+    [allEntries, selectedDate]
+  );
 
   function handleSelectAll() {
     if (selectedSongIds.size === availableSongs.length && availableSongs.length > 0) {

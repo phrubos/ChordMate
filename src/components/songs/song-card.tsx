@@ -8,10 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import type { SongWithUser } from '@/types';
 import { formatRelativeDate } from '@/lib/utils';
 import { ExpandableText } from '@/components/shared/expandable-text';
-import { useState, useTransition } from 'react';
+import { memo, useState, useTransition } from 'react';
 import { toggleFavorite } from '@/actions/songs';
+import dynamic from 'next/dynamic';
 import { DeleteSongDialog } from './delete-song-dialog';
-import { TabViewerModal } from './tab-viewer-modal';
+
+const TabViewerModal = dynamic(() => import('./tab-viewer-modal').then(m => ({ default: m.TabViewerModal })), { ssr: false });
 import { TruncatedText } from '@/components/shared/truncated-text';
 
 interface SongCardProps {
@@ -19,7 +21,7 @@ interface SongCardProps {
   onPlay?: (song: SongWithUser) => void;
 }
 
-function DifficultyStars({ level }: { level: number | null }) {
+const DifficultyStars = memo(function DifficultyStars({ level }: { level: number | null }) {
   if (!level) return null;
   const colors = ['text-green-500', 'text-lime-500', 'text-yellow-500', 'text-orange-500', 'text-red-500'];
   return (
@@ -32,9 +34,9 @@ function DifficultyStars({ level }: { level: number | null }) {
       ))}
     </div>
   );
-}
+});
 
-export function SongCard({ song, onPlay }: SongCardProps) {
+export const SongCard = memo(function SongCard({ song, onPlay }: SongCardProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isFav, setIsFav] = useState(song.isFavorite);
   const [, startTransition] = useTransition();
@@ -142,4 +144,4 @@ export function SongCard({ song, onPlay }: SongCardProps) {
       />
     </>
   );
-}
+});

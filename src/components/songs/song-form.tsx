@@ -3,6 +3,7 @@
 import { useTransition, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import Image from 'next/image';
 import { Star, ExternalLink, ChevronDown, ChevronUp, Search, Sparkles, Loader2, Play, FileText, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { YouTubePlayer } from '@/components/youtube/youtube-player';
+import dynamic from 'next/dynamic';
+
+const YouTubePlayer = dynamic(() => import('@/components/youtube/youtube-player').then(m => ({ default: m.YouTubePlayer })), { ssr: false });
 import { createSong, updateSong } from '@/actions/songs';
 import type { Song } from '@/types';
 import { TruncatedText } from '@/components/shared/truncated-text';
@@ -483,10 +486,13 @@ export function SongForm({ song }: SongFormProps) {
                     >
                       <div className="relative shrink-0 w-28 aspect-video rounded-md overflow-hidden bg-secondary">
                         {result.thumbnail && (
-                          <img
+                          <Image
                             src={result.thumbnail}
                             alt={result.title}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="112px"
+                            className="object-cover"
+                            unoptimized
                           />
                         )}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/30">

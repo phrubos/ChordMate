@@ -19,8 +19,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { springs } from '@/lib/motion';
-import { GuitarTunerModal } from '@/components/tools/guitar-tuner-modal';
-import { MetronomeModal } from '@/components/tools/metronome-modal';
+import dynamic from 'next/dynamic';
+
+const GuitarTunerModal = dynamic(() => import('@/components/tools/guitar-tuner-modal').then(m => ({ default: m.GuitarTunerModal })), { ssr: false });
+const MetronomeModal = dynamic(() => import('@/components/tools/metronome-modal').then(m => ({ default: m.MetronomeModal })), { ssr: false });
 import { TruncatedText } from '@/components/shared/truncated-text';
 import { BandSwitcher } from '@/components/band/band-switcher';
 
@@ -404,8 +406,8 @@ export function Navbar() {
       </AnimatePresence>,
       document.body
     )}
-    <GuitarTunerModal open={tunerOpen} onOpenChange={setTunerOpen} />
-    <MetronomeModal open={metronomeOpen} onOpenChange={setMetronomeOpen} />
+    {tunerOpen && <GuitarTunerModal open={tunerOpen} onOpenChange={setTunerOpen} />}
+    {metronomeOpen && <MetronomeModal open={metronomeOpen} onOpenChange={setMetronomeOpen} />}
     </>
   );
 }

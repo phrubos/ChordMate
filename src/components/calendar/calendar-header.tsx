@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { ChevronLeft, ChevronRight, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -13,7 +14,7 @@ interface CalendarHeaderProps {
   onToday: () => void;
 }
 
-export function CalendarHeader({ year, month, onPrev, onNext, onToday }: CalendarHeaderProps) {
+export const CalendarHeader = memo(function CalendarHeader({ year, month, onPrev, onNext, onToday }: CalendarHeaderProps) {
   const date = new Date(year, month - 1);
   const monthName = format(date, 'MMMM', { locale: hu });
   const yearStr = format(date, 'yyyy');
@@ -40,4 +41,4 @@ export function CalendarHeader({ year, month, onPrev, onNext, onToday }: Calenda
       </div>
     </div>
   );
-}
+});
