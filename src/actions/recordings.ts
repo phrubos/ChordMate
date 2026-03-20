@@ -59,13 +59,18 @@ export async function getRecordingAudio(id: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? and(eq(recordings.id, id), eq(recordings.bandId, bandId))
+    : and(eq(recordings.id, id), isNull(recordings.bandId), eq(recordings.addedById, session.user.id));
+
   const row = await db
     .select({
       audioData: recordings.audioData,
       mimeType: recordings.mimeType,
     })
     .from(recordings)
-    .where(and(eq(recordings.id, id), eq(recordings.addedById, session.user.id)))
+    .where(scope)
     .limit(1);
 
   if (!row[0]) throw new Error('Recording not found');
@@ -107,10 +112,15 @@ export async function updateRecordingName(id: string, name: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? and(eq(recordings.id, id), eq(recordings.bandId, bandId))
+    : and(eq(recordings.id, id), isNull(recordings.bandId), eq(recordings.addedById, session.user.id));
+
   await db
     .update(recordings)
     .set({ name })
-    .where(and(eq(recordings.id, id), eq(recordings.addedById, session.user.id)));
+    .where(scope);
 
   revalidatePath('/dashboard');
 }
@@ -120,9 +130,14 @@ export async function deleteRecording(id: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? and(eq(recordings.id, id), eq(recordings.bandId, bandId))
+    : and(eq(recordings.id, id), isNull(recordings.bandId), eq(recordings.addedById, session.user.id));
+
   await db
     .delete(recordings)
-    .where(and(eq(recordings.id, id), eq(recordings.addedById, session.user.id)));
+    .where(scope);
 
   revalidatePath('/dashboard');
 }
