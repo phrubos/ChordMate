@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Users, ChevronDown, Check, Plus, Ticket } from 'lucide-react';
+import { Users, ChevronDown, Check, Plus, Settings, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ export function BandSwitcher() {
   const [bands, setBands] = useState<BandInfo[]>([]);
   const [activeBandId, setActiveBandId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -62,6 +64,7 @@ export function BandSwitcher() {
   if (loading || bands.length === 0) return null;
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
@@ -72,7 +75,16 @@ export function BandSwitcher() {
         }
       >
         {/* Band logo */}
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-primary/10 ring-1 ring-border/50">
+        <div
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-primary/10 ring-1 ring-border/50"
+          onClick={(e) => {
+            if (activeBand?.logoData) {
+              e.preventDefault();
+              e.stopPropagation();
+              setLightboxSrc(activeBand.logoData);
+            }
+          }}
+        >
           {activeBand?.logoData ? (
             <Image
               src={activeBand.logoData}
@@ -111,7 +123,19 @@ export function BandSwitcher() {
             </div>
             <span className="flex-1 truncate text-sm">{band.name}</span>
             {band.id === activeBandId && (
-              <Check className="size-4 text-primary shrink-0" />
+              <>
+                <Check className="size-4 text-primary shrink-0" />
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push('/band');
+                  }}
+                  title="Banda profil"
+                  className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                >
+                  <Settings className="size-3.5" />
+                </div>
+              </>
             )}
           </DropdownMenuItem>
         ))}
@@ -126,5 +150,31 @@ export function BandSwitcher() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    {/* Lightbox for band logo — portalled to body to escape navbar's backdrop-blur containing block */}
+    {lightboxSrc && createPortal(
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in-0 duration-150"
+        onClick={() => setLightboxSrc(null)}
+      >
+        <div className="relative flex items-center justify-center animate-in zoom-in-90 duration-200">
+          <button
+            onClick={() => setLightboxSrc(null)}
+            className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-all shadow-md cursor-pointer"
+          >
+            <X className="size-5" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxSrc}
+            alt={activeBand?.name ?? 'Banda logó'}
+            className="max-h-[85vh] max-w-[85vw] object-contain rounded-xl shadow-2xl block"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      </div>,
+      document.body
+    )}
+    </>
   );
 }

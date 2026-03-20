@@ -188,9 +188,14 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
         animate={{ opacity: 1, y: 0 }}
         className="relative mb-8 overflow-hidden rounded-2xl border border-border/50 bg-card/30 shadow-lg"
       >
-        <div className="relative h-48 w-full bg-secondary/30">
+        <div className="relative h-48 w-full bg-background">
           {band.backgroundData ? (
             <img src={band.backgroundData} alt="Cover" className="h-full w-full object-cover" />
+          ) : band.logoData ? (
+            <div className="relative h-full w-full overflow-hidden">
+              <img src={band.logoData} alt="Cover" className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl opacity-40" />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
+            </div>
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/5 to-background" />
           )}
