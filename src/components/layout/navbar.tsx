@@ -22,6 +22,7 @@ import { springs } from '@/lib/motion';
 import { GuitarTunerModal } from '@/components/tools/guitar-tuner-modal';
 import { MetronomeModal } from '@/components/tools/metronome-modal';
 import { TruncatedText } from '@/components/shared/truncated-text';
+import { BandSwitcher } from '@/components/band/band-switcher';
 
 const desktopNavLinks = [
   { href: '/dashboard', label: 'Naptár', icon: Calendar },
@@ -68,13 +69,17 @@ export function Navbar() {
     <>
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 lg:px-6">
-        {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm">
-            <Image src="/icon.svg" alt="ChordMate" width={32} height={32} className="size-full object-cover" />
-          </div>
-          <span className="shimmer-text text-lg font-bold tracking-tight">ChordMate</span>
-        </Link>
+        {/* Logo + Band switcher */}
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm">
+              <Image src="/icon.svg" alt="ChordMate" width={32} height={32} className="size-full object-cover" />
+            </div>
+            <span className="shimmer-text text-lg font-bold tracking-tight hidden sm:inline">ChordMate</span>
+          </Link>
+          <div className="h-5 w-px bg-border/40 mx-0.5" />
+          <BandSwitcher />
+        </div>
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 md:flex">
@@ -223,18 +228,22 @@ export function Navbar() {
               onClick={closeMobile}
             />
 
-            {/* Top bar area: logo + close button */}
+            {/* Top bar area: logo + band + close button */}
             <div className="relative z-10 mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-              <Link href="/dashboard" onClick={closeMobile} className="flex items-center gap-2.5">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm">
-                  <Image src="/icon.svg" alt="ChordMate" width={32} height={32} className="size-full object-cover" />
-                </div>
-                <span className="shimmer-text text-lg font-bold tracking-tight">ChordMate</span>
-              </Link>
+              <div className="flex items-center gap-2 min-w-0">
+                <Link href="/dashboard" onClick={closeMobile} className="flex items-center gap-2.5 shrink-0">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm">
+                    <Image src="/icon.svg" alt="ChordMate" width={32} height={32} className="size-full object-cover" />
+                  </div>
+                  <span className="shimmer-text text-lg font-bold tracking-tight">ChordMate</span>
+                </Link>
+                <div className="h-5 w-px bg-border/40 mx-0.5" />
+                <BandSwitcher />
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
-                className="size-9 p-0"
+                className="size-9 p-0 shrink-0"
                 onClick={closeMobile}
               >
                 <X className="size-5" />

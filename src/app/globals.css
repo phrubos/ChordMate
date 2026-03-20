@@ -202,6 +202,18 @@
     0 0 8px oklch(0.55 0.14 155 / 5%);
 }
 
+/* Adjacent-month upcoming practice day - very subtle amber hint */
+.practice-day-upcoming-faded {
+  background: oklch(0.78 0.155 65 / 3%);
+  border-right: 2px solid oklch(0.78 0.155 65 / 18%);
+}
+
+/* Adjacent-month completed practice day - very subtle emerald hint */
+.practice-day-completed-faded {
+  background: oklch(0.45 0.12 155 / 4%);
+  border-left: 2px solid oklch(0.65 0.18 155 / 20%);
+}
+
 /* Today marker - bottom accent bar */
 .today-marker::after {
   content: '';

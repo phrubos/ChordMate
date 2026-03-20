@@ -31,6 +31,10 @@ export function CalendarDayCell({
   const hasSongs = songCount > 0 && isCurrentMonth;
   const isPastWithSongs = hasSongs && isPast;
   const isFutureWithSongs = hasSongs && !isPast;
+  // Adjacent-month days with events (faded indicators)
+  const adjacentHasSongs = songCount > 0 && !isCurrentMonth;
+  const adjacentPast = adjacentHasSongs && isPast;
+  const adjacentFuture = adjacentHasSongs && !isPast;
 
   return (
     <div
@@ -44,7 +48,7 @@ export function CalendarDayCell({
         'relative group outline-none flex h-14 w-full flex-col items-center justify-center rounded-lg text-sm transition-all duration-200 md:h-[4.5rem]',
         isCurrentMonth
           ? 'hover:bg-card/80 cursor-pointer'
-          : 'text-muted-foreground/30 cursor-default',
+          : 'text-muted-foreground/30 cursor-pointer',
         // State: Today (subtle bottom bar via CSS class)
         isToday && !isSelected && 'today-marker',
         // State: Selected (interaction feedback)
@@ -52,7 +56,11 @@ export function CalendarDayCell({
         // State: Future practice (warm amber right stripe)
         isFutureWithSongs && !isSelected && 'practice-day-upcoming',
         // State: Past practice (emerald green left stripe)
-        isPastWithSongs && !isSelected && 'practice-day-completed'
+        isPastWithSongs && !isSelected && 'practice-day-completed',
+        // Adjacent month with future events (very subtle indicator)
+        adjacentFuture && !isSelected && 'practice-day-upcoming-faded',
+        // Adjacent month with past events (very subtle indicator)
+        adjacentPast && !isSelected && 'practice-day-completed-faded'
       )}
     >
       {/* Day number */}
@@ -60,7 +68,9 @@ export function CalendarDayCell({
         'relative z-10 text-[15px]',
         isToday && 'font-bold',
         isFutureWithSongs && !isSelected && 'text-primary',
-        isPastWithSongs && !isSelected && 'text-muted-foreground'
+        isPastWithSongs && !isSelected && 'text-muted-foreground',
+        adjacentFuture && !isSelected && 'text-primary/40',
+        adjacentPast && !isSelected && 'text-muted-foreground/40'
       )}>
         {day}
       </span>
@@ -76,6 +86,13 @@ export function CalendarDayCell({
         </div>
       )}
 
+      {/* Adjacent-month upcoming badge (faded) */}
+      {adjacentFuture && (
+        <div className="absolute top-1.5 left-1.5 flex items-center justify-center size-4 rounded-full z-10 bg-primary/8 ring-1 ring-primary/12">
+          <Music className="size-2 text-primary/40" />
+        </div>
+      )}
+
       {/* Completed badge: emerald check, bottom-right */}
       {isPastWithSongs && (
         <div className={cn(
@@ -84,6 +101,13 @@ export function CalendarDayCell({
           isSelected && 'bg-emerald-500/30 ring-emerald-400/40'
         )}>
           <Check className="size-2.5 stroke-[3] text-emerald-400" />
+        </div>
+      )}
+
+      {/* Adjacent-month completed badge (faded) */}
+      {adjacentPast && (
+        <div className="absolute bottom-1 right-1 flex items-center justify-center size-4 rounded-full z-10 bg-emerald-500/10 ring-1 ring-emerald-500/15">
+          <Check className="size-2.5 stroke-[3] text-emerald-400/40" />
         </div>
       )}
 

@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
-import { Users, Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield, Camera, Image as ImageIcon, Eye } from 'lucide-react';
+import { Users, Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield, Camera, Image as ImageIcon, Eye, Plus, Ticket, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { updateBandName, regenerateInviteCode, removeBandMember, leaveBand, updateBandImages } from '@/actions/bands';
+import { updateBandName, regenerateInviteCode, removeBandMember, leaveBand, updateBandImages, createBand, joinBand } from '@/actions/bands';
 import { toast } from 'sonner';
 import type { BandWithMembers } from '@/types';
 import { TruncatedText } from '@/components/shared/truncated-text';
@@ -32,9 +32,10 @@ import { compressImageBase64 } from '@/lib/image-utils';
 interface BandProfileProps {
   band: BandWithMembers;
   currentUserId: string;
+  bandCount?: number;
 }
 
-export function BandProfile({ band, currentUserId }: BandProfileProps) {
+export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileProps) {
   const router = useRouter();
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(band.name);
@@ -43,6 +44,10 @@ export function BandProfile({ band, currentUserId }: BandProfileProps) {
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [viewImage, setViewImage] = useState<string | null>(null);
+  const [addMode, setAddMode] = useState<'none' | 'create' | 'join'>('none');
+  const [newBandName, setNewBandName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [addLoading, setAddLoading] = useState(false);
 
   const bgInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +115,38 @@ export function BandProfile({ band, currentUserId }: BandProfileProps) {
       toast.error(err?.message ?? 'Hiba történt');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCreateBand() {
+    if (!newBandName.trim()) return;
+    setAddLoading(true);
+    try {
+      const result = await createBand(newBandName);
+      toast.success(`Banda létrehozva: ${result.name}`);
+      setAddMode('none');
+      setNewBandName('');
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Hiba történt');
+    } finally {
+      setAddLoading(false);
+    }
+  }
+
+  async function handleJoinBand() {
+    if (!joinCode.trim()) return;
+    setAddLoading(true);
+    try {
+      const result = await joinBand(joinCode);
+      toast.success(`Csatlakoztál: ${result.name}`);
+      setAddMode('none');
+      setJoinCode('');
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Hiba történt');
+    } finally {
+      setAddLoading(false);
     }
   }
 
@@ -360,11 +397,93 @@ export function BandProfile({ band, currentUserId }: BandProfileProps) {
           </div>
         </motion.div>
 
-        {/* Leave band */}
+        {/* Add new band / Join */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
+          className="rounded-xl border border-border/50 bg-card/50 p-5"
+        >
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">Új banda</p>
+
+          {addMode === 'none' && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 h-10 rounded-xl gap-2"
+                onClick={() => setAddMode('create')}
+              >
+                <Plus className="size-4" />
+                Létrehozás
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 h-10 rounded-xl gap-2"
+                onClick={() => setAddMode('join')}
+              >
+                <Ticket className="size-4" />
+                Csatlakozás
+              </Button>
+            </div>
+          )}
+
+          {addMode === 'create' && (
+            <div className="flex flex-col gap-3">
+              <Input
+                placeholder="Banda neve..."
+                value={newBandName}
+                onChange={(e) => setNewBandName(e.target.value)}
+                className="h-10 rounded-lg"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newBandName.trim()) handleCreateBand();
+                  if (e.key === 'Escape') { setAddMode('none'); setNewBandName(''); }
+                }}
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 h-9 rounded-xl" onClick={() => { setAddMode('none'); setNewBandName(''); }} disabled={addLoading}>
+                  Mégse
+                </Button>
+                <Button className="flex-1 h-9 rounded-xl gap-2" onClick={handleCreateBand} disabled={!newBandName.trim() || addLoading}>
+                  {addLoading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+                  Létrehozás
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {addMode === 'join' && (
+            <div className="flex flex-col gap-3">
+              <Input
+                placeholder="Meghívó kód (pl. A3F1B2C4)"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                className="h-10 rounded-lg font-mono tracking-widest text-center"
+                autoFocus
+                maxLength={8}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && joinCode.trim()) handleJoinBand();
+                  if (e.key === 'Escape') { setAddMode('none'); setJoinCode(''); }
+                }}
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 h-9 rounded-xl" onClick={() => { setAddMode('none'); setJoinCode(''); }} disabled={addLoading}>
+                  Mégse
+                </Button>
+                <Button className="flex-1 h-9 rounded-xl gap-2" onClick={handleJoinBand} disabled={!joinCode.trim() || addLoading}>
+                  {addLoading ? <Loader2 className="size-4 animate-spin" /> : <Ticket className="size-4" />}
+                  Csatlakozás
+                </Button>
+              </div>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Leave band */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
         >
           <Button
             variant="outline"
