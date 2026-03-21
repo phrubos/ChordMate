@@ -1,10 +1,10 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { songs } from '@/lib/db/schema';
+import { songs, bandMembers } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { eq, or, and, ilike, desc, asc, isNotNull, isNull } from 'drizzle-orm';
+import { eq, or, and, ilike, desc, asc, isNotNull, isNull, inArray } from 'drizzle-orm';
 import { songSchema } from '@/lib/validators';
 import { fetchAlbumArt } from '@/lib/fetch-album-art';
 import { getUserBandId } from './bands';
@@ -29,7 +29,18 @@ export async function getSongs(filters?: string | SongFilters) {
   const conditions = [];
   // Scope to band
   if (bandId) {
-    conditions.push(eq(songs.bandId, bandId));
+    // Get all member IDs so we can also show songs they added without a band context
+    const members = await db.query.bandMembers.findMany({
+      where: eq(bandMembers.bandId, bandId),
+      columns: { userId: true },
+    });
+    const memberIds = members.map((m) => m.userId);
+    conditions.push(
+      or(
+        eq(songs.bandId, bandId),
+        and(isNull(songs.bandId), inArray(songs.addedById, memberIds))
+      )!
+    );
   } else {
     conditions.push(isNull(songs.bandId));
     conditions.push(eq(songs.addedById, session.user.id));
@@ -186,7 +197,20 @@ export async function getSongStats() {
   if (!session?.user?.id) throw new Error('Unauthorized');
 
   const bandId = await getUserBandId();
-  const condition = bandId ? eq(songs.bandId, bandId) : eq(songs.addedById, session.user.id);
+  let condition;
+  if (bandId) {
+    const members = await db.query.bandMembers.findMany({
+      where: eq(bandMembers.bandId, bandId),
+      columns: { userId: true },
+    });
+    const memberIds = members.map((m) => m.userId);
+    condition = or(
+      eq(songs.bandId, bandId),
+      and(isNull(songs.bandId), inArray(songs.addedById, memberIds))
+    );
+  } else {
+    condition = and(isNull(songs.bandId), eq(songs.addedById, session.user.id));
+  }
   const allSongs = await db.select().from(songs).where(condition);
   const totalSongs = allSongs.length;
   const withTabs = allSongs.filter((s) => s.tabContent).length;
