@@ -29,6 +29,7 @@ export function BandSwitcher() {
   const [loading, setLoading] = useState(true);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [returnToModal, setReturnToModal] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -124,7 +125,10 @@ export function BandSwitcher() {
             <div
               onClick={(e) => {
                 e.stopPropagation();
-                onClose?.();
+                if (mobileOpen) {
+                  setMobileOpen(false);
+                  setReturnToModal(true);
+                }
                 setLightboxSrc(band.logoData);
               }}
               title="Logó megtekintése"
@@ -248,16 +252,16 @@ export function BandSwitcher() {
       {/* Mobile modal — portalled to body */}
       {mobileOpen && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center md:hidden animate-in fade-in-0 duration-150"
+          className="fixed inset-0 z-[100] flex items-center justify-center md:hidden animate-in fade-in-0 duration-150"
           onClick={() => setMobileOpen(false)}
         >
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
           <div
-            className="relative z-10 w-full max-h-[80vh] overflow-y-auto rounded-t-2xl bg-background border-t border-border/50 shadow-2xl animate-in slide-in-from-bottom-4 duration-200 pb-safe"
+            className="relative z-10 w-[90%] max-w-sm max-h-[80vh] overflow-y-auto rounded-2xl bg-background border border-border/50 shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border/30 bg-background/95 backdrop-blur-sm rounded-t-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border/30 bg-background/95 backdrop-blur-sm rounded-t-2xl -mt-px">
               <span className="text-sm font-semibold">Bandáid</span>
               <button
                 onClick={() => setMobileOpen(false)}
@@ -279,11 +283,11 @@ export function BandSwitcher() {
       {lightboxSrc && createPortal(
         <div
           className="fixed inset-0 z-[110] flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in-0 duration-150"
-          onClick={() => setLightboxSrc(null)}
+          onClick={() => { setLightboxSrc(null); if (returnToModal) { setMobileOpen(true); setReturnToModal(false); } }}
         >
           <div className="relative flex items-center justify-center animate-in zoom-in-90 duration-200">
             <button
-              onClick={() => setLightboxSrc(null)}
+              onClick={() => { setLightboxSrc(null); if (returnToModal) { setMobileOpen(true); setReturnToModal(false); } }}
               className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-all shadow-md cursor-pointer"
             >
               <X className="size-5" />
