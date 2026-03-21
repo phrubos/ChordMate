@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Calendar, ListMusic, BarChart2, LogOut, Menu, X, Guitar, Timer, Wrench, ChevronDown, Users } from 'lucide-react';
+import { Calendar, ListMusic, BarChart2, LogOut, Menu, X, Guitar, Timer, Wrench, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -161,10 +161,6 @@ export function Navbar() {
               <TruncatedText className="max-w-[100px] text-sm text-muted-foreground">{user?.name ?? ''}</TruncatedText>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[160px]">
-              <DropdownMenuItem onClick={() => router.push('/band')}>
-                <Users data-icon="inline-start" />
-                Banda profil
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/login' })}>
                 <LogOut data-icon="inline-start" />
                 Kijelentkezés
@@ -382,12 +378,6 @@ export function Navbar() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Link href="/band" onClick={closeMobile}>
-                      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
-                        <Users className="size-4" />
-                        <span className="text-xs">Banda</span>
-                      </Button>
-                    </Link>
                     <Button
                       variant="ghost"
                       size="sm"

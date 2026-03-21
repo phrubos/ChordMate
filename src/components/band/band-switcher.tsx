@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Users, ChevronDown, Check, Plus, Settings, X } from 'lucide-react';
+import { Users, ChevronDown, Check, Plus, Settings, X, Eye } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -123,19 +123,31 @@ export function BandSwitcher() {
             </div>
             <span className="flex-1 truncate text-sm">{band.name}</span>
             {band.id === activeBandId && (
-              <>
-                <Check className="size-4 text-primary shrink-0" />
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push('/band');
-                  }}
-                  title="Banda profil"
-                  className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                >
-                  <Settings className="size-3.5" />
-                </div>
-              </>
+              <Check className="size-4 text-primary shrink-0" />
+            )}
+            {band.logoData && (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxSrc(band.logoData);
+                }}
+                title="Logó megtekintése"
+                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+              >
+                <Eye className="size-3.5" />
+              </div>
+            )}
+            {band.id === activeBandId && (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push('/band');
+                }}
+                title="Banda profil"
+                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+              >
+                <Settings className="size-3.5" />
+              </div>
             )}
           </DropdownMenuItem>
         ))}
@@ -167,7 +179,7 @@ export function BandSwitcher() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={lightboxSrc}
-            alt={activeBand?.name ?? 'Banda logó'}
+            alt={bands.find(b => b.logoData === lightboxSrc)?.name ?? 'Banda logó'}
             className="max-h-[85vh] max-w-[85vw] object-contain rounded-xl shadow-2xl block"
             onClick={(e) => e.stopPropagation()}
           />
