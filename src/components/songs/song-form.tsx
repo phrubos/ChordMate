@@ -240,8 +240,11 @@ export function SongForm({ song }: SongFormProps) {
   const difficultyColors = ['text-green-500', 'text-lime-500', 'text-yellow-500', 'text-orange-500', 'text-red-500'];
 
   return (
-    <div className="mx-auto max-w-lg animate-fade-up h-[calc(100dvh-8rem)] max-md:h-[calc(100dvh-8rem-3.5rem)]">
-      <div className="flex flex-col h-full rounded-xl border border-border/50 bg-card/50 overflow-hidden shadow-sm">
+    <>
+    {/* Mobile: blurred backdrop overlay (like Dialog/TAB modal) */}
+    <div className="fixed inset-0 z-50 bg-black/10 backdrop-blur-sm md:hidden" />
+    <div className="mx-auto max-w-lg animate-fade-up md:h-[calc(100dvh-8rem)] max-md:fixed max-md:inset-0 max-md:z-50 max-md:max-w-none max-md:p-3">
+      <div className="flex flex-col h-full rounded-xl border border-border/50 overflow-hidden md:bg-card/50 md:shadow-sm max-md:bg-card max-md:shadow-2xl max-md:ring-1 max-md:ring-foreground/10">
         <div className="p-6 pb-4 shrink-0">
           <h2 className="text-lg font-semibold tracking-tight">
             {isEdit ? 'Dal szerkesztése' : 'Új dal hozzáadása'}
@@ -648,5 +651,6 @@ export function SongForm({ song }: SongFormProps) {
         </form>
       </div>
     </div>
+    </>
   );
 }
