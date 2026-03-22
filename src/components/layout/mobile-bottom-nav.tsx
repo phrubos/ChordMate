@@ -82,8 +82,8 @@ export function MobileBottomNav() {
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        {/* Backdrop blur background */}
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-2xl border-t border-border/40" />
+        {/* Solid background */}
+        <div className="absolute inset-0 bg-background border-t border-border/40" />
 
         <div className="relative flex h-14 items-center justify-around px-2 max-w-lg mx-auto">
           {/* Calendar & Songs links */}
