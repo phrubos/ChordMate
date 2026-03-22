@@ -221,7 +221,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
       </div>
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-md:max-w-[calc(100%-1rem)] max-md:max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Dal hozzáadása ({hoverActionDate ? format(parseISO(hoverActionDate), 'MMMM d.', { locale: hu }) : ''})</DialogTitle>
           </DialogHeader>
@@ -289,7 +289,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
       </Dialog>
 
       <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-md:max-w-[calc(100%-1rem)] max-md:max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Dallista másolása ({hoverActionDate ? format(parseISO(hoverActionDate), 'MMMM d.', { locale: hu }) : ''})</DialogTitle>
           </DialogHeader>
@@ -331,7 +331,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
 
       {/* Mobile action modal when tapping a day */}
       <Dialog open={!!mobileActionDate} onOpenChange={(open) => !open && setMobileActionDate(null)}>
-        <DialogContent className="max-w-[320px] rounded-[2rem] p-6">
+        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[320px] rounded-[2rem] p-6">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-center text-2xl font-bold capitalize">
               {mobileActionDate ? format(parseISO(mobileActionDate), 'MMMM d.', { locale: hu }) : ''}
