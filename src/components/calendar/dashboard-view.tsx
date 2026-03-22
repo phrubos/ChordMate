@@ -221,7 +221,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
       </div>
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="max-md:max-w-[calc(100%-1rem)] max-md:max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-[90vw] sm:max-w-sm max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Dal hozzáadása ({hoverActionDate ? format(parseISO(hoverActionDate), 'MMMM d.', { locale: hu }) : ''})</DialogTitle>
           </DialogHeader>
@@ -289,7 +289,7 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
       </Dialog>
 
       <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
-        <DialogContent className="max-md:max-w-[calc(100%-1rem)] max-md:max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-[90vw] sm:max-w-sm max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Dallista másolása ({hoverActionDate ? format(parseISO(hoverActionDate), 'MMMM d.', { locale: hu }) : ''})</DialogTitle>
           </DialogHeader>

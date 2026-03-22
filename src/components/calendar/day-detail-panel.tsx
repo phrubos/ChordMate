@@ -443,7 +443,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
             <Plus className="size-4" />
             Dal hozzáadása
           </DialogTrigger>
-          <DialogContent className="max-md:max-w-[calc(100%-1rem)] max-md:max-h-[85vh] flex flex-col">
+          <DialogContent className="max-w-[90vw] sm:max-w-sm max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>Dal hozzáadása</DialogTitle>
             </DialogHeader>
@@ -522,7 +522,7 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
             <Copy className="size-4" />
             Másolás másik napról
           </DialogTrigger>
-          <DialogContent className="max-md:max-w-[calc(100%-1rem)] max-md:max-h-[85vh] flex flex-col">
+          <DialogContent className="max-w-[90vw] sm:max-w-sm max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>Dallista másolása</DialogTitle>
             </DialogHeader>

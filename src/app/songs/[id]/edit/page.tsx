@@ -17,7 +17,7 @@ export default async function EditSongPage({ params }: EditSongPageProps) {
   return (
     <>
       <Navbar />
-      <main className="mx-auto max-w-7xl max-md:px-0 max-md:py-0 px-4 py-8 lg:px-6">
+      <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
         <SongForm song={song} />
       </main>
       <MobileBottomNav />
