@@ -4,6 +4,7 @@ import { SongList } from '@/components/songs/song-list';
 import { SongFilters } from '@/components/songs/song-filters';
 import { NewSongButton } from '@/components/songs/new-song-button';
 import { Navbar } from '@/components/layout/navbar';
+import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { auth } from '@/lib/auth';
 import { getSongs } from '@/actions/songs';
 import { PageTransition } from '@/components/shared/page-transition';
@@ -44,6 +45,7 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
           </div>
         </PageTransition>
       </main>
+      <MobileBottomNav />
     </>
   );
 }

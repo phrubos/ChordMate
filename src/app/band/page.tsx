@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
+import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { auth } from '@/lib/auth';
 import { getUserBand, getUserBands } from '@/actions/bands';
 import { PageTransition } from '@/components/shared/page-transition';
@@ -20,6 +21,7 @@ export default async function BandPage() {
           <BandProfile band={band} currentUserId={session.user.id!} bandCount={allBands.length} />
         </PageTransition>
       </main>
+      <MobileBottomNav />
     </>
   );
 }
