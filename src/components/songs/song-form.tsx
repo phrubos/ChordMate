@@ -242,8 +242,8 @@ export function SongForm({ song }: SongFormProps) {
   return (
     <>
     {/* Mobile: blurred backdrop overlay (like Dialog/TAB modal) */}
-    <div className="fixed inset-0 z-[45] bg-black/10 backdrop-blur-sm md:hidden" />
-    <div className="mx-auto max-w-lg animate-fade-up md:h-[calc(100dvh-8rem)] max-md:fixed max-md:inset-0 max-md:z-[45] max-md:max-w-none">
+    <div className="fixed inset-0 z-[60] bg-black/10 backdrop-blur-sm md:hidden" />
+    <div className="mx-auto max-w-lg animate-fade-up md:h-[calc(100dvh-8rem)] max-md:fixed max-md:inset-0 max-md:z-[60] max-md:max-w-none">
       <div className="flex flex-col h-full rounded-xl border border-border/50 overflow-hidden md:bg-card/50 md:shadow-sm max-md:bg-card max-md:shadow-2xl max-md:ring-1 max-md:ring-foreground/10">
         <div className="p-6 pb-4 shrink-0">
           <h2 className="text-lg font-semibold tracking-tight">
