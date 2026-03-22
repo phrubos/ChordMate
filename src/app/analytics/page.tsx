@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getAnalyticsData } from '@/actions/analytics';
 import { Navbar } from '@/components/layout/navbar';
+import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { PageTransition } from '@/components/shared/page-transition';
 import { PageHeader } from '@/components/shared/page-header';
 import { PracticeHeatmap } from '@/components/analytics/practice-heatmap';
@@ -127,6 +128,7 @@ export default async function AnalyticsPage() {
           </div>
         </PageTransition>
       </main>
+      <MobileBottomNav />
     </>
   );
 }

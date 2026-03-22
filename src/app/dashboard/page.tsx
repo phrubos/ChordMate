@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { Navbar } from '@/components/layout/navbar';
+import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { DashboardView } from '@/components/calendar/dashboard-view';
 import { PracticeHistory } from '@/components/dashboard/practice-history';
 import { getCalendarEntries, getCalendarStats } from '@/actions/calendar';
@@ -40,6 +41,7 @@ export default async function DashboardPage() {
           </div>
         </PageTransition>
       </main>
+      <MobileBottomNav />
     </>
   );
 }
