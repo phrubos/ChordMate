@@ -240,8 +240,8 @@ export function SongForm({ song }: SongFormProps) {
   const difficultyColors = ['text-green-500', 'text-lime-500', 'text-yellow-500', 'text-orange-500', 'text-red-500'];
 
   return (
-    <div className="mx-auto max-w-lg animate-fade-up h-[calc(100dvh-8rem)] max-md:h-[100dvh] max-md:max-w-none">
-      <div className="flex flex-col h-full rounded-xl border border-border/50 bg-card/50 overflow-hidden shadow-sm max-md:rounded-none max-md:border-0 max-md:bg-background">
+    <div className="mx-auto max-w-lg animate-fade-up h-[calc(100dvh-8rem)] max-md:h-[calc(100dvh-8rem-3.5rem)]">
+      <div className="flex flex-col h-full rounded-xl border border-border/50 bg-card/50 overflow-hidden shadow-sm">
         <div className="p-6 pb-4 shrink-0">
           <h2 className="text-lg font-semibold tracking-tight">
             {isEdit ? 'Dal szerkesztése' : 'Új dal hozzáadása'}
@@ -448,7 +448,7 @@ export function SongForm({ song }: SongFormProps) {
 
           {/* YouTube Recommendations Dialog */}
           <Dialog open={ytShowResults} onOpenChange={setYtShowResults}>
-            <DialogContent className="max-w-[92vw] sm:max-w-lg max-h-[85vh] flex flex-col" showCloseButton={false}>
+            <DialogContent className="max-w-[90vw] sm:max-w-lg max-h-[90vh] flex flex-col" showCloseButton={false}>
               <DialogHeader className="shrink-0">
                 <div className="flex items-center justify-between">
                   <DialogTitle className="text-base">YouTube ajánló</DialogTitle>
@@ -532,7 +532,7 @@ export function SongForm({ song }: SongFormProps) {
 
           {/* Tab Recommendations Dialog */}
           <Dialog open={tabShowResults} onOpenChange={setTabShowResults}>
-            <DialogContent className="max-w-[92vw] sm:max-w-lg max-h-[85vh] flex flex-col" showCloseButton={false}>
+            <DialogContent className="max-w-[90vw] sm:max-w-lg max-h-[90vh] flex flex-col" showCloseButton={false}>
               <DialogHeader className="shrink-0">
                 <div className="flex items-center justify-between">
                   <DialogTitle className="text-base">Tab ajánló</DialogTitle>
