@@ -108,6 +108,11 @@ export function Navbar() {
           </DropdownMenu>
         </nav>
 
+        {/* Mobile theme toggle */}
+        <div className="flex items-center md:hidden">
+          <ThemeToggle />
+        </div>
+
         {/* Theme toggle + Analytics + User menu (desktop) */}
         <div className="hidden items-center gap-1 md:flex">
           <Link href="/analytics">
