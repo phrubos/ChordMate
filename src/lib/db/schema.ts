@@ -141,6 +141,24 @@ export const calendarEntries = pgTable(
   }
 );
 
+export const spotifyPlaylists = pgTable(
+  'spotify_playlists',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    bandId: uuid('band_id').references(() => bands.id, { onDelete: 'cascade' }),
+    spotifyPlaylistId: text('spotify_playlist_id').notNull(),
+    spotifyPlaylistUrl: text('spotify_playlist_url').notNull(),
+    name: text('name').notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (sp) => ({
+    uniqueUserBand: uniqueIndex('spotify_playlists_user_band_idx').on(sp.userId, sp.bandId),
+  })
+);
+
 export const recordings = pgTable('recordings', {
   id: uuid('id').defaultRandom().primaryKey(),
   date: date('date', { mode: 'string' }).notNull(),
@@ -212,6 +230,17 @@ export const calendarEntriesRelations = relations(calendarEntries, ({ one }) => 
   addedBy: one(users, {
     fields: [calendarEntries.addedById],
     references: [users.id],
+  }),
+}));
+
+export const spotifyPlaylistsRelations = relations(spotifyPlaylists, ({ one }) => ({
+  user: one(users, {
+    fields: [spotifyPlaylists.userId],
+    references: [users.id],
+  }),
+  band: one(bands, {
+    fields: [spotifyPlaylists.bandId],
+    references: [bands.id],
   }),
 }));
 

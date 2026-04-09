@@ -8,6 +8,7 @@ import { eq, or, and, ilike, desc, asc, isNotNull, isNull, inArray } from 'drizz
 import { songSchema } from '@/lib/validators';
 import { fetchAlbumArt } from '@/lib/fetch-album-art';
 import { getUserBandId } from './bands';
+import { addSongToSpotifyPlaylist } from './spotify';
 
 interface SongFilters {
   search?: string;
@@ -118,7 +119,23 @@ export async function createSong(formData: FormData) {
 
   revalidatePath('/songs');
   revalidatePath('/dashboard');
-  return { imageFound: !!imageUrl };
+
+  // Try to auto-add to Spotify playlist (best-effort, don't fail song creation)
+  let spotifyResult: {
+    added: boolean;
+    noPlaylist?: boolean;
+    notFound?: boolean;
+    playlistUrl?: string;
+    error?: string;
+  } | null = null;
+
+  try {
+    spotifyResult = await addSongToSpotifyPlaylist(data.title, data.artist);
+  } catch {
+    // Spotify auto-add is best-effort
+  }
+
+  return { imageFound: !!imageUrl, spotify: spotifyResult };
 }
 
 export async function updateSong(id: string, formData: FormData) {
