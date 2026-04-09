@@ -161,11 +161,28 @@ export async function createSpotifyPlaylist(
     : `ChordMate playlist (${found.length} dal)`;
 
   // 5. Create the playlist
-  const playlist = await createPlaylist(accessToken, playlistName, description, false);
+  let playlist;
+  try {
+    playlist = await createPlaylist(accessToken, playlistName, description, false);
+  } catch (err) {
+    console.error('Spotify createPlaylist error:', err);
+    throw new Error('PLAYLIST_CREATE_FAILED');
+  }
 
   // 6. Add all found tracks
-  const trackUris = found.map(t => t.uri);
-  await addTracksToPlaylist(accessToken, playlist.id, trackUris);
+  try {
+    const trackUris = found.map(t => t.uri);
+    await addTracksToPlaylist(accessToken, playlist.id, trackUris);
+  } catch (err) {
+    console.error('Spotify addTracksToPlaylist error:', err);
+    // Playlist was created but tracks couldn't be added — still return the URL
+    return {
+      playlistUrl: playlist.external_urls.spotify,
+      tracksFound: 0,
+      tracksTotal: userSongs.length,
+      notFound: userSongs,
+    };
+  }
 
   return {
     playlistUrl: playlist.external_urls.spotify,

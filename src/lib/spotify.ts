@@ -166,7 +166,7 @@ export async function addTracksToPlaylist(
   const batchSize = 100;
   for (let i = 0; i < trackUris.length; i += batchSize) {
     const batch = trackUris.slice(i, i + batchSize);
-    const res = await fetch(`${SPOTIFY_API}/playlists/${playlistId}/tracks`, {
+    const res = await fetch(`${SPOTIFY_API}/playlists/${playlistId}/items`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

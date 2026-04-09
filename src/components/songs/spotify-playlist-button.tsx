@@ -123,6 +123,9 @@ export function SpotifyPlaylistButton({ bandName }: SpotifyPlaylistButtonProps) 
         } else if (message === 'NO_TRACKS_FOUND') {
           setDialogState('closed');
           toast.error('Egyetlen dalt sem találtam a Spotify-on');
+        } else if (message === 'PLAYLIST_CREATE_FAILED') {
+          setDialogState('create');
+          toast.error('Nem sikerült a playlist létrehozása a Spotify-on. Ellenőrizd, hogy a fiókod hozzá van-e adva a Spotify Developer Dashboard-on.');
         } else {
           setDialogState('create');
           toast.error('Hiba a playlist létrehozásakor');
