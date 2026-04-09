@@ -1,10 +1,10 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { accounts, songs, bandMembers, bands } from '@/lib/db/schema';
+import { accounts, songs, bandMembers, bands, spotifyPlaylists } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { eq, and, or, isNull, inArray } from 'drizzle-orm';
-import { refreshAccessToken, searchTracks, createPlaylist, addTracksToPlaylist } from '@/lib/spotify';
+import { refreshAccessToken, searchTrack, searchTracks, createPlaylist, addTracksToPlaylist } from '@/lib/spotify';
 import { getUserBandId } from './bands';
 
 /**
@@ -184,10 +184,158 @@ export async function createSpotifyPlaylist(
     };
   }
 
+  // Save the playlist reference for auto-add
+  const existingLink = await db.query.spotifyPlaylists.findFirst({
+    where: bandId
+      ? and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          eq(spotifyPlaylists.bandId, bandId),
+        )
+      : and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          isNull(spotifyPlaylists.bandId),
+        ),
+  });
+
+  if (existingLink) {
+    await db.update(spotifyPlaylists)
+      .set({
+        spotifyPlaylistId: playlist.id,
+        spotifyPlaylistUrl: playlist.external_urls.spotify,
+        name: playlistName,
+      })
+      .where(eq(spotifyPlaylists.id, existingLink.id));
+  } else {
+    await db.insert(spotifyPlaylists).values({
+      userId: session.user.id,
+      bandId: bandId ?? null,
+      spotifyPlaylistId: playlist.id,
+      spotifyPlaylistUrl: playlist.external_urls.spotify,
+      name: playlistName,
+    });
+  }
+
   return {
     playlistUrl: playlist.external_urls.spotify,
     tracksFound: found.length,
     tracksTotal: userSongs.length,
     notFound,
   };
+}
+
+/**
+ * Get the linked Spotify playlist for the current user/band context.
+ */
+export async function getLinkedSpotifyPlaylist(): Promise<{
+  exists: boolean;
+  spotifyConnected: boolean;
+  playlist?: {
+    id: string;
+    spotifyPlaylistId: string;
+    spotifyPlaylistUrl: string;
+    name: string;
+  };
+}> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  // Check Spotify connection
+  const account = await db.query.accounts.findFirst({
+    where: and(
+      eq(accounts.userId, session.user.id),
+      eq(accounts.provider, 'spotify'),
+    ),
+  });
+
+  if (!account) {
+    return { exists: false, spotifyConnected: false };
+  }
+
+  const bandId = await getUserBandId();
+
+  const linked = await db.query.spotifyPlaylists.findFirst({
+    where: bandId
+      ? and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          eq(spotifyPlaylists.bandId, bandId),
+        )
+      : and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          isNull(spotifyPlaylists.bandId),
+        ),
+  });
+
+  if (!linked) {
+    return { exists: false, spotifyConnected: true };
+  }
+
+  return {
+    exists: true,
+    spotifyConnected: true,
+    playlist: {
+      id: linked.id,
+      spotifyPlaylistId: linked.spotifyPlaylistId,
+      spotifyPlaylistUrl: linked.spotifyPlaylistUrl,
+      name: linked.name,
+    },
+  };
+}
+
+/**
+ * Add a single song to the linked Spotify playlist.
+ * Returns the result of the operation.
+ */
+export async function addSongToSpotifyPlaylist(
+  title: string,
+  artist: string,
+): Promise<{
+  added: boolean;
+  noPlaylist?: boolean;
+  notFound?: boolean;
+  playlistUrl?: string;
+  error?: string;
+}> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const bandId = await getUserBandId();
+
+  // Find linked playlist
+  const linked = await db.query.spotifyPlaylists.findFirst({
+    where: bandId
+      ? and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          eq(spotifyPlaylists.bandId, bandId),
+        )
+      : and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          isNull(spotifyPlaylists.bandId),
+        ),
+  });
+
+  if (!linked) {
+    return { added: false, noPlaylist: true };
+  }
+
+  try {
+    const accessToken = await getValidAccessToken(session.user.id);
+
+    // Search for the track on Spotify
+    const track = await searchTrack(accessToken, title, artist);
+    if (!track) {
+      return { added: false, notFound: true, playlistUrl: linked.spotifyPlaylistUrl };
+    }
+
+    // Add track to playlist
+    await addTracksToPlaylist(accessToken, linked.spotifyPlaylistId, [track.uri]);
+
+    return { added: true, playlistUrl: linked.spotifyPlaylistUrl };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    if (message === 'NO_SPOTIFY_CONNECTION') {
+      return { added: false, error: 'NO_SPOTIFY_CONNECTION' };
+    }
+    console.error('Failed to add song to Spotify playlist:', err);
+    return { added: false, error: message };
+  }
 }

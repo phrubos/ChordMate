@@ -14,11 +14,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 
 const YouTubePlayer = dynamic(() => import('@/components/youtube/youtube-player').then(m => ({ default: m.YouTubePlayer })), { ssr: false });
 import { createSong, updateSong } from '@/actions/songs';
+import { getLinkedSpotifyPlaylist, createSpotifyPlaylist } from '@/actions/spotify';
 import type { Song } from '@/types';
 import { TruncatedText } from '@/components/shared/truncated-text';
 import { ExpandableText } from '@/components/shared/expandable-text';
@@ -55,6 +57,14 @@ function formatViews(views: number): string {
   return String(views);
 }
 
+function SpotifyIconSmall() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-4" fill="#1DB954">
+      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+    </svg>
+  );
+}
+
 interface SongFormProps {
   song?: Song;
 }
@@ -82,6 +92,9 @@ export function SongForm({ song }: SongFormProps) {
   const tabUrlRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollHint, setShowScrollHint] = useState(true);
+  const [showSpotifyOffer, setShowSpotifyOffer] = useState(false);
+  const [spotifyPlaylistName, setSpotifyPlaylistName] = useState('');
+  const [spotifyCreating, setSpotifyCreating] = useState(false);
 
   // Track form changes
   const markDirty = useCallback(() => { if (!isDirty) setIsDirty(true); }, [isDirty]);
@@ -214,6 +227,29 @@ export function SongForm({ song }: SongFormProps) {
     }
   }
 
+  async function handleCreateSpotifyPlaylist() {
+    if (!spotifyPlaylistName.trim()) {
+      toast.error('Add meg a playlist nevét');
+      return;
+    }
+    setSpotifyCreating(true);
+    try {
+      const res = await createSpotifyPlaylist(spotifyPlaylistName.trim());
+      toast.success(`Spotify playlist létrehozva! (${res.tracksFound}/${res.tracksTotal} dal)`, {
+        action: {
+          label: 'Megnyitás',
+          onClick: () => window.open(res.playlistUrl, '_blank'),
+        },
+      });
+      setShowSpotifyOffer(false);
+      router.push('/songs');
+    } catch {
+      toast.error('Nem sikerült a playlist létrehozása');
+    } finally {
+      setSpotifyCreating(false);
+    }
+  }
+
   function handleSubmit(formData: FormData) {
     formData.set('difficulty', String(difficulty));
 
@@ -226,6 +262,38 @@ export function SongForm({ song }: SongFormProps) {
         } else {
           result = await createSong(formData);
           toast.success('Dal sikeresen hozzáadva');
+
+          // Handle Spotify auto-add result
+          if (result?.spotify) {
+            const sp = result.spotify;
+            if (sp.added) {
+              toast.success('Hozzáadva a Spotify playlisthez is!', {
+                icon: <SpotifyIconSmall />,
+                action: sp.playlistUrl ? {
+                  label: 'Megnyitás',
+                  onClick: () => window.open(sp.playlistUrl!, '_blank'),
+                } : undefined,
+              });
+            } else if (sp.noPlaylist) {
+              // Check if Spotify is connected — if so, offer playlist creation
+              try {
+                const status = await getLinkedSpotifyPlaylist();
+                if (status.spotifyConnected) {
+                  setSpotifyPlaylistName('ChordMate Playlist');
+                  setShowSpotifyOffer(true);
+                  // Don't navigate yet, wait for dialog
+                  return;
+                }
+              } catch {
+                // Ignore — just proceed
+              }
+            } else if (sp.notFound) {
+              toast('A dal nem található a Spotify-on', {
+                icon: <SpotifyIconSmall />,
+                description: 'A playlist frissítésekor újra megpróbálhatod.',
+              });
+            }
+          }
         }
         if (result?.imageFound) {
           toast.success('Borítókép automatikusan betöltve', { icon: '🎵' });
@@ -651,6 +719,73 @@ export function SongForm({ song }: SongFormProps) {
         </form>
       </div>
     </div>
+
+    {/* Spotify Playlist Creation Offer Dialog */}
+    <Dialog
+      open={showSpotifyOffer}
+      onOpenChange={(open) => {
+        if (!open && !spotifyCreating) {
+          setShowSpotifyOffer(false);
+          router.push('/songs');
+        }
+      }}
+    >
+      <DialogContent className="max-w-[90vw] sm:max-w-md" showCloseButton={!spotifyCreating}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <SpotifyIconSmall />
+            Spotify Playlist létrehozása
+          </DialogTitle>
+          <DialogDescription>
+            Még nincs Spotify playlist a dallistádhoz. Szeretnél egyet létrehozni? Az összes dalod automatikusan hozzá lesz adva, és az új dalok is automatikusan bekerülnek.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 mt-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="spotify-playlist-name" className="text-sm font-medium">Playlist neve</Label>
+            <Input
+              id="spotify-playlist-name"
+              value={spotifyPlaylistName}
+              onChange={(e) => setSpotifyPlaylistName(e.target.value)}
+              placeholder="pl. ChordMate Playlist"
+              className="h-10"
+              autoFocus
+              disabled={spotifyCreating}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateSpotifyPlaylist();
+              }}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setShowSpotifyOffer(false);
+                router.push('/songs');
+              }}
+              disabled={spotifyCreating}
+            >
+              Most nem
+            </Button>
+            <Button
+              type="button"
+              className="gap-2"
+              style={{ backgroundColor: '#1DB954', color: '#000' }}
+              onClick={handleCreateSpotifyPlaylist}
+              disabled={spotifyCreating || !spotifyPlaylistName.trim()}
+            >
+              {spotifyCreating ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <SpotifyIconSmall />
+              )}
+              Playlist létrehozása
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
