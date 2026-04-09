@@ -129,8 +129,16 @@ export async function createSpotifyPlaylist(
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
-  // 1. Get valid access token
-  const accessToken = await getValidAccessToken(session.user.id);
+  // 1. Get valid access token (scope mismatch = user needs to re-authorize)
+  let accessToken: string;
+  try {
+    accessToken = await getValidAccessToken(session.user.id);
+  } catch (err) {
+    if (err instanceof Error && err.message === 'SPOTIFY_SCOPE_MISMATCH') {
+      throw new Error('SPOTIFY_SCOPE_MISMATCH');
+    }
+    throw err;
+  }
 
   // 2. Get the user's songs from the database
   const bandId = await getUserBandId();

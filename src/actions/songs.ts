@@ -125,6 +125,7 @@ export async function createSong(formData: FormData) {
     added: boolean;
     noPlaylist?: boolean;
     notFound?: boolean;
+    needsReauth?: boolean;
     playlistUrl?: string;
     error?: string;
   } | null = null;

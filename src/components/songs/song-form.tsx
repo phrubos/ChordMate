@@ -243,8 +243,13 @@ export function SongForm({ song }: SongFormProps) {
       });
       setShowSpotifyOffer(false);
       router.push('/songs');
-    } catch {
-      toast.error('Nem sikerült a playlist létrehozása');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '';
+      if (message === 'SPOTIFY_SCOPE_MISMATCH') {
+        toast.error('A Spotify jogosultságok frissültek — kösd össze újra a Spotify-t a Beállításokban');
+      } else {
+        toast.error('Nem sikerült a playlist létrehozása');
+      }
     } finally {
       setSpotifyCreating(false);
     }
@@ -290,6 +295,11 @@ export function SongForm({ song }: SongFormProps) {
           } else if (sp?.notFound) {
             toast.success('Dal sikeresen hozzáadva', {
               description: '⚠️ A dal nem található a Spotify-on',
+              icon: <SpotifyIconSmall />,
+            });
+          } else if (sp?.needsReauth) {
+            toast.success('Dal sikeresen hozzáadva', {
+              description: '⚠️ Spotify jogosultságok frissítése szükséges — csatlakoztasd újra a Beállításokban',
               icon: <SpotifyIconSmall />,
             });
           } else if (sp?.error) {

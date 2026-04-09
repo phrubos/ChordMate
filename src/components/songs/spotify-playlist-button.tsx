@@ -113,7 +113,11 @@ export function SpotifyPlaylistButton({ bandName }: SpotifyPlaylistButtonProps) 
         setDialogState('success');
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : '';
-        if (message === 'NO_SPOTIFY_CONNECTION') {
+        if (message === 'SPOTIFY_SCOPE_MISMATCH') {
+          setConnected(false);
+          setDialogState('connect');
+          toast.error('A Spotify jogosultságok frissültek — kösd össze újra a Spotify-t');
+        } else if (message === 'NO_SPOTIFY_CONNECTION') {
           setConnected(false);
           setDialogState('connect');
           toast.error('A Spotify kapcsolat lejárt, kösd össze újra');
