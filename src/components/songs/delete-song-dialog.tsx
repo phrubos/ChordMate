@@ -29,8 +29,19 @@ export function DeleteSongDialog({ song, open, onOpenChange }: DeleteSongDialogP
       try {
         const result = await deleteSong(song.id);
         toast.success('Dal törölve');
-        if (result?.spotifyRemoved) {
-          toast.success('A Spotify playlistből is eltávolítva');
+        if (result?.spotify) {
+          const sp = result.spotify;
+          if (sp.removed) {
+            toast.success('A Spotify playlistből is eltávolítva');
+          } else if (sp.noPlaylist) {
+            // No linked playlist — nothing to remove from, skip silently
+          } else if (sp.notFound) {
+            toast('A dal nem található a Spotify-on, a playlistből nem lett törölve', {
+              icon: '⚠️',
+            });
+          } else if (sp.error) {
+            toast.error('Nem sikerült a Spotify playlistből törölni');
+          }
         }
         onOpenChange(false);
       } catch {

@@ -65,7 +65,7 @@ export default async function RootLayout({
             <KeyboardShortcuts />
             <OnboardingCheck needsOnboardingServer={needs} />
             {children}
-            <Toaster richColors position="bottom-right" visibleToasts={1} />
+            <Toaster richColors position="bottom-right" visibleToasts={3} />
           </TooltipProvider>
         </AuthSessionProvider>
       </body>

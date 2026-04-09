@@ -196,17 +196,22 @@ export async function deleteSong(id: string) {
   revalidatePath('/dashboard');
 
   // Try to remove from Spotify playlist (best-effort)
-  let spotifyRemoved = false;
+  let spotifyResult: {
+    removed: boolean;
+    noPlaylist?: boolean;
+    notFound?: boolean;
+    error?: string;
+  } | null = null;
+
   if (song) {
     try {
-      const result = await removeSongFromSpotifyPlaylist(song.title, song.artist);
-      spotifyRemoved = result.removed;
+      spotifyResult = await removeSongFromSpotifyPlaylist(song.title, song.artist);
     } catch {
       // Best-effort
     }
   }
 
-  return { spotifyRemoved };
+  return { spotifyRemoved: spotifyResult?.removed ?? false, spotify: spotifyResult };
 }
 
 export async function toggleFavorite(id: string) {

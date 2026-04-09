@@ -292,6 +292,10 @@ export function SongForm({ song }: SongFormProps) {
                 icon: <SpotifyIconSmall />,
                 description: 'A playlist frissítésekor újra megpróbálhatod.',
               });
+            } else if (sp.error) {
+              toast.error('Nem sikerült hozzáadni a Spotify playlisthez', {
+                icon: <SpotifyIconSmall />,
+              });
             }
           }
         }
