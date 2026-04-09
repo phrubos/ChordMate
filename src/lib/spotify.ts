@@ -183,6 +183,35 @@ export async function addTracksToPlaylist(
 }
 
 /**
+ * Remove tracks from a Spotify playlist.
+ */
+export async function removeTracksFromPlaylist(
+  accessToken: string,
+  playlistId: string,
+  trackUris: string[],
+): Promise<void> {
+  const batchSize = 100;
+  for (let i = 0; i < trackUris.length; i += batchSize) {
+    const batch = trackUris.slice(i, i + batchSize);
+    const res = await fetch(`${SPOTIFY_API}/playlists/${playlistId}/tracks`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        tracks: batch.map(uri => ({ uri })),
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Failed to remove tracks from playlist: ${err}`);
+    }
+  }
+}
+
+/**
  * Search multiple tracks in parallel with concurrency control.
  */
 export async function searchTracks(

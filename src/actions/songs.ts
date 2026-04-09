@@ -8,7 +8,7 @@ import { eq, or, and, ilike, desc, asc, isNotNull, isNull, inArray } from 'drizz
 import { songSchema } from '@/lib/validators';
 import { fetchAlbumArt } from '@/lib/fetch-album-art';
 import { getUserBandId } from './bands';
-import { addSongToSpotifyPlaylist } from './spotify';
+import { addSongToSpotifyPlaylist, removeSongFromSpotifyPlaylist } from './spotify';
 
 interface SongFilters {
   search?: string;
@@ -187,10 +187,26 @@ export async function deleteSong(id: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
+  // Get song info before deleting so we can remove from Spotify
+  const song = await db.query.songs.findFirst({ where: eq(songs.id, id) });
+
   await db.delete(songs).where(eq(songs.id, id));
 
   revalidatePath('/songs');
   revalidatePath('/dashboard');
+
+  // Try to remove from Spotify playlist (best-effort)
+  let spotifyRemoved = false;
+  if (song) {
+    try {
+      const result = await removeSongFromSpotifyPlaylist(song.title, song.artist);
+      spotifyRemoved = result.removed;
+    } catch {
+      // Best-effort
+    }
+  }
+
+  return { spotifyRemoved };
 }
 
 export async function toggleFavorite(id: string) {

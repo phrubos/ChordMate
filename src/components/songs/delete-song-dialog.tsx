@@ -27,8 +27,11 @@ export function DeleteSongDialog({ song, open, onOpenChange }: DeleteSongDialogP
   function handleDelete() {
     startTransition(async () => {
       try {
-        await deleteSong(song.id);
+        const result = await deleteSong(song.id);
         toast.success('Dal törölve');
+        if (result?.spotifyRemoved) {
+          toast.success('A Spotify playlistből is eltávolítva');
+        }
         onOpenChange(false);
       } catch {
         toast.error('Hiba történt a törlés során');

@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { accounts, songs, bandMembers, bands, spotifyPlaylists } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { eq, and, or, isNull, inArray } from 'drizzle-orm';
-import { refreshAccessToken, searchTrack, searchTracks, createPlaylist, addTracksToPlaylist } from '@/lib/spotify';
+import { refreshAccessToken, searchTrack, searchTracks, createPlaylist, addTracksToPlaylist, removeTracksFromPlaylist } from '@/lib/spotify';
 import { getUserBandId } from './bands';
 
 /**
@@ -337,5 +337,56 @@ export async function addSongToSpotifyPlaylist(
     }
     console.error('Failed to add song to Spotify playlist:', err);
     return { added: false, error: message };
+  }
+}
+
+/**
+ * Remove a single song from the linked Spotify playlist.
+ */
+export async function removeSongFromSpotifyPlaylist(
+  title: string,
+  artist: string,
+): Promise<{
+  removed: boolean;
+  noPlaylist?: boolean;
+  notFound?: boolean;
+  error?: string;
+}> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const bandId = await getUserBandId();
+
+  const linked = await db.query.spotifyPlaylists.findFirst({
+    where: bandId
+      ? and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          eq(spotifyPlaylists.bandId, bandId),
+        )
+      : and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          isNull(spotifyPlaylists.bandId),
+        ),
+  });
+
+  if (!linked) {
+    return { removed: false, noPlaylist: true };
+  }
+
+  try {
+    const accessToken = await getValidAccessToken(session.user.id);
+
+    const track = await searchTrack(accessToken, title, artist);
+    if (!track) {
+      return { removed: false, notFound: true };
+    }
+
+    await removeTracksFromPlaylist(accessToken, linked.spotifyPlaylistId, [track.uri]);
+
+    return { removed: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('Failed to remove song from Spotify playlist:', err);
+    return { removed: false, error: message };
   }
 }
