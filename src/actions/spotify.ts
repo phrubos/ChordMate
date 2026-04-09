@@ -295,29 +295,32 @@ export async function addSongToSpotifyPlaylist(
   playlistUrl?: string;
   error?: string;
 }> {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('Unauthorized');
-
-  const bandId = await getUserBandId();
-
-  // Find linked playlist
-  const linked = await db.query.spotifyPlaylists.findFirst({
-    where: bandId
-      ? and(
-          eq(spotifyPlaylists.userId, session.user.id),
-          eq(spotifyPlaylists.bandId, bandId),
-        )
-      : and(
-          eq(spotifyPlaylists.userId, session.user.id),
-          isNull(spotifyPlaylists.bandId),
-        ),
-  });
-
-  if (!linked) {
-    return { added: false, noPlaylist: true };
-  }
-
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      console.error('[Spotify add] No session/user');
+      return { added: false, error: 'Unauthorized' };
+    }
+
+    const bandId = await getUserBandId();
+
+    // Find linked playlist
+    const linked = await db.query.spotifyPlaylists.findFirst({
+      where: bandId
+        ? and(
+            eq(spotifyPlaylists.userId, session.user.id),
+            eq(spotifyPlaylists.bandId, bandId),
+          )
+        : and(
+            eq(spotifyPlaylists.userId, session.user.id),
+            isNull(spotifyPlaylists.bandId),
+          ),
+    });
+
+    if (!linked) {
+      return { added: false, noPlaylist: true };
+    }
+
     const accessToken = await getValidAccessToken(session.user.id);
 
     // Search for the track on Spotify
@@ -329,13 +332,11 @@ export async function addSongToSpotifyPlaylist(
     // Add track to playlist
     await addTracksToPlaylist(accessToken, linked.spotifyPlaylistId, [track.uri]);
 
+    console.log('[Spotify add] Successfully added:', title, '–', artist);
     return { added: true, playlistUrl: linked.spotifyPlaylistUrl };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    if (message === 'NO_SPOTIFY_CONNECTION') {
-      return { added: false, error: 'NO_SPOTIFY_CONNECTION' };
-    }
-    console.error('Failed to add song to Spotify playlist:', err);
+    console.error('[Spotify add] Error:', message, err);
     return { added: false, error: message };
   }
 }
@@ -352,41 +353,47 @@ export async function removeSongFromSpotifyPlaylist(
   notFound?: boolean;
   error?: string;
 }> {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('Unauthorized');
-
-  const bandId = await getUserBandId();
-
-  const linked = await db.query.spotifyPlaylists.findFirst({
-    where: bandId
-      ? and(
-          eq(spotifyPlaylists.userId, session.user.id),
-          eq(spotifyPlaylists.bandId, bandId),
-        )
-      : and(
-          eq(spotifyPlaylists.userId, session.user.id),
-          isNull(spotifyPlaylists.bandId),
-        ),
-  });
-
-  if (!linked) {
-    return { removed: false, noPlaylist: true };
-  }
-
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      console.error('[Spotify remove] No session/user');
+      return { removed: false, error: 'Unauthorized' };
+    }
+
+    const bandId = await getUserBandId();
+
+    const linked = await db.query.spotifyPlaylists.findFirst({
+      where: bandId
+        ? and(
+            eq(spotifyPlaylists.userId, session.user.id),
+            eq(spotifyPlaylists.bandId, bandId),
+          )
+        : and(
+            eq(spotifyPlaylists.userId, session.user.id),
+            isNull(spotifyPlaylists.bandId),
+          ),
+    });
+
+    if (!linked) {
+      console.log('[Spotify remove] No linked playlist found for user:', session.user.id, 'bandId:', bandId);
+      return { removed: false, noPlaylist: true };
+    }
+
     const accessToken = await getValidAccessToken(session.user.id);
 
     const track = await searchTrack(accessToken, title, artist);
     if (!track) {
+      console.log('[Spotify remove] Track not found on Spotify:', title, '–', artist);
       return { removed: false, notFound: true };
     }
 
     await removeTracksFromPlaylist(accessToken, linked.spotifyPlaylistId, [track.uri]);
 
+    console.log('[Spotify remove] Successfully removed:', title, '–', artist);
     return { removed: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('Failed to remove song from Spotify playlist:', err);
+    console.error('[Spotify remove] Error:', message, err);
     return { removed: false, error: message };
   }
 }

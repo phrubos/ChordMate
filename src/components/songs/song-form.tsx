@@ -261,42 +261,44 @@ export function SongForm({ song }: SongFormProps) {
           toast.success('Dal sikeresen frissítve');
         } else {
           result = await createSong(formData);
-          toast.success('Dal sikeresen hozzáadva');
 
-          // Handle Spotify auto-add result
-          if (result?.spotify) {
-            const sp = result.spotify;
-            if (sp.added) {
-              toast.success('Hozzáadva a Spotify playlisthez is!', {
-                icon: <SpotifyIconSmall />,
-                action: sp.playlistUrl ? {
-                  label: 'Megnyitás',
-                  onClick: () => window.open(sp.playlistUrl!, '_blank'),
-                } : undefined,
-              });
-            } else if (sp.noPlaylist) {
-              // Check if Spotify is connected — if so, offer playlist creation
-              try {
-                const status = await getLinkedSpotifyPlaylist();
-                if (status.spotifyConnected) {
-                  setSpotifyPlaylistName('ChordMate Playlist');
-                  setShowSpotifyOffer(true);
-                  // Don't navigate yet, wait for dialog
-                  return;
-                }
-              } catch {
-                // Ignore — just proceed
+          // Handle Spotify auto-add result — combine into single toast
+          const sp = result?.spotify;
+          if (sp?.added) {
+            toast.success('Dal sikeresen hozzáadva', {
+              description: 'Spotify playlisthez is hozzáadva ✓',
+              icon: <SpotifyIconSmall />,
+              action: sp.playlistUrl ? {
+                label: 'Megnyitás',
+                onClick: () => window.open(sp.playlistUrl!, '_blank'),
+              } : undefined,
+            });
+          } else if (sp?.noPlaylist) {
+            toast.success('Dal sikeresen hozzáadva');
+            // Check if Spotify is connected — if so, offer playlist creation
+            try {
+              const status = await getLinkedSpotifyPlaylist();
+              if (status.spotifyConnected) {
+                setSpotifyPlaylistName('ChordMate Playlist');
+                setShowSpotifyOffer(true);
+                // Don't navigate yet, wait for dialog
+                return;
               }
-            } else if (sp.notFound) {
-              toast('A dal nem található a Spotify-on', {
-                icon: <SpotifyIconSmall />,
-                description: 'A playlist frissítésekor újra megpróbálhatod.',
-              });
-            } else if (sp.error) {
-              toast.error('Nem sikerült hozzáadni a Spotify playlisthez', {
-                icon: <SpotifyIconSmall />,
-              });
+            } catch {
+              // Ignore — just proceed
             }
+          } else if (sp?.notFound) {
+            toast.success('Dal sikeresen hozzáadva', {
+              description: '⚠️ A dal nem található a Spotify-on',
+              icon: <SpotifyIconSmall />,
+            });
+          } else if (sp?.error) {
+            toast.success('Dal sikeresen hozzáadva', {
+              description: '⚠️ Nem sikerült a Spotify playlisthez adni',
+              icon: <SpotifyIconSmall />,
+            });
+          } else {
+            toast.success('Dal sikeresen hozzáadva');
           }
         }
         if (result?.imageFound) {

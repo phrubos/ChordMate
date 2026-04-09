@@ -206,8 +206,9 @@ export async function deleteSong(id: string) {
   if (song) {
     try {
       spotifyResult = await removeSongFromSpotifyPlaylist(song.title, song.artist);
-    } catch {
-      // Best-effort
+      console.log('[deleteSong] Spotify result:', JSON.stringify(spotifyResult));
+    } catch (err) {
+      console.error('[deleteSong] Spotify removal threw:', err);
     }
   }
 
