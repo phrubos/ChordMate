@@ -48,10 +48,11 @@ function normalize(s: string): string {
 }
 
 // Extract significant words (len>=2, no stop words) from a string
-const STOP_WORDS = new Set(['a', 'az', 'és', 'egy', 'the', 'on', 'in', 'at', 'is', 'of', 'to', 'im', "i'm", 'my', 'me']);
+const STOP_WORDS = new Set(['a', 'az', 'és', 'egy', 'the', 'on', 'in', 'at', 'is', 'of', 'to', 'im', "i'm", 'my', 'me', 'and', 'or', 'for', 'by', 'with', 'from']);
 function significantWords(s: string): string[] {
   return normalize(s)
-    .replace(/[-–''`]/g, ' ')
+    .replace(/[&]/g, 'and')
+    .replace(/[-–''`']/g, ' ')
     .split(/\s+/)
     .filter(w => w.length >= 2 && !STOP_WORDS.has(w));
 }
@@ -68,52 +69,102 @@ function titleWordOverlap(searchTitle: string, songName: string): number {
   return matches / searchWords.length; // 0..1 ratio
 }
 
-// Generate title-focused search query variations
-function generateQueryVariations(title: string, artist: string): string[] {
-  const queries = new Set<string>();
-
-  // 1. Original: "title artist"
-  queries.add(`${title} ${artist}`);
-
-  // 2. Strip Hungarian/English articles from title
-  const strippedTitle = title.replace(/^(a\s+|az\s+|the\s+)/i, '').trim();
-  if (strippedTitle !== title) {
-    queries.add(`${strippedTitle} ${artist}`);
+// Compute artist name similarity
+function artistOverlap(searchArtist: string, resultArtist: string): number {
+  const searchWords = significantWords(searchArtist);
+  const resultWords = significantWords(resultArtist);
+  if (searchWords.length === 0) return 0;
+  let matches = 0;
+  for (const sw of searchWords) {
+    if (resultWords.some(w => w.includes(sw) || sw.includes(w))) matches++;
   }
+  return matches / searchWords.length;
+}
 
-  // 3. Extract core words (strip suffixes like "-es", "-on", etc.)
-  const coreWords = title
-    .replace(/[-–]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 1)
-    .filter(w => !STOP_WORDS.has(w.toLowerCase()));
-  if (coreWords.length > 0) {
-    const coreQuery = `${coreWords.join(' ')} ${artist}`;
-    if (coreQuery !== `${title} ${artist}`) {
-      queries.add(coreQuery);
+// Clean up a string for UG search: replace & with and, strip special chars
+function cleanForSearch(s: string): string {
+  return s
+    .replace(/&/g, 'and')
+    .replace(/[''`']/g, '')
+    .replace(/[-–—]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Generate search query variations for better UG API coverage
+function generateQueryVariations(title: string, artist: string): string[] {
+  const queries: string[] = [];
+  const seen = new Set<string>();
+
+  function add(q: string) {
+    const key = q.toLowerCase().trim();
+    if (key.length > 0 && !seen.has(key)) {
+      seen.add(key);
+      queries.push(q.trim());
     }
   }
 
-  return Array.from(queries);
+  // 1. Original: "title artist"
+  add(`${title} ${artist}`);
+
+  // 2. Cleaned version: replace & with "and", strip apostrophes
+  const cleanTitle = cleanForSearch(title);
+  const cleanArtist = cleanForSearch(artist);
+  add(`${cleanTitle} ${cleanArtist}`);
+
+  // 3. Just the title (cleaned)
+  add(cleanTitle);
+
+  // 4. Just the artist (for browsing their catalog)
+  add(cleanArtist);
+
+  // 5. Strip articles from title
+  const strippedTitle = cleanTitle.replace(/^(a\s+|az\s+|the\s+)/i, '').trim();
+  if (strippedTitle !== cleanTitle) {
+    add(`${strippedTitle} ${cleanArtist}`);
+  }
+
+  // 6. Extract just alphanumeric "core" words from the title
+  const coreWords = cleanTitle
+    .split(/\s+/)
+    .filter(w => w.length > 1)
+    .filter(w => !STOP_WORDS.has(w.toLowerCase()));
+  if (coreWords.length > 0 && coreWords.join(' ') !== cleanTitle) {
+    add(`${coreWords.join(' ')} ${cleanArtist}`);
+  }
+
+  // 7. For titles with numbers (e.g. "'74-'75"), try with numbers extracted
+  const numbers = title.match(/\d+/g);
+  if (numbers && numbers.length > 0) {
+    add(`${numbers.join(' ')} ${cleanArtist}`);
+  }
+
+  return queries;
 }
 
 async function searchUG(query: string): Promise<UGTab[]> {
-  const params = new URLSearchParams({
-    title: query,
-    'type[]': '300',
-    page: '1',
-  });
-  const url = `${UG_API}/tab/search?${params.toString()}&type[]=200`;
+  // Build URL manually to avoid URLSearchParams encoding brackets
+  // type[]=300 = Chords, type[]=200 = Tab
+  const encodedQuery = encodeURIComponent(query);
+  const url = `${UG_API}/tab/search?title=${encodedQuery}&type[]=300&type[]=200&page=1`;
 
-  const res = await fetch(url, {
-    headers: getHeaders(),
-    signal: AbortSignal.timeout(8000),
-  });
+  try {
+    const res = await fetch(url, {
+      headers: getHeaders(),
+      signal: AbortSignal.timeout(10000),
+    });
 
-  if (!res.ok) return [];
+    if (!res.ok) {
+      console.error(`UG API returned ${res.status} for query: "${query}"`);
+      return [];
+    }
 
-  const data = await res.json();
-  return (data?.tabs || []) as UGTab[];
+    const data = await res.json();
+    return (data?.tabs || []) as UGTab[];
+  } catch (err) {
+    console.error(`UG search failed for query "${query}":`, err);
+    return [];
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -130,10 +181,10 @@ export async function GET(req: NextRequest) {
   try {
     const variations = artist
       ? generateQueryVariations(title, artist)
-      : [query];
+      : [query, cleanForSearch(query)];
 
-    // Run searches in parallel (max 3)
-    const searches = variations.slice(0, 3).map(q => searchUG(q));
+    // Run searches in parallel (max 5 variations for better coverage)
+    const searches = variations.slice(0, 5).map(q => searchUG(q));
     const allResults = await Promise.all(searches);
 
     // Merge & deduplicate by tab id
@@ -148,37 +199,73 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Score results: heavily weight title relevance
-    const normalizedArtist = artist ? normalize(artist) : '';
+    // Score results: weight title relevance, artist match, and quality
+    const cleanedTitle = cleanForSearch(title);
     const scored = merged.map(t => {
-      const overlap = titleWordOverlap(title, t.song_name);
-      const artistMatch = normalizedArtist && normalize(t.artist_name).includes(normalizedArtist);
+      const overlap = Math.max(
+        titleWordOverlap(title, t.song_name),
+        titleWordOverlap(cleanedTitle, t.song_name),
+      );
+      const artistSimilarity = artist
+        ? artistOverlap(artist, t.artist_name)
+        : 0;
+      const artistMatch = artistSimilarity >= 0.5;
 
-      // Title relevance is king — overlap 0..1 mapped to 0..2000
+      // Title relevance: overlap 0..1 mapped to 0..2000
       let score = overlap * 2000;
-      // Bonus for exact/near-exact title match
+
+      // Bonus for exact/near-exact title match (also check cleaned version)
       const nTitle = normalize(title);
+      const nCleanTitle = normalize(cleanedTitle);
       const nSong = normalize(t.song_name);
-      if (nSong === nTitle) score += 1000;
-      else if (nSong.includes(nTitle) || nTitle.includes(nSong)) score += 500;
-      // Artist match bonus
-      if (artistMatch) score += 300;
+      if (nSong === nTitle || nSong === nCleanTitle) {
+        score += 1000;
+      } else if (nSong.includes(nTitle) || nTitle.includes(nSong) || nSong.includes(nCleanTitle) || nCleanTitle.includes(nSong)) {
+        score += 500;
+      }
+
+      // Artist match bonus (scaled by similarity)
+      if (artistMatch) score += 300 * artistSimilarity;
+
       // Quality tiebreaker
       score += t.rating * 5 + Math.min(t.votes, 5000) * 0.01;
 
-      return { tab: t, score, overlap, artistMatch };
+      return { tab: t, score, overlap, artistMatch, artistSimilarity };
     });
 
-    // Filter: require at least SOME title word overlap OR exact substring match
-    const filtered = scored.filter(({ overlap, tab }) => {
+    // Less strict filtering:
+    // Accept results where:
+    //   - Title words overlap significantly, OR
+    //   - Title substring match exists, OR
+    //   - Artist matches strongly (for catalog browsing when title is weird)
+    const filtered = scored.filter(({ overlap, tab, artistMatch, artistSimilarity }) => {
+      // Title word overlap
       if (overlap > 0) return true;
+
+      // Normalized substring match
       const nTitle = normalize(title);
+      const nCleanTitle = normalize(cleanedTitle);
       const nSong = normalize(tab.song_name);
-      return nSong.includes(nTitle) || nTitle.includes(nSong);
+      if (nSong.includes(nTitle) || nTitle.includes(nSong)) return true;
+      if (nSong.includes(nCleanTitle) || nCleanTitle.includes(nSong)) return true;
+
+      // For short/unusual titles (e.g. "'74-'75"), be more lenient —
+      // accept if artist matches well
+      const titleWords = significantWords(title);
+      if (titleWords.length <= 2 && artistSimilarity >= 0.5) return true;
+
+      // Strong artist match with at least partial title presence
+      if (artistMatch) {
+        // Check if any number from the title appears in the song name
+        const titleNumbers = title.match(/\d+/g);
+        if (titleNumbers && titleNumbers.some(n => nSong.includes(n))) return true;
+      }
+
+      return false;
     });
 
     filtered.sort((a, b) => b.score - a.score);
-    const top = filtered.slice(0, 10);
+    const top = filtered.slice(0, 15);
 
     const results = top.map(({ tab: t }) => ({
       id: t.id,
