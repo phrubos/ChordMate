@@ -63,6 +63,7 @@ function ChordDiagramSVG({ chord }: { chord: ChordDiagram }) {
       {chord.frets.map((fret, i) => {
         if (fret <= 0) return null; // open or muted, handled earlier
 
+
         // Which relative "row" in the 5-fret diagram are we drawing on?
         // If fret = 1 and baseFret = 1, we want row 0.
         // If fret = 3 and baseFret = 1, we want row 2.
