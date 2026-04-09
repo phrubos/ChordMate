@@ -4,7 +4,7 @@ import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
 
 const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize';
-const SCOPES = 'playlist-modify-public playlist-modify-private';
+const SCOPES = 'playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private';
 
 export async function GET() {
   const session = await auth();

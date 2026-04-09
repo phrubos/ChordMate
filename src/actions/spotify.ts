@@ -45,9 +45,18 @@ export async function disconnectSpotify(): Promise<void> {
   );
 }
 
+// Scopes required for full functionality (must match authorize route)
+const REQUIRED_SCOPES = [
+  'playlist-read-private',
+  'playlist-read-collaborative',
+  'playlist-modify-public',
+  'playlist-modify-private',
+];
+
 /**
  * Get a valid Spotify access token for the current user.
  * Refreshes the token if it's expired or about to expire.
+ * Throws SPOTIFY_SCOPE_MISMATCH if stored token has outdated scopes.
  */
 async function getValidAccessToken(userId: string): Promise<string> {
   const account = await db.query.accounts.findFirst({
@@ -59,6 +68,16 @@ async function getValidAccessToken(userId: string): Promise<string> {
 
   if (!account?.access_token || !account.refresh_token) {
     throw new Error('NO_SPOTIFY_CONNECTION');
+  }
+
+  // Check if stored scopes include all required scopes
+  if (account.scope) {
+    const storedScopes = account.scope.split(' ');
+    const missing = REQUIRED_SCOPES.filter(s => !storedScopes.includes(s));
+    if (missing.length > 0) {
+      console.warn('[Spotify] Token missing scopes:', missing.join(', '), '— user needs to re-authorize');
+      throw new Error('SPOTIFY_SCOPE_MISMATCH');
+    }
   }
 
   // Check if token is expired (with 60s buffer)
@@ -292,6 +311,7 @@ export async function addSongToSpotifyPlaylist(
   added: boolean;
   noPlaylist?: boolean;
   notFound?: boolean;
+  needsReauth?: boolean;
   playlistUrl?: string;
   error?: string;
 }> {
@@ -337,6 +357,9 @@ export async function addSongToSpotifyPlaylist(
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[Spotify add] Error:', message, err);
+    if (message === 'SPOTIFY_SCOPE_MISMATCH') {
+      return { added: false, needsReauth: true, error: 'Spotify permissions outdated — please reconnect Spotify in Settings' };
+    }
     return { added: false, error: message };
   }
 }
@@ -351,6 +374,7 @@ export async function removeSongFromSpotifyPlaylist(
   removed: boolean;
   noPlaylist?: boolean;
   notFound?: boolean;
+  needsReauth?: boolean;
   error?: string;
 }> {
   try {
@@ -394,6 +418,9 @@ export async function removeSongFromSpotifyPlaylist(
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[Spotify remove] Error:', message, err);
+    if (message === 'SPOTIFY_SCOPE_MISMATCH') {
+      return { removed: false, needsReauth: true, error: 'Spotify permissions outdated — please reconnect Spotify in Settings' };
+    }
     return { removed: false, error: message };
   }
 }

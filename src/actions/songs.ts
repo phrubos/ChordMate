@@ -200,6 +200,7 @@ export async function deleteSong(id: string) {
     removed: boolean;
     noPlaylist?: boolean;
     notFound?: boolean;
+    needsReauth?: boolean;
     error?: string;
   } | null = null;
 

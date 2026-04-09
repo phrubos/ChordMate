@@ -37,6 +37,10 @@ export function DeleteSongDialog({ song, open, onOpenChange }: DeleteSongDialogP
           toast.success('Dal törölve', {
             description: '⚠️ A dal nem található a Spotify-on, a playlistből nem lett törölve',
           });
+        } else if (sp?.needsReauth) {
+          toast.success('Dal törölve', {
+            description: '⚠️ Spotify jogosultságok frissítése szükséges — csatlakoztasd újra a Spotify-t a Beállításokban',
+          });
         } else if (sp?.error) {
           toast.success('Dal törölve', {
             description: '⚠️ Nem sikerült a Spotify playlistből törölni',
