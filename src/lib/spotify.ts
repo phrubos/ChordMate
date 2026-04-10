@@ -292,7 +292,8 @@ async function replacePlaylistTracks(
 ): Promise<void> {
   // PUT replaces the playlist contents. Max 100 URIs per call. Empty array clears the playlist.
   const firstBatch = trackUris.slice(0, 100);
-  const url = `${SPOTIFY_API}/playlists/${playlistId}/items`;
+  // PUT /items appears to be a no-op on Spotify; the documented endpoint is PUT /tracks.
+  const url = `${SPOTIFY_API}/playlists/${playlistId}/tracks`;
   console.log('[Spotify replacePlaylistTracks] PUT', url, 'count:', firstBatch.length);
   const res = await fetch(url, {
     method: 'PUT',
@@ -306,6 +307,8 @@ async function replacePlaylistTracks(
     const err = await res.text();
     throw new Error(`Failed to replace playlist tracks (${res.status}): ${err}`);
   }
+  const respBody = await res.text();
+  console.log('[Spotify replacePlaylistTracks] PUT success, response:', respBody);
 
   // If more than 100 URIs, append the rest with POST.
   if (trackUris.length > 100) {
