@@ -331,34 +331,30 @@ export async function removeTracksFromPlaylist(
 ): Promise<void> {
   if (trackUris.length === 0) return;
 
-  console.log('[Spotify removeTracks] using PUT-replace workaround for', trackUris.length, 'uri(s)');
+  console.log('[Spotify removeTracks] using PUT-replace workaround for', trackUris.length, 'uri(s):', trackUris);
 
   // 1. Fetch all current track URIs in the playlist.
   const currentUris = await getAllPlaylistTrackUris(accessToken, playlistId);
   console.log('[Spotify removeTracks] playlist has', currentUris.length, 'tracks');
+  console.log('[Spotify removeTracks] all playlist URIs:', JSON.stringify(currentUris));
 
-  // 2. Build a multiset-aware filtered list: remove only as many copies of each
-  // URI as were requested, so duplicates of other tracks are preserved.
-  const removalCounts = new Map<string, number>();
+  // Count how many copies of each requested URI exist in the playlist (for diagnostic).
   for (const uri of trackUris) {
-    removalCounts.set(uri, (removalCounts.get(uri) ?? 0) + 1);
+    const matches = currentUris.filter(u => u === uri).length;
+    console.log('[Spotify removeTracks]   ', uri, 'appears', matches, 'time(s) in playlist');
   }
-  const newUris: string[] = [];
-  for (const uri of currentUris) {
-    const remaining = removalCounts.get(uri) ?? 0;
-    if (remaining > 0) {
-      removalCounts.set(uri, remaining - 1);
-      continue;
-    }
-    newUris.push(uri);
-  }
+
+  // 2. Remove ALL matching copies (not just one) — if a song is deleted from ChordMate,
+  // the user expects it gone entirely from the linked Spotify playlist.
+  const toRemove = new Set(trackUris);
+  const newUris = currentUris.filter(uri => !toRemove.has(uri));
 
   if (newUris.length === currentUris.length) {
     console.log('[Spotify removeTracks] no matching URIs in playlist — nothing to do');
     return;
   }
 
-  console.log('[Spotify removeTracks] replacing playlist:', currentUris.length, '->', newUris.length, 'tracks');
+  console.log('[Spotify removeTracks] replacing playlist:', currentUris.length, '->', newUris.length, 'tracks (removed', currentUris.length - newUris.length, 'copies)');
 
   // 3. Replace the playlist contents with the filtered list.
   await replacePlaylistTracks(accessToken, playlistId, newUris);
