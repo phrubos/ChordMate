@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { accounts, songs, bandMembers, bands, spotifyPlaylists } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { eq, and, or, isNull, inArray } from 'drizzle-orm';
-import { refreshAccessToken, searchTrack, searchTracks, createPlaylist, addTracksToPlaylist, removeTracksFromPlaylist, getPlaylist, getMe } from '@/lib/spotify';
+import { refreshAccessToken, searchTrack, searchTracks, createPlaylist, addTracksToPlaylist } from '@/lib/spotify';
 import { getUserBandId } from './bands';
 
 /**
@@ -374,116 +374,24 @@ export async function addSongToSpotifyPlaylist(
 }
 
 /**
- * Remove a single song from the linked Spotify playlist.
+ * Check whether the current user has a linked Spotify playlist for their context.
+ * Used by deleteSong to decide whether to show a "manually remove from Spotify" hint.
  */
-export async function removeSongFromSpotifyPlaylist(
-  title: string,
-  artist: string,
-): Promise<{
-  removed: boolean;
-  noPlaylist?: boolean;
-  notFound?: boolean;
-  needsReauth?: boolean;
-  notOwner?: boolean;
-  error?: string;
-}> {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      console.error('[Spotify remove] No session/user');
-      return { removed: false, error: 'Unauthorized' };
-    }
+export async function hasLinkedSpotifyPlaylist(): Promise<boolean> {
+  const session = await auth();
+  if (!session?.user?.id) return false;
 
-    const bandId = await getUserBandId();
-
-    const linked = await db.query.spotifyPlaylists.findFirst({
-      where: bandId
-        ? and(
-            eq(spotifyPlaylists.userId, session.user.id),
-            eq(spotifyPlaylists.bandId, bandId),
-          )
-        : and(
-            eq(spotifyPlaylists.userId, session.user.id),
-            isNull(spotifyPlaylists.bandId),
-          ),
-    });
-
-    if (!linked) {
-      console.log('[Spotify remove] No linked playlist found for user:', session.user.id, 'bandId:', bandId);
-      return { removed: false, noPlaylist: true };
-    }
-
-    // Get DB-stored Spotify account info
-    const account = await db.query.accounts.findFirst({
-      where: and(
-        eq(accounts.userId, session.user.id),
-        eq(accounts.provider, 'spotify'),
-      ),
-    });
-    const dbSpotifyUserId = account?.providerAccountId;
-    const dbScopes = account?.scope;
-
-    const accessToken = await getValidAccessToken(session.user.id);
-
-    // Run all 3 diagnostic Spotify calls in parallel
-    const [me, playlist, track] = await Promise.all([
-      getMe(accessToken),
-      getPlaylist(accessToken, linked.spotifyPlaylistId),
-      searchTrack(accessToken, title, artist),
-    ]);
-
-    // Build a single comprehensive diagnostic that we'll include in any error message
-    const diagnostic = {
-      playlistId: linked.spotifyPlaylistId,
-      playlistName: playlist?.name,
-      playlistOwner: playlist?.owner.id,
-      playlistOwnerName: playlist?.owner.display_name,
-      currentSpotifyUser: me?.id,
-      currentSpotifyName: me?.display_name,
-      dbSpotifyUserId,
-      dbScopes,
-      ownerMatchesCurrent: playlist?.owner.id === me?.id,
-      ownerMatchesDb: playlist?.owner.id === dbSpotifyUserId,
-      trackUri: track?.uri,
-      trackName: track?.name,
-    };
-    console.error('[Spotify remove] DIAGNOSTIC', JSON.stringify(diagnostic));
-
-    if (!playlist) {
-      return {
-        removed: false,
-        error: `Playlist not accessible (id: ${linked.spotifyPlaylistId}) — possibly deleted on Spotify. DIAG: ${JSON.stringify(diagnostic)}`,
-      };
-    }
-
-    if (me && playlist.owner.id !== me.id) {
-      return {
-        removed: false,
-        notOwner: true,
-        error: `Playlist owned by '${playlist.owner.display_name ?? playlist.owner.id}' but you are logged in as '${me.display_name ?? me.id}'. Create a new playlist.`,
-      };
-    }
-
-    if (!track) {
-      return { removed: false, notFound: true };
-    }
-
-    try {
-      await removeTracksFromPlaylist(accessToken, linked.spotifyPlaylistId, [track.uri]);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      // Embed diagnostic INTO the error message so it shows on Vercel's collapsed error line
-      throw new Error(`${msg} | DIAG: ${JSON.stringify(diagnostic)}`);
-    }
-
-    console.log('[Spotify remove] Successfully removed:', title, '–', artist);
-    return { removed: true };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('[Spotify remove] Error:', message, err);
-    if (message === 'SPOTIFY_SCOPE_MISMATCH') {
-      return { removed: false, needsReauth: true, error: 'Spotify permissions outdated — please reconnect Spotify in Settings' };
-    }
-    return { removed: false, error: message };
-  }
+  const bandId = await getUserBandId();
+  const linked = await db.query.spotifyPlaylists.findFirst({
+    where: bandId
+      ? and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          eq(spotifyPlaylists.bandId, bandId),
+        )
+      : and(
+          eq(spotifyPlaylists.userId, session.user.id),
+          isNull(spotifyPlaylists.bandId),
+        ),
+  });
+  return !!linked;
 }

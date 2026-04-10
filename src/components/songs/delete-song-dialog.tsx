@@ -28,26 +28,9 @@ export function DeleteSongDialog({ song, open, onOpenChange }: DeleteSongDialogP
     startTransition(async () => {
       try {
         const result = await deleteSong(song.id);
-        const sp = result?.spotify;
-        if (sp?.removed) {
+        if (result?.spotifyManualRemoval) {
           toast.success('Dal törölve', {
-            description: 'A Spotify playlistből is eltávolítva ✓',
-          });
-        } else if (sp?.notFound) {
-          toast.success('Dal törölve', {
-            description: '⚠️ A dal nem található a Spotify-on, a playlistből nem lett törölve',
-          });
-        } else if (sp?.needsReauth) {
-          toast.success('Dal törölve', {
-            description: '⚠️ Spotify jogosultságok frissítése szükséges — csatlakoztasd újra a Spotify-t a Beállításokban',
-          });
-        } else if (sp?.notOwner) {
-          toast.success('Dal törölve', {
-            description: '⚠️ A Spotify playlist egy másik fiókhoz tartozik — hozz létre egy újat',
-          });
-        } else if (sp?.error) {
-          toast.success('Dal törölve', {
-            description: '⚠️ Nem sikerült a Spotify playlistből törölni',
+            description: 'A Spotify playlistből manuálisan távolítsd el',
           });
         } else {
           toast.success('Dal törölve');

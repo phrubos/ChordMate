@@ -8,7 +8,7 @@ import { eq, or, and, ilike, desc, asc, isNotNull, isNull, inArray } from 'drizz
 import { songSchema } from '@/lib/validators';
 import { fetchAlbumArt } from '@/lib/fetch-album-art';
 import { getUserBandId } from './bands';
-import { addSongToSpotifyPlaylist, removeSongFromSpotifyPlaylist } from './spotify';
+import { addSongToSpotifyPlaylist, hasLinkedSpotifyPlaylist } from './spotify';
 
 interface SongFilters {
   search?: string;
@@ -188,34 +188,17 @@ export async function deleteSong(id: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
-  // Get song info before deleting so we can remove from Spotify
-  const song = await db.query.songs.findFirst({ where: eq(songs.id, id) });
-
   await db.delete(songs).where(eq(songs.id, id));
 
   revalidatePath('/songs');
   revalidatePath('/dashboard');
 
-  // Try to remove from Spotify playlist (best-effort)
-  let spotifyResult: {
-    removed: boolean;
-    noPlaylist?: boolean;
-    notFound?: boolean;
-    needsReauth?: boolean;
-    notOwner?: boolean;
-    error?: string;
-  } | null = null;
+  // Spotify auto-remove is not supported (Spotify's DELETE endpoints 403 from this
+  // app/Vercel environment). If the user has a linked playlist, hint that they need
+  // to remove the song manually from Spotify.
+  const spotifyManualRemoval = await hasLinkedSpotifyPlaylist();
 
-  if (song) {
-    try {
-      spotifyResult = await removeSongFromSpotifyPlaylist(song.title, song.artist);
-      console.log('[deleteSong] Spotify result:', JSON.stringify(spotifyResult));
-    } catch (err) {
-      console.error('[deleteSong] Spotify removal threw:', err);
-    }
-  }
-
-  return { spotifyRemoved: spotifyResult?.removed ?? false, spotify: spotifyResult };
+  return { spotifyManualRemoval };
 }
 
 export async function toggleFavorite(id: string) {
