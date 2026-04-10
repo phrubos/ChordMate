@@ -266,11 +266,11 @@ export async function removeTracksFromPlaylist(
     const body = JSON.stringify({
       tracks: batch.map(uri => ({ uri })),
     });
-    console.log('[Spotify removeTracks] DELETE via node:https', `/v1/playlists/${playlistId}/tracks`, 'body:', body);
+    console.log('[Spotify removeTracks] DELETE via node:https', `/v1/playlists/${playlistId}/items`, 'body:', body);
 
     const res = await nodeDeleteJson(
       'api.spotify.com',
-      `/v1/playlists/${playlistId}/tracks`,
+      `/v1/playlists/${playlistId}/items`,
       accessToken,
       body,
     );
