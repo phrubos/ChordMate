@@ -310,8 +310,13 @@ export async function getLinkedSpotifyPlaylist(): Promise<{
 }
 
 /**
- * Add a single song to the linked Spotify playlist.
- * Returns the result of the operation.
+ * Add a single song to all linked Spotify playlists for the current context.
+ *
+ * For personal songs (no band): adds to the current user's personal playlist.
+ * For band songs: adds to every band member's playlist that's linked for that band,
+ * so the song shows up in everyone's Spotify automatically.
+ *
+ * Failures for individual members are logged but don't block other members.
  */
 export async function addSongToSpotifyPlaylist(
   title: string,
@@ -333,36 +338,71 @@ export async function addSongToSpotifyPlaylist(
 
     const bandId = await getUserBandId();
 
-    // Find linked playlist
-    const linked = await db.query.spotifyPlaylists.findFirst({
+    // Find ALL linked playlists for this context. For a band song, this returns
+    // every band member's linked playlist; for a personal song, just the current user's.
+    const linkedPlaylists = await db.query.spotifyPlaylists.findMany({
       where: bandId
-        ? and(
-            eq(spotifyPlaylists.userId, session.user.id),
-            eq(spotifyPlaylists.bandId, bandId),
-          )
+        ? eq(spotifyPlaylists.bandId, bandId)
         : and(
             eq(spotifyPlaylists.userId, session.user.id),
             isNull(spotifyPlaylists.bandId),
           ),
     });
 
-    if (!linked) {
+    if (linkedPlaylists.length === 0) {
       return { added: false, noPlaylist: true };
     }
 
-    const accessToken = await getValidAccessToken(session.user.id);
-
-    // Search for the track on Spotify
-    const track = await searchTrack(accessToken, title, artist);
+    // Search the track once using the current user's token. The resulting URI
+    // is reused for every band member — Spotify track URIs are stable across users
+    // in the same market.
+    const currentUserToken = await getValidAccessToken(session.user.id);
+    const track = await searchTrack(currentUserToken, title, artist);
     if (!track) {
-      return { added: false, notFound: true, playlistUrl: linked.spotifyPlaylistUrl };
+      // Pick the current user's playlist URL for the toast link, fall back to the first.
+      const ownPlaylist = linkedPlaylists.find(p => p.userId === session.user!.id);
+      return {
+        added: false,
+        notFound: true,
+        playlistUrl: ownPlaylist?.spotifyPlaylistUrl ?? linkedPlaylists[0].spotifyPlaylistUrl,
+      };
     }
 
-    // Add track to playlist
-    await addTracksToPlaylist(accessToken, linked.spotifyPlaylistId, [track.uri]);
+    // Add the track to each linked playlist in parallel using each member's own token.
+    // Per-member failures are caught so one bad token doesn't block other members.
+    const results = await Promise.all(
+      linkedPlaylists.map(async (playlist) => {
+        try {
+          const memberToken = await getValidAccessToken(playlist.userId);
+          await addTracksToPlaylist(memberToken, playlist.spotifyPlaylistId, [track.uri]);
+          console.log('[Spotify add] Added to', playlist.userId, 'playlist:', title, '–', artist);
+          return { userId: playlist.userId, ok: true as const };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error('[Spotify add] Failed for user', playlist.userId, ':', msg);
+          return { userId: playlist.userId, ok: false as const, error: msg };
+        }
+      })
+    );
 
-    console.log('[Spotify add] Successfully added:', title, '–', artist);
-    return { added: true, playlistUrl: linked.spotifyPlaylistUrl };
+    const succeeded = results.filter(r => r.ok).length;
+    const ownResult = results.find(r => r.userId === session.user!.id);
+    const ownPlaylist = linkedPlaylists.find(p => p.userId === session.user!.id);
+
+    // If the current user's own add failed with a scope mismatch, surface that to the UI.
+    if (ownResult && !ownResult.ok && ownResult.error === 'SPOTIFY_SCOPE_MISMATCH') {
+      return { added: false, needsReauth: true, error: 'Spotify permissions outdated — please reconnect Spotify in Settings' };
+    }
+
+    if (succeeded === 0) {
+      return { added: false, error: 'Failed to add to any playlist' };
+    }
+
+    console.log(`[Spotify add] Added to ${succeeded}/${linkedPlaylists.length} playlists`);
+    return {
+      added: true,
+      playlistUrl: ownPlaylist?.spotifyPlaylistUrl ?? linkedPlaylists[0].spotifyPlaylistUrl,
+    };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[Spotify add] Error:', message, err);
