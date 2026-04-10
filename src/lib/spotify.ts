@@ -263,7 +263,7 @@ export async function removeTracksFromPlaylist(
   const batchSize = 100;
   for (let i = 0; i < trackUris.length; i += batchSize) {
     const batch = trackUris.slice(i, i + batchSize);
-    const body = JSON.stringify({ tracks: batch.map(uri => ({ uri })) });
+    const body = JSON.stringify({ uris: batch });
     const url = `${SPOTIFY_API}/playlists/${playlistId}/items`;
     console.log('[Spotify removeTracks] DELETE via fetch', url, 'body:', body);
 
