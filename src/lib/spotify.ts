@@ -1,8 +1,48 @@
 // Spotify Web API client utilities
 // Handles token refresh, track search, playlist creation, and track addition
 
+import { request as httpsRequest } from 'node:https';
+
 const SPOTIFY_API = 'https://api.spotify.com/v1';
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
+
+/**
+ * Send a DELETE request with a JSON body using Node's native https module.
+ * Workaround for serverless/undici environments where fetch DELETE+body doesn't transmit reliably.
+ */
+function nodeDeleteJson(
+  hostname: string,
+  path: string,
+  accessToken: string,
+  body: string,
+): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const req = httpsRequest(
+      {
+        hostname,
+        path,
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+          'Accept': 'application/json',
+        },
+      },
+      (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          resolve({ status: res.statusCode ?? 0, body: data });
+        });
+      },
+    );
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
 
 // ── Token Management ─────────────────────────────────────────────
 
@@ -226,28 +266,23 @@ export async function removeTracksFromPlaylist(
     const body = JSON.stringify({
       tracks: batch.map(uri => ({ uri })),
     });
-    console.log('[Spotify removeTracks] DELETE', `${SPOTIFY_API}/playlists/${playlistId}/tracks`, 'body:', body);
-    const res = await fetch(`${SPOTIFY_API}/playlists/${playlistId}/tracks`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body,
-    });
+    console.log('[Spotify removeTracks] DELETE via node:https', `/v1/playlists/${playlistId}/tracks`, 'body:', body);
 
-    if (!res.ok) {
-      const errText = await res.text();
-      const headers = Object.fromEntries(res.headers.entries());
+    const res = await nodeDeleteJson(
+      'api.spotify.com',
+      `/v1/playlists/${playlistId}/tracks`,
+      accessToken,
+      body,
+    );
+
+    if (res.status < 200 || res.status >= 300) {
       console.error('[Spotify removeTracks] FAILED', {
         status: res.status,
-        statusText: res.statusText,
-        headers,
-        body: errText,
+        body: res.body,
         playlistId,
         trackCount: batch.length,
       });
-      throw new Error(`Failed to remove tracks from playlist (${res.status}): ${errText}`);
+      throw new Error(`Failed to remove tracks from playlist (${res.status}): ${res.body}`);
     }
   }
 }
