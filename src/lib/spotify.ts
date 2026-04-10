@@ -183,6 +183,36 @@ export async function addTracksToPlaylist(
 }
 
 /**
+ * Get a Spotify playlist's metadata (including owner info).
+ */
+export async function getPlaylist(
+  accessToken: string,
+  playlistId: string,
+): Promise<{ id: string; name: string; owner: { id: string; display_name?: string }; snapshot_id: string } | null> {
+  const res = await fetch(`${SPOTIFY_API}/playlists/${playlistId}?fields=id,name,owner(id,display_name),snapshot_id`, {
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    console.error('[Spotify getPlaylist] Failed:', res.status, await res.text());
+    return null;
+  }
+  return res.json();
+}
+
+/**
+ * Get the current Spotify user's profile.
+ */
+export async function getMe(
+  accessToken: string,
+): Promise<{ id: string; display_name?: string } | null> {
+  const res = await fetch(`${SPOTIFY_API}/me`, {
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+/**
  * Remove tracks from a Spotify playlist.
  */
 export async function removeTracksFromPlaylist(
@@ -193,20 +223,31 @@ export async function removeTracksFromPlaylist(
   const batchSize = 100;
   for (let i = 0; i < trackUris.length; i += batchSize) {
     const batch = trackUris.slice(i, i + batchSize);
+    const body = JSON.stringify({
+      tracks: batch.map(uri => ({ uri })),
+    });
+    console.log('[Spotify removeTracks] DELETE', `${SPOTIFY_API}/playlists/${playlistId}/tracks`, 'body:', body);
     const res = await fetch(`${SPOTIFY_API}/playlists/${playlistId}/tracks`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        tracks: batch.map(uri => ({ uri })),
-      }),
+      body,
     });
 
     if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Failed to remove tracks from playlist: ${err}`);
+      const errText = await res.text();
+      const headers = Object.fromEntries(res.headers.entries());
+      console.error('[Spotify removeTracks] FAILED', {
+        status: res.status,
+        statusText: res.statusText,
+        headers,
+        body: errText,
+        playlistId,
+        trackCount: batch.length,
+      });
+      throw new Error(`Failed to remove tracks from playlist (${res.status}): ${errText}`);
     }
   }
 }

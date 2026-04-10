@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { accounts, songs, bandMembers, bands, spotifyPlaylists } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { eq, and, or, isNull, inArray } from 'drizzle-orm';
-import { refreshAccessToken, searchTrack, searchTracks, createPlaylist, addTracksToPlaylist, removeTracksFromPlaylist } from '@/lib/spotify';
+import { refreshAccessToken, searchTrack, searchTracks, createPlaylist, addTracksToPlaylist, removeTracksFromPlaylist, getPlaylist } from '@/lib/spotify';
 import { getUserBandId } from './bands';
 
 /**
@@ -45,10 +45,11 @@ export async function disconnectSpotify(): Promise<void> {
   );
 }
 
-// Scopes required for full functionality (must match authorize route)
+// Scopes required for playlist add/remove operations.
+// Per Spotify Web API docs, ADD and DELETE both only require playlist-modify-*.
+// We grant playlist-read-* in the authorize route too for future flexibility, but
+// don't enforce them here so older tokens still work for the core flows.
 const REQUIRED_SCOPES = [
-  'playlist-read-private',
-  'playlist-read-collaborative',
   'playlist-modify-public',
   'playlist-modify-private',
 ];
@@ -383,6 +384,7 @@ export async function removeSongFromSpotifyPlaylist(
   noPlaylist?: boolean;
   notFound?: boolean;
   needsReauth?: boolean;
+  notOwner?: boolean;
   error?: string;
 }> {
   try {
@@ -411,7 +413,39 @@ export async function removeSongFromSpotifyPlaylist(
       return { removed: false, noPlaylist: true };
     }
 
+    // Get current Spotify account info from DB so we can compare ownership
+    const account = await db.query.accounts.findFirst({
+      where: and(
+        eq(accounts.userId, session.user.id),
+        eq(accounts.provider, 'spotify'),
+      ),
+    });
+    const currentSpotifyUserId = account?.providerAccountId;
+
     const accessToken = await getValidAccessToken(session.user.id);
+
+    // Verify the playlist exists and the current user owns it
+    const playlist = await getPlaylist(accessToken, linked.spotifyPlaylistId);
+    if (!playlist) {
+      console.error('[Spotify remove] Playlist not accessible:', linked.spotifyPlaylistId);
+      return { removed: false, error: 'Playlist not accessible — it may have been deleted on Spotify' };
+    }
+
+    console.log('[Spotify remove] Playlist info:', {
+      playlistId: playlist.id,
+      ownerId: playlist.owner.id,
+      currentUserId: currentSpotifyUserId,
+      ownerMatches: playlist.owner.id === currentSpotifyUserId,
+    });
+
+    if (currentSpotifyUserId && playlist.owner.id !== currentSpotifyUserId) {
+      console.error('[Spotify remove] Playlist owned by different user:', playlist.owner.id, 'vs', currentSpotifyUserId);
+      return {
+        removed: false,
+        notOwner: true,
+        error: `Playlist belongs to a different Spotify account (${playlist.owner.display_name ?? playlist.owner.id}) — please create a new playlist`,
+      };
+    }
 
     const track = await searchTrack(accessToken, title, artist);
     if (!track) {

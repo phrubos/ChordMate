@@ -41,6 +41,10 @@ export function DeleteSongDialog({ song, open, onOpenChange }: DeleteSongDialogP
           toast.success('Dal törölve', {
             description: '⚠️ Spotify jogosultságok frissítése szükséges — csatlakoztasd újra a Spotify-t a Beállításokban',
           });
+        } else if (sp?.notOwner) {
+          toast.success('Dal törölve', {
+            description: '⚠️ A Spotify playlist egy másik fiókhoz tartozik — hozz létre egy újat',
+          });
         } else if (sp?.error) {
           toast.success('Dal törölve', {
             description: '⚠️ Nem sikerült a Spotify playlistből törölni',
