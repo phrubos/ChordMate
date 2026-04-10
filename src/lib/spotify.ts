@@ -263,14 +263,17 @@ export async function removeTracksFromPlaylist(
   const batchSize = 100;
   for (let i = 0; i < trackUris.length; i += batchSize) {
     const batch = trackUris.slice(i, i + batchSize);
-    const body = JSON.stringify({ uris: batch });
-    console.log('[Spotify removeTracks] DELETE via node:https', `/v1/playlists/${playlistId}/items`, 'body:', body);
+    // Spotify's DELETE /items endpoint reads `uris` from the QUERY STRING (comma-separated),
+    // not from the request body. Sending it in the body returns 400 "No uris provided".
+    const urisParam = encodeURIComponent(batch.join(','));
+    const path = `/v1/playlists/${playlistId}/tracks?uris=${urisParam}`;
+    console.log('[Spotify removeTracks] DELETE via node:https', path);
 
     const res = await nodeDeleteJson(
       'api.spotify.com',
-      `/v1/playlists/${playlistId}/items`,
+      path,
       accessToken,
-      body,
+      '',
     );
 
     if (res.status < 200 || res.status >= 300) {
