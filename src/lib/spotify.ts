@@ -253,40 +253,112 @@ export async function getMe(
 }
 
 /**
+ * Fetch all track URIs in a playlist (paginated).
+ */
+async function getAllPlaylistTrackUris(
+  accessToken: string,
+  playlistId: string,
+): Promise<string[]> {
+  const uris: string[] = [];
+  let offset = 0;
+  const limit = 100;
+  while (true) {
+    const url = `${SPOTIFY_API}/playlists/${playlistId}/tracks?fields=items(track(uri)),total&limit=${limit}&offset=${offset}`;
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Failed to fetch playlist tracks (${res.status}): ${err}`);
+    }
+    const data = await res.json();
+    const items = (data?.items ?? []) as { track: { uri: string } | null }[];
+    for (const item of items) {
+      if (item.track?.uri) uris.push(item.track.uri);
+    }
+    if (items.length < limit) break;
+    offset += limit;
+  }
+  return uris;
+}
+
+/**
+ * Replace a playlist's contents with the given URI list (max 100 per call).
+ */
+async function replacePlaylistTracks(
+  accessToken: string,
+  playlistId: string,
+  trackUris: string[],
+): Promise<void> {
+  // PUT replaces the playlist contents. Max 100 URIs per call. Empty array clears the playlist.
+  const firstBatch = trackUris.slice(0, 100);
+  const url = `${SPOTIFY_API}/playlists/${playlistId}/tracks`;
+  console.log('[Spotify replacePlaylistTracks] PUT', url, 'count:', firstBatch.length);
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ uris: firstBatch }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Failed to replace playlist tracks (${res.status}): ${err}`);
+  }
+
+  // If more than 100 URIs, append the rest with POST.
+  if (trackUris.length > 100) {
+    await addTracksToPlaylist(accessToken, playlistId, trackUris.slice(100));
+  }
+}
+
+/**
  * Remove tracks from a Spotify playlist.
+ *
+ * Workaround: Spotify's DELETE /playlists/{id}/tracks endpoint returns 403 from
+ * Vercel for unclear reasons (POST add works fine on the same playlist with the
+ * same token). Instead, we fetch the full playlist, filter out the URIs to remove,
+ * and PUT the new list back via "Reorder or Replace Items".
  */
 export async function removeTracksFromPlaylist(
   accessToken: string,
   playlistId: string,
   trackUris: string[],
 ): Promise<void> {
-  const batchSize = 100;
-  for (let i = 0; i < trackUris.length; i += batchSize) {
-    const batch = trackUris.slice(i, i + batchSize);
-    const body = JSON.stringify({ uris: batch });
-    const url = `${SPOTIFY_API}/playlists/${playlistId}/items`;
-    console.log('[Spotify removeTracks] DELETE via fetch', url, 'body:', body);
+  if (trackUris.length === 0) return;
 
-    const res = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body,
-    });
+  console.log('[Spotify removeTracks] using PUT-replace workaround for', trackUris.length, 'uri(s)');
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error('[Spotify removeTracks] FAILED', {
-        status: res.status,
-        body: errText,
-        playlistId,
-        trackCount: batch.length,
-      });
-      throw new Error(`Failed to remove tracks from playlist (${res.status}): ${errText}`);
-    }
+  // 1. Fetch all current track URIs in the playlist.
+  const currentUris = await getAllPlaylistTrackUris(accessToken, playlistId);
+  console.log('[Spotify removeTracks] playlist has', currentUris.length, 'tracks');
+
+  // 2. Build a multiset-aware filtered list: remove only as many copies of each
+  // URI as were requested, so duplicates of other tracks are preserved.
+  const removalCounts = new Map<string, number>();
+  for (const uri of trackUris) {
+    removalCounts.set(uri, (removalCounts.get(uri) ?? 0) + 1);
   }
+  const newUris: string[] = [];
+  for (const uri of currentUris) {
+    const remaining = removalCounts.get(uri) ?? 0;
+    if (remaining > 0) {
+      removalCounts.set(uri, remaining - 1);
+      continue;
+    }
+    newUris.push(uri);
+  }
+
+  if (newUris.length === currentUris.length) {
+    console.log('[Spotify removeTracks] no matching URIs in playlist — nothing to do');
+    return;
+  }
+
+  console.log('[Spotify removeTracks] replacing playlist:', currentUris.length, '->', newUris.length, 'tracks');
+
+  // 3. Replace the playlist contents with the filtered list.
+  await replacePlaylistTracks(accessToken, playlistId, newUris);
 }
 
 /**
