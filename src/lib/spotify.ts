@@ -263,7 +263,7 @@ async function getAllPlaylistTrackUris(
   let offset = 0;
   const limit = 100;
   while (true) {
-    const url = `${SPOTIFY_API}/playlists/${playlistId}/tracks?fields=items(track(uri)),total&limit=${limit}&offset=${offset}`;
+    const url = `${SPOTIFY_API}/playlists/${playlistId}/items?fields=items(track(uri)),total&limit=${limit}&offset=${offset}`;
     const res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
@@ -292,7 +292,7 @@ async function replacePlaylistTracks(
 ): Promise<void> {
   // PUT replaces the playlist contents. Max 100 URIs per call. Empty array clears the playlist.
   const firstBatch = trackUris.slice(0, 100);
-  const url = `${SPOTIFY_API}/playlists/${playlistId}/tracks`;
+  const url = `${SPOTIFY_API}/playlists/${playlistId}/items`;
   console.log('[Spotify replacePlaylistTracks] PUT', url, 'count:', firstBatch.length);
   const res = await fetch(url, {
     method: 'PUT',
