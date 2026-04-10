@@ -263,10 +263,11 @@ export async function removeTracksFromPlaylist(
   const batchSize = 100;
   for (let i = 0; i < trackUris.length; i += batchSize) {
     const batch = trackUris.slice(i, i + batchSize);
-    // Spotify's DELETE /items endpoint reads `uris` from the QUERY STRING (comma-separated),
-    // not from the request body. Sending it in the body returns 400 "No uris provided".
+    // The /tracks endpoint returns 403 from Vercel for unclear reasons.
+    // The /items alias works for POST and DELETE, but the body gets stripped
+    // somewhere between Vercel and Spotify on DELETE — pass uris via query string instead.
     const urisParam = encodeURIComponent(batch.join(','));
-    const path = `/v1/playlists/${playlistId}/tracks?uris=${urisParam}`;
+    const path = `/v1/playlists/${playlistId}/items?uris=${urisParam}`;
     console.log('[Spotify removeTracks] DELETE via node:https', path);
 
     const res = await nodeDeleteJson(
