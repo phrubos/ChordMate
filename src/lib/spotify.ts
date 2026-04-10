@@ -263,28 +263,28 @@ export async function removeTracksFromPlaylist(
   const batchSize = 100;
   for (let i = 0; i < trackUris.length; i += batchSize) {
     const batch = trackUris.slice(i, i + batchSize);
-    // The /tracks endpoint returns 403 from Vercel for unclear reasons.
-    // The /items alias works for POST and DELETE, but the body gets stripped
-    // somewhere between Vercel and Spotify on DELETE — pass uris via query string instead.
-    const urisParam = encodeURIComponent(batch.join(','));
-    const path = `/v1/playlists/${playlistId}/items?uris=${urisParam}`;
-    console.log('[Spotify removeTracks] DELETE via node:https', path);
+    const body = JSON.stringify({ tracks: batch.map(uri => ({ uri })) });
+    const url = `${SPOTIFY_API}/playlists/${playlistId}/items`;
+    console.log('[Spotify removeTracks] DELETE via fetch', url, 'body:', body);
 
-    const res = await nodeDeleteJson(
-      'api.spotify.com',
-      path,
-      accessToken,
-      '',
-    );
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body,
+    });
 
-    if (res.status < 200 || res.status >= 300) {
+    if (!res.ok) {
+      const errText = await res.text();
       console.error('[Spotify removeTracks] FAILED', {
         status: res.status,
-        body: res.body,
+        body: errText,
         playlistId,
         trackCount: batch.length,
       });
-      throw new Error(`Failed to remove tracks from playlist (${res.status}): ${res.body}`);
+      throw new Error(`Failed to remove tracks from playlist (${res.status}): ${errText}`);
     }
   }
 }
