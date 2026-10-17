@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="hu" data-dir="precision">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChordMate — 3. Precision Utility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400..800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/base.css">
+<style>
+/* ===== 3. PRECISION UTILITY =====
+   Letisztult, sűrű, nyugodt eszköz. Világos alap, egyetlen narancs akcent,
+   pontos rács, finom árnyékok. A Próba mód automatikusan sötét „színpadra” vált. */
+:root {
+  --font-display: "Onest", sans-serif;
+  --font-body: "Onest", sans-serif;
+  --font-mono: "Geist Mono", monospace;
+  --page: oklch(.975 .002 90);
+  --bg: oklch(.985 .002 90);
+  --bg-2: oklch(.965 .003 90);
+  --surface: #fff;
+  --surface-2: oklch(.965 .003 90);
+  --line: oklch(.25 .01 260 / .09);
+  --line-strong: oklch(.25 .01 260 / .16);
+  --text: oklch(.22 .012 260);
+  --text-2: oklch(.47 .012 260);
+  --text-3: oklch(.6 .01 260);
+  --accent: oklch(.68 .185 47);
+  --accent-2: oklch(.63 .19 45);
+  --accent-text: oklch(.56 .17 43);
+  --on-accent: #fff;
+  --accent-soft: oklch(.68 .185 47 / .1);
+  --done: oklch(.55 .13 155);
+  --fav: oklch(.62 .2 15);
+  --st-learning: oklch(.6 .18 295);
+  --st-ok: oklch(.6 .14 240);
+  --st-ready: oklch(.6 .14 155);
+  --diff: var(--text);
+  --radius: 9px; --radius-sm: 7px; --radius-lg: 12px; --radius-xl: 14px; --radius-chip: 5px; --radius-cover: 6px;
+  --display-weight: 650; --display-track: -0.035em; --display-track-sm: -0.02em;
+  --eyebrow-case: none; --eyebrow-track: 0;
+  --hero: 44px; --h1: 30px; --h3: 15px; --hub-title: 44px;
+  --shadow: 0 1px 2px oklch(.2 .01 260 / .04), 0 1px 1px oklch(.2 .01 260 / .02);
+  --shadow-hover: 0 8px 24px oklch(.2 .01 260 / .08);
+  --seg-shadow: 0 1px 2px oklch(.2 .01 260 / .1), 0 0 0 1px oklch(.2 .01 260 / .05);
+  --cv-l1: .72; --cv-l2: .45; --cv-c: .13;
+  --side-w: 236px;
+  --icon-stroke: 1.75;
+}
+body { color-scheme: light; font-size: 14px; }
+.eyebrow { font-size: 13px; font-weight: 500; color: var(--text-3); }
+.eyebrow-accent { color: var(--accent-text); font-weight: 600; }
+.card-title { font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+.card-head { margin-bottom: 14px; }
+.card { padding: 18px; }
+.brand-name { font-size: 17px; font-weight: 700; letter-spacing: -.03em; }
+.logo-bg { fill: var(--text); } .logo-mark { stroke: #fff; }
+.nav-item { font-size: 14px; padding: 7px 10px; }
+.nav-item.active { background: var(--surface); color: var(--text); box-shadow: var(--seg-shadow); }
+.nav-item.active .i { color: var(--accent); }
+.band-switch { box-shadow: var(--shadow); }
+.topbar { height: 56px; background: oklch(.985 .002 90 / .85); }
+.search-trigger { height: 34px; background: var(--surface-2); border-color: transparent; }
+.btn { height: 36px; font-weight: 550; font-size: 13.5px; }
+.btn-lg { height: 42px; font-size: 14px; }
+.btn-sm { height: 30px; font-size: 13px; }
+.btn-ghost { box-shadow: var(--shadow); border-color: var(--line-strong); }
+.btn-primary { box-shadow: 0 1px 2px oklch(.5 .15 45 / .3), inset 0 1px 0 oklch(1 0 0 / .2); }
+.icon-btn { width: 34px; height: 34px; }
+.chip { background: var(--surface-2); border-color: transparent; color: var(--text-2); height: 22px; font-size: 12px; }
+.status { font-size: 12.5px; font-weight: 550; padding: 2px 8px 2px 6px; border-radius: 99px; background: color-mix(in oklch, var(--c) 10%, transparent); }
+.main { padding: 28px 36px 40px; }
+.page-title { font-size: 30px; }
+
+/* hero: tiszta panel, kiemelt visszaszámláló */
+.hero { --hero-bg: var(--surface); box-shadow: var(--shadow); padding: 28px; gap: 32px; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+.hero::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--accent) 0 30%, var(--line) 30%); }
+.hero-title { font-size: 44px; }
+.hero-date { color: var(--accent-text); }
+.hero-setlist { border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 10px 6px 6px; background: var(--bg); }
+.sl-head { padding: 0 10px 8px; }
+.sl-row { padding: 7px 10px; }
+.sl-meta b { font-size: 14px; }
+.sl-row + .sl-row { border-top: 1px solid var(--line); border-radius: 0; }
+
+/* naptár: kompakt */
+.cal-cell { min-height: 64px; border: 1px solid var(--line); background: var(--surface); }
+.cal-cell.out { background: transparent; border-color: transparent; }
+.cal-cell.done { background: var(--bg); }
+.cal-cell.selected { box-shadow: 0 0 0 1px var(--accent), 0 0 0 4px var(--accent-soft); }
+.cal-marks i { width: 8px; height: 8px; }
+
+/* dalok: vízszintes, sűrű kártyák */
+.song-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.song-card { flex-direction: row; box-shadow: var(--shadow); }
+.song-card:hover { transform: none; }
+.sc-art { width: 112px; aspect-ratio: auto; flex: none; }
+.sc-play { width: 34px; height: 34px; right: 8px; bottom: 8px; }
+.sc-play .i { width: 13px; height: 13px; }
+.sc-fav { width: 22px; height: 22px; left: 8px; top: 8px; }
+.sc-fav .i { width: 11px; height: 11px; }
+.sc-body { padding: 12px 14px; flex: 1; gap: 2px; }
+.sc-title { font-size: 14.5px; font-weight: 600; }
+.sc-artist { font-size: 13px; }
+.sc-chips { margin-top: 6px; }
+.sc-foot { border-top: 0; padding-top: 0; margin-top: 8px; }
+.song-row { padding: 8px 16px; }
+
+/* song hub */
+.hub-hero { --hub-bg: linear-gradient(180deg, oklch(.96 .03 var(--h)), var(--surface)); box-shadow: var(--shadow); grid-template-columns: 180px minmax(0, 1fr); align-items: center; }
+.hub-cover { width: 180px; height: 180px; box-shadow: 0 12px 30px oklch(.3 .05 var(--h) / .25); }
+.hub-artist { font-size: 16px; }
+.chord { background: var(--surface); box-shadow: var(--shadow); }
+.ch-dot { fill: var(--text); }
+.bars { border-left-color: var(--text); }
+.bar { height: 40px; }
+.tab { background: var(--bg); border: 1px solid var(--line); }
+.note { background: var(--bg); border: 1px solid var(--line); }
+
+/* mini player */
+.mini { --mini-bg: oklch(1 0 0 / .9); box-shadow: 0 12px 32px oklch(.2 .01 260 / .14), 0 0 0 1px var(--line); border: 0; }
+.play-btn { background: var(--text); color: #fff; }
+
+/* próba mód — automatikus sötét színpad */
+.practice { --bg: oklch(.17 .008 260); --pr-bg: oklch(.15 .008 260); --pr-bar-bg: oklch(.19 .009 260); --surface: oklch(.21 .01 260); --surface-2: oklch(.24 .01 260); --line: oklch(1 0 0 / .08); --line-strong: oklch(1 0 0 / .15); --text: oklch(.96 .004 260); --text-2: oklch(.74 .01 260); --text-3: oklch(.58 .01 260); --accent-text: oklch(.78 .15 52); --accent-soft: oklch(.68 .185 47 / .16); color-scheme: dark; }
+.practice .ch-dot { fill: var(--accent); }
+.practice .bars { border-left-color: var(--accent); }
+.practice .chip { background: var(--surface-2); }
+
+@container app (max-width: 760px) {
+  .main { padding: 18px 16px 24px; }
+  .hero { padding: 18px; grid-template-columns: minmax(0, 1fr); }
+  .hero-title { font-size: 32px; }
+  .song-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .sc-art { width: 92px; }
+  .sc-foot { flex-direction: row; align-items: center; }
+  .sc-chips .chip:nth-child(n+3) { display: inline-flex; }
+  .nav-item.active { box-shadow: none; }
+  .bn-item.active .i { color: var(--accent); }
+  .bn-item.active { color: var(--text); }
+  .hub-hero { align-items: start; }
+  .ws-day.today { background: var(--text); border-color: var(--text); color: #fff; }
+}
+</style>
+<script src="shared/data.js"></script>
+<script src="shared/screens.js"></script>
+<script src="shared/frame.js"></script>
+</head>
+<body></body>
+</html>
