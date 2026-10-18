@@ -4,8 +4,6 @@ import { SongList } from '@/components/songs/song-list';
 import { SongFilters } from '@/components/songs/song-filters';
 import { NewSongButton } from '@/components/songs/new-song-button';
 import { SpotifyPlaylistButton } from '@/components/songs/spotify-playlist-button';
-import { Navbar } from '@/components/layout/navbar';
-import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { auth } from '@/lib/auth';
 import { getSongs } from '@/actions/songs';
 import { getUserBand } from '@/actions/bands';
@@ -34,8 +32,7 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
 
   return (
     <>
-      <Navbar />
-      <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+      <div>
         <div>
           <PageHeader title="Dalok" description="A közös dallistátok">
             <Suspense>
@@ -51,8 +48,7 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
             <SongList songs={songs} searchQuery={search} />
           </div>
         </div>
-      </main>
-      <MobileBottomNav />
+      </div>
     </>
   );
 }

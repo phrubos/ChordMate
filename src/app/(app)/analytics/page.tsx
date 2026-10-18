@@ -1,8 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getAnalyticsData } from '@/actions/analytics';
-import { Navbar } from '@/components/layout/navbar';
-import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { PageHeader } from '@/components/shared/page-header';
 import { PracticeHeatmap } from '@/components/analytics/practice-heatmap';
 import { TopSongsRanking } from '@/components/analytics/top-songs-ranking';
@@ -25,8 +23,7 @@ export default async function AnalyticsPage() {
 
   return (
     <>
-      <Navbar />
-      <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+      <div>
         <div>
           <PageHeader
             title="Analitika"
@@ -126,8 +123,7 @@ export default async function AnalyticsPage() {
             <NeglectedSongs songs={data.neglectedSongs} />
           </div>
         </div>
-      </main>
-      <MobileBottomNav />
+      </div>
     </>
   );
 }

@@ -1,6 +1,4 @@
 import { notFound } from 'next/navigation';
-import { Navbar } from '@/components/layout/navbar';
-import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { SongForm } from '@/components/songs/song-form';
 import { getSongById } from '@/actions/songs';
 
@@ -16,11 +14,9 @@ export default async function EditSongPage({ params }: EditSongPageProps) {
 
   return (
     <>
-      <Navbar />
-      <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+      <div>
         <SongForm song={song} />
-      </main>
-      <MobileBottomNav />
+      </div>
     </>
   );
 }
