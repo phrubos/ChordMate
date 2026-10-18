@@ -1,7 +1,5 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { staggerContainer, staggerItem } from '@/lib/motion';
 import { AlertTriangle, Calendar, Plus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -46,10 +44,7 @@ export function NeglectedSongs({ songs }: NeglectedSongsProps) {
         </span>
       </div>
 
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
+      <div
         className="flex flex-col gap-2"
       >
         {songs.map((song) => {
@@ -59,9 +54,8 @@ export function NeglectedSongs({ songs }: NeglectedSongsProps) {
           });
 
           return (
-            <motion.div
+            <div
               key={`${song.title}-${song.artist}`}
-              variants={staggerItem}
               className="flex items-center gap-3 rounded-xl border border-border/30 bg-card/30 p-3 transition-colors hover:bg-card/60"
             >
               <div className="flex-1 min-w-0">
@@ -72,10 +66,10 @@ export function NeglectedSongs({ songs }: NeglectedSongsProps) {
                 <p className="text-[11px] font-medium text-amber-400">{lastPracticed}</p>
                 <p className="text-[10px] text-muted-foreground">{song.count}× összesen</p>
               </div>
-            </motion.div>
+            </div>
           );
         })}
-      </motion.div>
+      </div>
     </div>
   );
 }

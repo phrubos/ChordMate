@@ -9,7 +9,6 @@ import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { auth } from '@/lib/auth';
 import { getSongs } from '@/actions/songs';
 import { getUserBand } from '@/actions/bands';
-import { PageTransition } from '@/components/shared/page-transition';
 import { Suspense } from 'react';
 
 
@@ -37,7 +36,7 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
     <>
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
-        <PageTransition>
+        <div>
           <PageHeader title="Dalok" description="A közös dallistátok">
             <Suspense>
               <SpotifyPlaylistButton bandName={band?.name} />
@@ -51,7 +50,7 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
             </Suspense>
             <SongList songs={songs} searchQuery={search} />
           </div>
-        </PageTransition>
+        </div>
       </main>
       <MobileBottomNav />
     </>

@@ -28,3 +28,6 @@ Task 2: Ruling: removed CSS classes (`practice-day-*`, `today-marker`, `shimmer-
 Task 2: Ruling: grain noise moved from an inline SVG data URI to `public/grain.svg` — the production CSS minifier crashed on the data URI (`TypeError … reading 'length'`, bisected: build green without that block) — cost if wrong: one extra 237-byte request.
 Task 2: Ruling: fixed the pre-existing `react-hooks/set-state-in-effect` lint error in `theme-toggle.tsx` (now `useSyncExternalStore` on the `<html>` class) since the task touches the file — cost if wrong: none; baseline lint errors drop to 28.
 Task 2: complete (commits b5a512c..HEAD, tests: npm test → 1/1 pass; tsc ok; eslint changed files ok; build ok; /dev/ui#tokens screenshot matches hybrid.html palette and fonts incl. ő/ű)
+Task 3: Ruling: also removed the width "draw-in" animation of the analytics ranking bars (static `style.width`) — spec §6 rejects chart draw-in on functional data — cost if wrong: none.
+Task 3: note: eslint on touched files reports 2 errors, both pre-existing baseline (analytics/page.tsx `any` → Task 17; mobile-bottom-nav setState-in-effect → deleted in Task 6); no new errors.
+Task 3: complete (commits 05e32aa..HEAD, tests: npm test → 3/3 pass (motion 2 RED→GREEN); tsc ok; build ok)

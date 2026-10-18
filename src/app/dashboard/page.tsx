@@ -6,7 +6,6 @@ import { DashboardView } from '@/components/calendar/dashboard-view';
 import { PracticeHistory } from '@/components/dashboard/practice-history';
 import { getCalendarEntries, getCalendarStats } from '@/actions/calendar';
 import { getSongs } from '@/actions/songs';
-import { PageTransition } from '@/components/shared/page-transition';
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -26,7 +25,7 @@ export default async function DashboardPage() {
     <>
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6 overflow-x-hidden">
-        <PageTransition>
+        <div>
           <div className="flex flex-col gap-6">
             <DashboardView
               initialYear={year}
@@ -39,7 +38,7 @@ export default async function DashboardPage() {
               <PracticeHistory history={calendarStats.practiceHistory} />
             </div>
           </div>
-        </PageTransition>
+        </div>
       </main>
       <MobileBottomNav />
     </>

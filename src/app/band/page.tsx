@@ -3,7 +3,6 @@ import { Navbar } from '@/components/layout/navbar';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { auth } from '@/lib/auth';
 import { getUserBand, getUserBands } from '@/actions/bands';
-import { PageTransition } from '@/components/shared/page-transition';
 import { BandProfile } from '@/components/band/band-profile';
 
 export default async function BandPage() {
@@ -17,9 +16,9 @@ export default async function BandPage() {
     <>
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
-        <PageTransition>
+        <div>
           <BandProfile band={band} currentUserId={session.user.id!} bandCount={allBands.length} />
-        </PageTransition>
+        </div>
       </main>
       <MobileBottomNav />
     </>

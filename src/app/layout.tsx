@@ -7,6 +7,7 @@ import { KeyboardShortcuts } from "@/components/shared/keyboard-shortcuts";
 import { OnboardingCheck } from "@/components/band/onboarding-check";
 import { needsOnboarding } from "@/actions/bands";
 import NextTopLoader from "nextjs-toploader";
+import { MotionProvider } from "@/components/providers/motion-provider";
 import "./globals.css";
 
 const fontDisplay = Fraunces({
@@ -67,15 +68,17 @@ export default async function RootLayout({
       <body
         className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable} grain antialiased`}
       >
-        <AuthSessionProvider>
-          <NextTopLoader color="oklch(0.8 0.145 72)" showSpinner={false} height={2} shadow={false} />
-          <TooltipProvider>
-            <KeyboardShortcuts />
-            <OnboardingCheck needsOnboardingServer={needs} />
-            {children}
-            <Toaster richColors position="bottom-right" visibleToasts={3} expand />
-          </TooltipProvider>
-        </AuthSessionProvider>
+        <MotionProvider>
+          <AuthSessionProvider>
+            <NextTopLoader color="oklch(0.8 0.145 72)" showSpinner={false} height={2} shadow={false} />
+            <TooltipProvider>
+              <KeyboardShortcuts />
+              <OnboardingCheck needsOnboardingServer={needs} />
+              {children}
+              <Toaster richColors position="bottom-right" visibleToasts={3} expand />
+            </TooltipProvider>
+          </AuthSessionProvider>
+        </MotionProvider>
       </body>
     </html>
   );

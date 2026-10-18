@@ -1,48 +1,27 @@
-import type { Transition, Variants } from 'motion/react';
+import type { Transition } from 'motion/react';
 
-// =============================================
-// Spring Configurations (project-wide consistency)
-// =============================================
+/** Custom easing curves (spec §6). Never use ease-in for UI. */
+export const ease = {
+  out: [0.23, 1, 0.32, 1],
+  inOut: [0.77, 0, 0.175, 1],
+  drawer: [0.32, 0.72, 0, 1],
+} as const;
+
+/** Durations in seconds. UI stays under 300ms. */
+export const dur = {
+  press: 0.16,
+  fade: 0.15,
+  popover: 0.18,
+  dialog: 0.2,
+  sheet: 0.3,
+} as const;
+
+/** Exit animations run at ~65% of the enter duration. */
+export function exitDur(enter: number): number {
+  return Math.round(enter * 0.65 * 1000) / 1000;
+}
 
 export const springs = {
-  /** Buttons, toggles, small elements */
-  snappy: { type: 'spring', stiffness: 500, damping: 30 } as Transition,
-  /** Cards, panels, modals */
-  smooth: { type: 'spring', stiffness: 300, damping: 25 } as Transition,
-  /** Page transitions, large elements */
-  gentle: { type: 'spring', stiffness: 200, damping: 20 } as Transition,
-};
-
-// =============================================
-// Page Transition Variants
-// =============================================
-
-export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
-};
-
-// =============================================
-// Staggered List Variants
-// =============================================
-
-export const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.06,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-export const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring', stiffness: 300, damping: 25 },
-  },
+  /** Sliding indicators (segmented controls, nav). */
+  indicator: { type: 'spring', duration: 0.3, bounce: 0 } as Transition,
 };

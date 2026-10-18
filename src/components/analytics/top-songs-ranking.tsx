@@ -1,7 +1,5 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { staggerContainer, staggerItem } from '@/lib/motion';
 import { Medal, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TruncatedText } from '@/components/shared/truncated-text';
@@ -34,10 +32,7 @@ export function TopSongsRanking({ songs }: TopSongsRankingProps) {
         Legtöbbet gyakorolt dalok
       </h3>
 
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
+      <div
         className="flex flex-col gap-3"
       >
         {songs.map((song, idx) => {
@@ -45,9 +40,8 @@ export function TopSongsRanking({ songs }: TopSongsRankingProps) {
           const isTop3 = idx < 3;
 
           return (
-            <motion.div
+            <div
               key={`${song.title}-${song.artist}`}
-              variants={staggerItem}
               className="flex items-center gap-3"
             >
               {/* Rank badge */}
@@ -84,21 +78,18 @@ export function TopSongsRanking({ songs }: TopSongsRankingProps) {
 
                 {/* Progress bar */}
                 <div className="h-1.5 w-full rounded-full bg-secondary/30 overflow-hidden">
-                  <motion.div
+                  <div
                     className={cn(
                       'h-full rounded-full',
                       isTop3 ? 'bg-primary' : 'bg-primary/50'
-                    )}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${pct}%` }}
-                    transition={{ duration: 0.8, delay: idx * 0.08, ease: 'easeOut' }}
+                    )} style={{ width: `${pct}%` }}
                   />
                 </div>
               </div>
-            </motion.div>
+            </div>
           );
         })}
-      </motion.div>
+      </div>
     </div>
   );
 }

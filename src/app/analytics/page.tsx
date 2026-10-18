@@ -3,7 +3,6 @@ import { auth } from '@/lib/auth';
 import { getAnalyticsData } from '@/actions/analytics';
 import { Navbar } from '@/components/layout/navbar';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
-import { PageTransition } from '@/components/shared/page-transition';
 import { PageHeader } from '@/components/shared/page-header';
 import { PracticeHeatmap } from '@/components/analytics/practice-heatmap';
 import { TopSongsRanking } from '@/components/analytics/top-songs-ranking';
@@ -28,7 +27,7 @@ export default async function AnalyticsPage() {
     <>
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
-        <PageTransition>
+        <div>
           <PageHeader
             title="Analitika"
             description="A gyakorlásaid összesítője"
@@ -126,7 +125,7 @@ export default async function AnalyticsPage() {
           <div className="mt-6">
             <NeglectedSongs songs={data.neglectedSongs} />
           </div>
-        </PageTransition>
+        </div>
       </main>
       <MobileBottomNav />
     </>

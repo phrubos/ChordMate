@@ -108,7 +108,7 @@ export function MobileBottomNav() {
                     <motion.div
                       layoutId="bottomNavIndicator"
                       className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-[3px] w-4 rounded-full bg-primary"
-                      transition={springs.snappy}
+                      transition={springs.indicator}
                     />
                   )}
                 </div>
@@ -193,7 +193,7 @@ export function MobileBottomNav() {
                 <motion.div
                   layoutId="bottomNavIndicator"
                   className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-[3px] w-4 rounded-full bg-primary"
-                  transition={springs.snappy}
+                  transition={springs.indicator}
                 />
               )}
             </div>
