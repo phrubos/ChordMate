@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
@@ -9,14 +9,22 @@ import { needsOnboarding } from "@/actions/bands";
 import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-sans",
-  subsets: ["latin"],
+const fontDisplay = Fraunces({
+  variable: "--font-display",
+  subsets: ["latin", "latin-ext"],
+  axes: ["SOFT", "opsz"],
+  style: ["normal", "italic"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const fontSans = Hanken_Grotesk({
+  variable: "--font-sans",
+  subsets: ["latin", "latin-ext"],
+});
+
+const fontMono = IBM_Plex_Mono({
+  variable: "--font-mono",
+  weight: ["400", "500", "600"],
+  subsets: ["latin", "latin-ext"],
 });
 
 export const metadata: Metadata = {
@@ -39,8 +47,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1d1a16" },
+    { media: "(prefers-color-scheme: light)", color: "#f3eee3" },
   ],
 };
 
@@ -57,10 +65,10 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable} grain antialiased`}
       >
         <AuthSessionProvider>
-          <NextTopLoader color="#f59e0b" showSpinner={false} height={3} shadow="0 0 10px #f59e0b, 0 0 5px #f59e0b" />
+          <NextTopLoader color="oklch(0.8 0.145 72)" showSpinner={false} height={2} shadow={false} />
           <TooltipProvider>
             <KeyboardShortcuts />
             <OnboardingCheck needsOnboardingServer={needs} />

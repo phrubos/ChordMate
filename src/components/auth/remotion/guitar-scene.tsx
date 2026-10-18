@@ -308,7 +308,7 @@ function FloatingChords() {
               top: `${yPos}%`,
               transform: `translateY(${floatY}px)`,
               fontSize,
-              fontFamily: 'var(--font-geist-mono), monospace',
+              fontFamily: 'var(--font-mono), monospace',
               fontWeight: 700,
               color: '#f59e0b',
               opacity,
