@@ -31,3 +31,7 @@ Task 2: complete (commits b5a512c..HEAD, tests: npm test → 1/1 pass; tsc ok; e
 Task 3: Ruling: also removed the width "draw-in" animation of the analytics ranking bars (static `style.width`) — spec §6 rejects chart draw-in on functional data — cost if wrong: none.
 Task 3: note: eslint on touched files reports 2 errors, both pre-existing baseline (analytics/page.tsx `any` → Task 17; mobile-bottom-nav setState-in-effect → deleted in Task 6); no new errors.
 Task 3: complete (commits 05e32aa..HEAD, tests: npm test → 3/3 pass (motion 2 RED→GREEN); tsc ok; build ok)
+Task 4: Ruling: added `ChipList` (joins chips with a middle dot, skips empty values) and exported `STATUS_TEXT`/`STATUS_BG`/`initialsOf` alongside the planned atoms — needed so callers never render empty chips (Review Focus #3) and never hardcode status colors — cost if wrong: three extra exports.
+Task 4: Ruling: avatar fallback shows ONE initial (last word of the name; Hungarian names are family-name first) — two-letter initials were clipped by the overlapping stack and the mockup shows single letters — cost if wrong: cosmetic.
+Task 4: Ruling: Input/Textarea/Badge got only radius/height/focus token tweaks (h-10 inputs) — no visual spec beyond tokens; screens restyle them in context — cost if wrong: small follow-ups in screen tasks.
+Task 4: complete (commits 945b085..HEAD, tests: npm test → 7/7 pass (song-meta 4 RED→GREEN); tsc ok; eslint touched files 0 errors; build ok; /dev/ui#atoms desktop + 390px screenshots checked: no horizontal overflow, long title ellipsized)

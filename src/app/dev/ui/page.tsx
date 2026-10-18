@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { MobileFrame } from './mobile-frame';
 import { TokensSection } from './sections/tokens';
+import { AtomsSection } from './sections/atoms';
 
 export const metadata = { title: 'ChordMate — UI showcase (dev)' };
 
@@ -17,7 +18,7 @@ export default async function DevUiPage({ searchParams }: DevUiPageProps) {
     <main className="mx-auto flex max-w-[1320px] flex-col gap-16 px-4 py-10 lg:px-10">
       <h1 className="display-soft font-display text-4xl font-medium">ChordMate UI showcase</h1>
       <TokensSection />
-      <section id="atoms" />
+      <AtomsSection />
     </main>
   );
 }
