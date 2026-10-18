@@ -1,4 +1,5 @@
 import type { CalendarEntryWithSong, SongWithUser } from '@/types';
+import type { SongStatus } from '@/lib/song-meta';
 
 export const FIXTURE_TODAY = '2026-10-16';
 
@@ -16,24 +17,24 @@ A                     E
 G                     D
 Em                    F#`;
 
-type Seed = [id: string, title: string, artist: string, difficulty: number, fav: boolean, tab: boolean];
+type Seed = [id: string, title: string, artist: string, difficulty: number, fav: boolean, tab: boolean, status: SongStatus, key: string, bpm: number, capo: number, tuning: string | null];
 
 const SEEDS: Seed[] = [
-  ['hotel', 'Hotel California', 'Eagles', 4, true, true],
-  ['gyongy', 'Gyöngyhajú lány', 'Omega', 3, true, true],
-  ['wing', 'Little Wing', 'Jimi Hendrix', 5, false, true],
-  ['bridge', 'Under the Bridge', 'Red Hot Chili Peppers', 4, false, true],
-  ['wonder', 'Wonderwall', 'Oasis', 2, false, true],
-  ['wish', 'Wish You Were Here', 'Pink Floyd', 2, true, true],
-  ['mostmulik', 'Most múlik pontosan', 'Kispál és a Borz', 2, false, true],
-  ['black', 'Black', 'Pearl Jam', 3, false, false],
-  ['rosa', 'Ha én rózsa volnék', 'Koncz Zsuzsa', 1, false, true],
-  ['nothing', 'Nothing Else Matters', 'Metallica', 3, true, true],
-  ['blackbird', 'Blackbird', 'The Beatles', 4, false, true],
-  ['layla', 'Layla (Unplugged)', 'Eric Clapton', 3, false, false],
+  ['hotel', 'Hotel California', 'Eagles', 4, true, true, 'learning', 'Bm', 74, 7, null],
+  ['gyongy', 'Gyöngyhajú lány', 'Omega', 3, true, true, 'ok', 'Am', 76, 0, null],
+  ['wing', 'Little Wing', 'Jimi Hendrix', 5, false, true, 'learning', 'Em', 70, 0, 'Eb'],
+  ['bridge', 'Under the Bridge', 'Red Hot Chili Peppers', 4, false, true, 'ok', 'E', 84, 0, null],
+  ['wonder', 'Wonderwall', 'Oasis', 2, false, true, 'ready', 'F#m', 87, 2, null],
+  ['wish', 'Wish You Were Here', 'Pink Floyd', 2, true, true, 'ready', 'G', 61, 0, null],
+  ['mostmulik', 'Most múlik pontosan', 'Kispál és a Borz', 2, false, true, 'ready', 'D', 128, 0, null],
+  ['black', 'Black', 'Pearl Jam', 3, false, false, 'ok', 'E', 74, 0, null],
+  ['rosa', 'Ha én rózsa volnék', 'Koncz Zsuzsa', 1, false, true, 'ready', 'C', 92, 0, null],
+  ['nothing', 'Nothing Else Matters', 'Metallica', 3, true, true, 'ok', 'Em', 69, 0, null],
+  ['blackbird', 'Blackbird', 'The Beatles', 4, false, true, 'learning', 'G', 94, 0, null],
+  ['layla', 'Layla (Unplugged)', 'Eric Clapton', 3, false, false, 'ok', 'Dm', 95, 0, null],
 ];
 
-export const fixtureSongs: SongWithUser[] = SEEDS.map(([id, title, artist, difficulty, fav, tab], i) => ({
+export const fixtureSongs: SongWithUser[] = SEEDS.map(([id, title, artist, difficulty, fav, tab, status, songKey, bpm, capo, tuning], i) => ({
   id,
   title,
   artist,
@@ -44,6 +45,11 @@ export const fixtureSongs: SongWithUser[] = SEEDS.map(([id, title, artist, diffi
   tabUrl: null,
   imageUrl: null,
   isFavorite: fav,
+  status,
+  bpm,
+  songKey,
+  capo,
+  tuning,
   bandId: 'band-1',
   addedById: i % 2 ? gabor.id : peter.id,
   createdAt: new Date(2026, 2, 1 + i),

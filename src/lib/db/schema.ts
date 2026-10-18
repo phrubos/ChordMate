@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import type { AdapterAccountType } from 'next-auth/adapters';
+import type { SongStatus } from '@/lib/song-meta';
 
 // ============================================================
 // NextAuth.js szükséges táblák (Auth.js / DrizzleAdapter)
@@ -116,6 +117,11 @@ export const songs = pgTable('songs', {
   tabUrl: text('tab_url'),
   imageUrl: text('image_url'),
   isFavorite: boolean('is_favorite').default(false).notNull(),
+  status: text('status').$type<SongStatus>().notNull().default('learning'),
+  bpm: integer('bpm'),
+  songKey: text('song_key'),
+  capo: integer('capo'),
+  tuning: text('tuning'),
   bandId: uuid('band_id').references(() => bands.id, { onDelete: 'cascade' }),
   addedById: text('added_by_id')
     .notNull()

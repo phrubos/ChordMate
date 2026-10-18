@@ -5,9 +5,10 @@ import { songs, bandMembers } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { eq, or, and, ilike, desc, asc, isNotNull, isNull, inArray } from 'drizzle-orm';
-import { songSchema } from '@/lib/validators';
+import { songSchema, type SongFormValues } from '@/lib/validators';
 import { fetchAlbumArt } from '@/lib/fetch-album-art';
 import { getUserBandId } from './bands';
+import { SONG_STATUSES, type SongStatus } from '@/lib/song-meta';
 import { addSongToSpotifyPlaylist, hasLinkedSpotifyPlaylist } from './spotify';
 
 interface SongFilters {
@@ -16,6 +17,7 @@ interface SongFilters {
   hasTab?: boolean;
   favOnly?: boolean;
   sort?: 'artist' | 'date';
+  status?: SongStatus;
 }
 
 export async function getSongs(filters?: string | SongFilters) {
@@ -64,6 +66,9 @@ export async function getSongs(filters?: string | SongFilters) {
   if (f.favOnly) {
     conditions.push(eq(songs.isFavorite, true));
   }
+  if (f.status) {
+    conditions.push(eq(songs.status, f.status));
+  }
 
   const sortOrder = f.sort === 'date'
     ? [desc(songs.isFavorite), desc(songs.createdAt)]
@@ -74,6 +79,37 @@ export async function getSongs(filters?: string | SongFilters) {
     with: { addedBy: true },
     orderBy: sortOrder,
   });
+}
+
+/** Reads the musical metadata fields from a song form; empty strings become undefined. */
+function musicFields(formData: FormData) {
+  const get = (key: string) => {
+    const v = (formData.get(key) as string | null)?.trim();
+    return v ? v : undefined;
+  };
+  return { status: get('status'), bpm: get('bpm'), songKey: get('songKey'), capo: get('capo'), tuning: get('tuning') };
+}
+
+function musicValues(data: SongFormValues) {
+  return {
+    status: data.status,
+    bpm: data.bpm ?? null,
+    songKey: data.songKey || null,
+    capo: data.capo ?? null,
+    tuning: data.tuning || null,
+  };
+}
+
+export async function setSongStatus(id: string, status: SongStatus) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+  if (!SONG_STATUSES.includes(status)) throw new Error('Invalid status');
+
+  await db.update(songs).set({ status, updatedAt: new Date() }).where(eq(songs.id, id));
+
+  revalidatePath('/songs');
+  revalidatePath('/dashboard');
+  revalidatePath(`/songs/${id}`);
 }
 
 export async function getSongById(id: string) {
@@ -98,6 +134,7 @@ export async function createSong(formData: FormData) {
     notes: formData.get('notes') || undefined,
     tabContent: formData.get('tabContent') || undefined,
     tabUrl: formData.get('tabUrl') || undefined,
+    ...musicFields(formData),
   };
 
   const data = songSchema.parse(raw);
@@ -112,6 +149,7 @@ export async function createSong(formData: FormData) {
     youtubeUrl: data.youtubeUrl || null,
     tabContent: data.tabContent || null,
     tabUrl: data.tabUrl || null,
+    ...musicValues(data),
     imageUrl,
     bandId,
     addedById: session.user.id,
@@ -154,6 +192,7 @@ export async function updateSong(id: string, formData: FormData) {
     notes: formData.get('notes') || undefined,
     tabContent: rawTabContent || undefined,
     tabUrl: rawTabUrl || undefined,
+    ...musicFields(formData),
   });
 
   // Re-fetch album artwork if title or artist changed
@@ -174,6 +213,7 @@ export async function updateSong(id: string, formData: FormData) {
       youtubeUrl: data.youtubeUrl || null,
       tabContent: rawTabContent ? data.tabContent! : null,
       tabUrl: rawTabUrl ? data.tabUrl! : null,
+      ...musicValues(data),
       imageUrl,
       updatedAt: new Date(),
     })
