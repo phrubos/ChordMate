@@ -7,6 +7,7 @@ import { PlayerSection } from './sections/player';
 import { HeroSection } from './sections/hero';
 import { CalendarSection } from './sections/calendar';
 import { DaySection } from './sections/day';
+import { InsightsSection } from './sections/insights';
 
 export const metadata = { title: 'ChordMate — UI showcase (dev)' };
 
@@ -26,6 +27,7 @@ export default async function DevUiPage({ searchParams }: DevUiPageProps) {
       <HeroSection />
       <CalendarSection />
       <DaySection />
+      <InsightsSection />
       <TokensSection />
       <AtomsSection />
       <PlayerSection />

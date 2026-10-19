@@ -9,6 +9,9 @@ import { songSchema, type SongFormValues } from '@/lib/validators';
 import { fetchAlbumArt } from '@/lib/fetch-album-art';
 import { getUserBandId } from './bands';
 import { SONG_STATUSES, type SongStatus } from '@/lib/song-meta';
+import { buildSongInsights } from '@/lib/neglected';
+import { todayIso } from '@/lib/calendar-utils';
+import { getCalendarEntries } from './calendar';
 import { addSongToSpotifyPlaylist, hasLinkedSpotifyPlaylist } from './spotify';
 
 interface SongFilters {
@@ -110,6 +113,12 @@ export async function setSongStatus(id: string, status: SongStatus) {
   revalidatePath('/songs');
   revalidatePath('/dashboard');
   revalidatePath(`/songs/${id}`);
+}
+
+/** Dashboard cards: 3 songs worth bringing back + repertoire status counts. */
+export async function getDashboardSongInsights() {
+  const [allSongs, entries] = await Promise.all([getSongs(), getCalendarEntries()]);
+  return buildSongInsights(allSongs, entries, todayIso());
 }
 
 export async function getSongById(id: string) {
