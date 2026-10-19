@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { eq, and, gte, lte, asc, sql, isNull } from 'drizzle-orm';
 import { format, endOfMonth } from 'date-fns';
 import { getUserBandId } from './bands';
+import { pickNextRehearsal, todayIso } from '@/lib/calendar-utils';
 
 export async function getCalendarEntries() {
   const session = await auth();
@@ -25,6 +26,11 @@ export async function getCalendarEntries() {
     },
     orderBy: [asc(calendarEntries.date), asc(calendarEntries.sortOrder)],
   });
+}
+
+export async function getNextRehearsal() {
+  const entries = await getCalendarEntries();
+  return pickNextRehearsal(entries, todayIso());
 }
 
 export async function assignSongToDate(songId: string, date: string) {

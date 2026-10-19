@@ -9,7 +9,7 @@ const SIZE: Record<CoverSize, { box: string; px: number; title: string }> = {
   sm: { box: 'size-10', px: 40, title: '' },
   md: { box: 'size-14', px: 56, title: '' },
   lg: { box: 'size-[232px]', px: 232, title: 'text-[38px]' },
-  fill: { box: 'size-full', px: 400, title: 'text-[26px]' },
+  fill: { box: 'size-full', px: 400, title: 'text-[clamp(14px,11cqi,26px)]' },
 };
 
 const PATTERNS = [
@@ -45,7 +45,7 @@ export function CoverArt({ title, artist, imageUrl, size, showType, className }:
   return (
     <div
       aria-hidden
-      className={base}
+      className={cn(base, '@container')}
       style={{
         ['--h' as string]: hue,
         backgroundImage: `${PATTERNS[hue % 4]}, linear-gradient(180deg, rgb(255 255 255 / .1), transparent 40%), linear-gradient(140deg, oklch(.7 .15 ${hue}), oklch(.46 .1 ${hue + 40}))`,
@@ -53,10 +53,10 @@ export function CoverArt({ title, artist, imageUrl, size, showType, className }:
     >
       {showType && s.title && (
         <>
-          <span className="absolute top-3 left-3.5 font-mono text-[10.5px] tracking-[0.12em] text-white/85 uppercase">{artist}</span>
+          <span className="absolute top-3 left-3.5 font-mono text-[10.5px] tracking-[0.12em] text-white/85 uppercase @max-[150px]:hidden">{artist}</span>
           <span
             className={cn(
-              'display-soft absolute right-3.5 bottom-3 left-3.5 font-display leading-[0.98] font-normal tracking-[-0.02em] text-balance text-white italic',
+              'display-soft absolute right-3.5 bottom-3 left-3.5 line-clamp-3 font-display @max-[150px]:right-2 @max-[150px]:bottom-2 @max-[150px]:left-2 leading-[0.98] font-normal tracking-[-0.02em] text-balance text-white italic',
               s.title
             )}
           >

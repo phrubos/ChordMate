@@ -18,7 +18,7 @@ interface MastheadProps {
 }
 
 /** Desktop masthead (≥ md): brand + nav left, search / tools / practice / band / user right. */
-export function Masthead({ user, practiceHref = '/dashboard#next' }: MastheadProps) {
+export function Masthead({ user, practiceHref = '/practice/next' }: MastheadProps) {
   const pathname = usePathname();
   const tools = useTools();
 
