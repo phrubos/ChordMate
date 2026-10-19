@@ -47,23 +47,23 @@ import { CSS } from '@dnd-kit/utilities';
 import type { CalendarEntryWithSong, Song } from '@/types';
 import { ExpandableText } from '@/components/shared/expandable-text';
 
-const YouTubePlayer = dynamic(() => import('@/components/youtube/youtube-player').then(m => ({ default: m.YouTubePlayer })), { ssr: false });
 const TabViewerModal = dynamic(() => import('@/components/songs/tab-viewer-modal').then(m => ({ default: m.TabViewerModal })), { ssr: false });
 const RecordingModal = dynamic(() => import('@/components/tools/recording-modal').then(m => ({ default: m.RecordingModal })), { ssr: false });
 import { hasRecordingsForDate } from '@/actions/recordings';
+import { usePlayer } from '@/components/player/player-provider';
 
 // --- Sortable song item ---
 function SortableSongItem({
   entry,
-  playingUrl,
-  setPlayingUrl,
+  playingId,
+  onPlay,
   onRemove,
   isPending,
   date,
 }: {
   entry: CalendarEntryWithSong;
-  playingUrl: string | null;
-  setPlayingUrl: (url: string | null) => void;
+  playingId: string | null;
+  onPlay: (song: Song) => void;
   onRemove: (id: string) => void;
   isPending: boolean;
   date?: string;
@@ -133,11 +133,10 @@ function SortableSongItem({
             variant="ghost"
             size="sm"
             className="size-8 p-0 text-muted-foreground hover:text-primary"
-            onClick={() =>
-              setPlayingUrl(playingUrl === entry.song.youtubeUrl ? null : entry.song.youtubeUrl)
-            }
+            aria-label={playingId === entry.song.id ? 'Szünet' : 'Lejátszás'}
+            onClick={() => onPlay(entry.song)}
           >
-            {playingUrl === entry.song.youtubeUrl ? (
+            {playingId === entry.song.id ? (
               <Square className="size-4" />
             ) : (
               <Play className="size-4" />
@@ -161,16 +160,16 @@ function SortableSongItem({
 // --- Sortable song list wrapper ---
 function SortableSongList({
   entries,
-  playingUrl,
-  setPlayingUrl,
+  playingId,
+  onPlay,
   onRemove,
   onReorder,
   isPending,
   date,
 }: {
   entries: CalendarEntryWithSong[];
-  playingUrl: string | null;
-  setPlayingUrl: (url: string | null) => void;
+  playingId: string | null;
+  onPlay: (song: Song) => void;
   onRemove: (id: string) => void;
   onReorder: (reorderedEntries: CalendarEntryWithSong[], ids: string[]) => void;
   isPending: boolean;
@@ -204,8 +203,8 @@ function SortableSongList({
             <SortableSongItem
               key={entry.id}
               entry={entry}
-              playingUrl={playingUrl}
-              setPlayingUrl={setPlayingUrl}
+              playingId={playingId}
+              onPlay={onPlay}
               onRemove={onRemove}
               isPending={isPending}
               date={date}
@@ -226,7 +225,7 @@ interface DayDetailPanelProps {
 }
 
 export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: DayDetailPanelProps) {
-  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+  const player = usePlayer();
   const [isPending, startTransition] = useTransition();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
@@ -393,8 +392,10 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
         ) : (
           <SortableSongList
             entries={localEntries}
-            playingUrl={playingUrl}
-            setPlayingUrl={setPlayingUrl}
+            playingId={player.state.isPlaying ? player.current?.id ?? null : null}
+            onPlay={(song) =>
+              player.state.isPlaying && player.current?.id === song.id ? player.toggle() : player.play(song, localEntries.map((e) => e.song))
+            }
             onRemove={(id) => setSongToRemove(id)}
             onReorder={handleReorder}
             isPending={isPending}
@@ -402,26 +403,6 @@ export function DayDetailPanel({ selectedDate, entries, allSongs, allEntries }: 
           />
         )}
 
-        <Dialog open={!!playingUrl} onOpenChange={(open) => !open && setPlayingUrl(null)}>
-          <DialogContent showCloseButton={false} className="sm:max-w-3xl p-0 overflow-visible bg-transparent border-none shadow-none">
-            <DialogTitle className="sr-only">Videó lejátszása</DialogTitle>
-            <div className="relative">
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute -top-12 right-0 rounded-full bg-background/80 hover:bg-background shadow-md border-border/50"
-                onClick={() => setPlayingUrl(null)}
-              >
-                <X className="size-4" />
-              </Button>
-              <div className="aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-border/50 shadow-2xl">
-                {playingUrl && (
-                  <YouTubePlayer url={playingUrl} autoplay />
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Actions footer */}
