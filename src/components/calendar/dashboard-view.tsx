@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, useMemo, useTransition, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useTransition, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { CalendarHeader } from './calendar-header';
-import { CalendarGrid } from './calendar-grid';
+import { CalendarHeader, type CalendarView } from './calendar-header';
+import { WeekStrip } from './week-strip';
+import { dayState, todayIso, weekStripDates } from '@/lib/calendar-utils';
+import { cn } from '@/lib/utils';
+import { CalendarGrid, type DaySong } from './calendar-grid';
 import { DayDetailPanel } from './day-detail-panel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -31,6 +34,13 @@ interface DashboardViewProps {
   entries: CalendarEntryWithSong[];
   allSongs: Song[];
 }
+
+const DESKTOP_QUERY = '(min-width: 768px)';
+const subscribeDesktop = (cb: () => void) => {
+  const mq = window.matchMedia(DESKTOP_QUERY);
+  mq.addEventListener('change', cb);
+  return () => mq.removeEventListener('change', cb);
+};
 
 export function DashboardView({ initialYear, initialMonth, entries, allSongs }: DashboardViewProps) {
   const [year, setYear] = useState(initialYear);
@@ -77,6 +87,20 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
   const handleDeleteDate = useCallback((date: string) => {
     setDeleteDateStr(date);
   }, []);
+
+  const [view, setView] = useState<CalendarView | 'auto'>('auto');
+  const isDesktop = useSyncExternalStore(subscribeDesktop, () => window.matchMedia(DESKTOP_QUERY).matches, () => true);
+  const today = todayIso();
+  const songsByDate = useMemo(() => {
+    const map: Record<string, DaySong[]> = {};
+    for (const e of entries) (map[e.date] ??= []).push(e.song);
+    return map;
+  }, [entries]);
+  const stripDates = useMemo(() => weekStripDates(selectedDate ?? today), [selectedDate, today]);
+  const stateByDate = useMemo(
+    () => Object.fromEntries(stripDates.map((d) => [d, dayState(d, today, songsByDate[d]?.length ?? 0)])),
+    [stripDates, today, songsByDate]
+  );
 
   const songCountByDate = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -187,27 +211,32 @@ export function DashboardView({ initialYear, initialMonth, entries, allSongs }: 
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px] overflow-hidden">
+    <div id="calendar" className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-4 min-w-0">
         <CalendarHeader
           year={year}
           month={month}
+          view={view === 'auto' ? (isDesktop ? 'month' : 'week') : view}
+          onViewChange={setView}
           onPrev={handlePrev}
           onNext={handleNext}
           onToday={handleToday}
         />
-        <CalendarGrid
-          year={year}
-          month={month}
-          selectedDate={selectedDate}
-          songCountByDate={songCountByDate}
-          onSelectDate={handleSelectDate}
-          onAddSong={handleAddSong}
-          onCopyDate={handleCopyDate}
-          onDeleteDate={handleDeleteDate}
-          onSwipePrev={handlePrev}
-          onSwipeNext={handleNext}
-        />
+        <div className={cn(view === 'week' ? 'hidden' : view === 'auto' && 'hidden md:block')}>
+          <CalendarGrid
+            year={year}
+            month={month}
+            today={today}
+            selectedDate={selectedDate}
+            songsByDate={songsByDate}
+            onSelectDate={handleSelectDate}
+            onSwipePrev={handlePrev}
+            onSwipeNext={handleNext}
+          />
+        </div>
+        <div className={cn(view === 'month' ? 'hidden' : view === 'auto' && 'md:hidden')}>
+          <WeekStrip dates={stripDates} today={today} selected={selectedDate} stateByDate={stateByDate} onSelect={handleSelectDate} />
+        </div>
       </div>
       <div ref={dayDetailRef} className="relative min-w-0 overflow-hidden">
         <div className="lg:absolute lg:inset-0 flex flex-col h-[500px] lg:h-full min-w-0">

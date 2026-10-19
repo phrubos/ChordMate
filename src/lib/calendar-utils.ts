@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, format, parseISO } from 'date-fns';
+import { addDays, differenceInCalendarDays, format, parseISO, startOfWeek } from 'date-fns';
 
 /** Local calendar date as yyyy-MM-dd (never toISOString — that is UTC). */
 export function todayIso(now: Date = new Date()): string {
@@ -25,4 +25,18 @@ export function rehearsalCountdownLabel(days: number): string {
 export function pickNextRehearsal<T extends { date: string }>(entries: T[], today: string): { date: string; entries: T[] } | null {
   const date = findNextRehearsalDate(entries.map((e) => e.date), today);
   return date ? { date, entries: entries.filter((e) => e.date === date) } : null;
+}
+
+export type DayState = 'done' | 'plan' | 'empty';
+
+/** Rehearsal state of a day: past with songs = done; today or future with songs = plan. */
+export function dayState(date: string, today: string, songCount: number): DayState {
+  if (songCount <= 0) return 'empty';
+  return date < today ? 'done' : 'plan';
+}
+
+/** Consecutive dates starting on the Monday of the anchor's week. */
+export function weekStripDates(anchor: string, days = 14): string[] {
+  const start = startOfWeek(parseISO(anchor), { weekStartsOn: 1 });
+  return Array.from({ length: days }, (_, i) => format(addDays(start, i), 'yyyy-MM-dd'));
 }
