@@ -15,10 +15,12 @@ import { initialsOf } from '@/components/design/avatar-stack';
 import { hueFromString } from '@/lib/song-meta';
 import type { ShellUser } from './nav-items';
 
-export function UserMenu({ user }: { user: ShellUser }) {
+/** `triggerId` is fixed so the SSR and client ids always match (two instances: masthead + mobile bar). */
+export function UserMenu({ user, triggerId }: { user: ShellUser; triggerId: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        id={triggerId}
         aria-label="Profil menü"
         className="inline-grid size-10 place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >

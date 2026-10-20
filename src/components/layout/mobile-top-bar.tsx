@@ -19,7 +19,7 @@ export function MobileTopBar({ user }: { user: ShellUser }) {
         <Link href="/songs?focus=search" aria-label="Keresés" className={buttonVariants({ variant: 'ghost', size: 'icon' })}>
           <Search />
         </Link>
-        <UserMenu user={user} />
+        <UserMenu user={user} triggerId="user-menu-mobile" />
       </div>
     </header>
   );

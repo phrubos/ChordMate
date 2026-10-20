@@ -68,7 +68,7 @@ export function Masthead({ user, practiceHref = '/practice/next' }: MastheadProp
           Próba mód
         </Link>
         <BandSwitcher />
-        <UserMenu user={user} />
+        <UserMenu user={user} triggerId="user-menu-desktop" />
       </div>
     </header>
   );
