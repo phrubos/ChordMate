@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { calendarEntries } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { eq, and, gte, lte, asc, sql, isNull } from 'drizzle-orm';
+import { eq, and, gte, lte, asc, desc, sql, isNull } from 'drizzle-orm';
 import { format, endOfMonth } from 'date-fns';
 import { getUserBandId } from './bands';
 import { pickNextRehearsal, todayIso } from '@/lib/calendar-utils';
@@ -31,6 +31,23 @@ export async function getCalendarEntries() {
 export async function getNextRehearsal() {
   const entries = await getCalendarEntries();
   return pickNextRehearsal(entries, todayIso());
+}
+
+/** Distinct rehearsal dates of a song (band scope), newest first. */
+export async function getSongHistory(songId: string): Promise<{ date: string }[]> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? eq(calendarEntries.bandId, bandId)
+    : and(isNull(calendarEntries.bandId), eq(calendarEntries.addedById, session.user.id));
+
+  return db
+    .selectDistinct({ date: calendarEntries.date })
+    .from(calendarEntries)
+    .where(and(scope, eq(calendarEntries.songId, songId)))
+    .orderBy(desc(calendarEntries.date));
 }
 
 export async function assignSongToDate(songId: string, date: string) {

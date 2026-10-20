@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { ExternalLink, FileText, ZoomIn, ZoomOut, Copy, Check, Play, Pause, Minus, Plus, RotateCcw, Mic, Square, Timer, MoreHorizontal, Loader2 } from 'lucide-react';
 import { ChordTooltip } from '@/components/shared/chord-tooltip';
-import { chordNames } from '@/lib/chord-diagrams';
+import { splitChordText } from '@/lib/chords';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -31,48 +31,14 @@ interface TabViewerModalProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-// Build regex from known chord names (longest first to match "Cadd9" before "C")
-const chordPattern = new RegExp(
-  `(?<=^|\\s)(${chordNames.map((c) => c.replace(/[#/]/g, '\\$&')).join('|')})(?=\\s|$)`,
-  'gm'
-);
-
 function TabContentWithChords({ content }: { content: string }) {
-  const parts = useMemo(() => {
-    const result: { text: string; isChord: boolean; chord?: string }[] = [];
-    const lines = content.split('\n');
-
-    for (let li = 0; li < lines.length; li++) {
-      const line = lines[li];
-      let lastIndex = 0;
-      let match: RegExpExecArray | null;
-      const lineRegex = new RegExp(chordPattern.source, chordPattern.flags);
-
-      while ((match = lineRegex.exec(line)) !== null) {
-        if (match.index > lastIndex) {
-          result.push({ text: line.slice(lastIndex, match.index), isChord: false });
-        }
-        result.push({ text: match[1], isChord: true, chord: match[1] });
-        lastIndex = match.index + match[0].length;
-      }
-
-      if (lastIndex < line.length) {
-        result.push({ text: line.slice(lastIndex), isChord: false });
-      }
-
-      if (li < lines.length - 1) {
-        result.push({ text: '\n', isChord: false });
-      }
-    }
-
-    return result;
-  }, [content]);
+  const parts = useMemo(() => splitChordText(content), [content]);
 
   return (
     <>
       {parts.map((part, i) =>
-        part.isChord && part.chord ? (
-          <ChordTooltip key={i} chordName={part.chord}>
+        part.isChord ? (
+          <ChordTooltip key={i} chordName={part.text}>
             <span className="text-primary font-semibold cursor-help underline decoration-primary/30 decoration-dotted underline-offset-2">
               {part.text}
             </span>
