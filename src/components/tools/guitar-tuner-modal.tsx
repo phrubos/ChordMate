@@ -110,7 +110,7 @@ function TuningLEDs({ cents, active }: { cents: number; active: boolean }) {
         return (
           <div
             key={dot}
-            className={`rounded-full transition-all duration-100 ${color} ${isCenter ? 'size-3' : 'size-2'}`}
+            className={`rounded-full transition-[color,background-color,border-color,opacity,transform] duration-100 ${color} ${isCenter ? 'size-3' : 'size-2'}`}
           />
         );
       })}
@@ -336,7 +336,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedString(null)}
-              className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
+              className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,opacity,transform] ${
                 selectedString === null
                   ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
@@ -348,7 +348,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
               <button
                 key={gs.string}
                 onClick={() => setSelectedString(selectedString === gs.string ? null : gs.string)}
-                className={`flex flex-col items-center rounded-lg px-2 py-1 text-xs font-medium transition-all min-w-[32px] ${
+                className={`flex flex-col items-center rounded-lg px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,opacity,transform] min-w-[32px] ${
                   selectedString === gs.string
                     ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
                     : matchedString === gs.string && isListening
@@ -365,7 +365,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
           {/* Microphone button */}
           <Button
             size="lg"
-            className={`w-full h-12 rounded-xl gap-2 text-sm font-semibold transition-all ${
+            className={`w-full h-12 rounded-xl gap-2 text-sm font-semibold transition-[color,background-color,border-color,opacity,transform] ${
               isListening
                 ? 'bg-destructive/90 hover:bg-destructive text-background'
                 : 'bg-primary hover:bg-primary/90'

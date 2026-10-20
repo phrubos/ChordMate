@@ -264,12 +264,12 @@ export function BandSwitcher() {
           className="fixed inset-0 z-[110] flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in-0 duration-150"
           onClick={() => { setLightboxSrc(null); if (returnToModal) { setMobileOpen(true); setReturnToModal(false); } }}
         >
-          <div className="relative flex items-center justify-center animate-in zoom-in-90 duration-200">
+          <div className="relative flex items-center justify-center animate-in zoom-in-95 duration-200">
             <button
               type="button"
               aria-label="Bezárás"
               onClick={() => { setLightboxSrc(null); if (returnToModal) { setMobileOpen(true); setReturnToModal(false); } }}
-              className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-all shadow-md cursor-pointer"
+              className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-[color,background-color,border-color,opacity,transform] shadow-md cursor-pointer"
             >
               <X className="size-5" />
             </button>

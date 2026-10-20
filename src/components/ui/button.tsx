@@ -68,7 +68,7 @@ function Button({
         }}
         {...props}
       >
-        <span className="inline-flex items-center justify-center gap-1.5 transition-all duration-300 w-full h-full opacity-0 scale-95">
+        <span className="inline-flex items-center justify-center gap-1.5 transition-[color,background-color,border-color,opacity,transform] duration-300 w-full h-full opacity-0 scale-95">
           {props.children}
         </span>
         <div className="absolute inset-0 flex items-center justify-center gap-1.5">

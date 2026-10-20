@@ -321,7 +321,7 @@ function RecordingsList({
                 <button
                   onClick={() => { togglePlay(rec); }}
                   disabled={loadingId === rec.id}
-                  className={`flex size-9 shrink-0 items-center justify-center rounded-full transition-all ${
+                  className={`flex size-9 shrink-0 items-center justify-center rounded-full transition-[color,background-color,border-color,opacity,transform] ${
                     loadingId === rec.id
                       ? 'bg-primary/20 text-primary-text'
                       : isPlaying

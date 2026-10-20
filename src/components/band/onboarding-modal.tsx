@@ -87,7 +87,7 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
                 {/* Create band */}
                 <button
                   onClick={() => setStep('create')}
-                  className="group flex items-center gap-4 rounded-md border border-border-strong p-4 transition-[transform,border-color] duration-(--dur-press) ease-(--ease-out) active:scale-[.97] text-left transition-all hover:border-primary/30 hover:bg-primary/5"
+                  className="group flex items-center gap-4 rounded-md border border-border-strong p-4 transition-[transform,border-color,background-color] duration-(--dur-press) ease-(--ease-out) active:scale-[.97] text-left hover:border-primary/30 hover:bg-primary/5"
                 >
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                     <Users className="size-6" />
@@ -104,7 +104,7 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
                 {/* Join band */}
                 <button
                   onClick={() => setStep('join')}
-                  className="group flex items-center gap-4 rounded-md border border-border-strong p-4 transition-[transform,border-color] duration-(--dur-press) ease-(--ease-out) active:scale-[.97] text-left transition-all hover:border-primary/30 hover:bg-primary/5"
+                  className="group flex items-center gap-4 rounded-md border border-border-strong p-4 transition-[transform,border-color,background-color] duration-(--dur-press) ease-(--ease-out) active:scale-[.97] text-left hover:border-primary/30 hover:bg-primary/5"
                 >
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                     <Ticket className="size-6" />
@@ -122,7 +122,7 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
                 <button
                   onClick={handleSolo}
                   disabled={loading}
-                  className="group flex items-center gap-4 rounded-md border border-border-strong p-4 transition-[transform,border-color] duration-(--dur-press) ease-(--ease-out) active:scale-[.97] text-left transition-all hover:border-border hover:bg-secondary/30"
+                  className="group flex items-center gap-4 rounded-md border border-border-strong p-4 transition-[transform,border-color,background-color] duration-(--dur-press) ease-(--ease-out) active:scale-[.97] text-left hover:border-border hover:bg-secondary/30"
                 >
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-secondary/50 text-muted-foreground transition-colors group-hover:bg-secondary">
                     {loading ? <Loader2 className="size-6 animate-spin" /> : <User className="size-6" />}

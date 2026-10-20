@@ -68,7 +68,7 @@ export function SpotifyPlaylistButton({ bandName }: SpotifyPlaylistButtonProps) 
   useEffect(() => {
     const spotifyParam = searchParams.get('spotify');
     if (spotifyParam === 'connected') {
-      setConnected(true);
+      getSpotifyConnectionStatus().then((status) => setConnected(status.connected)).catch(() => {});
       toast.success('Spotify fiók sikeresen összekapcsolva!', { icon: <SpotifyIcon className="size-4" /> });
       // Clean the URL
       const url = new URL(window.location.href);
