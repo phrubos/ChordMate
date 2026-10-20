@@ -153,16 +153,19 @@ export async function createSong(formData: FormData) {
 
   const bandId = await getUserBandId();
 
-  await db.insert(songs).values({
-    ...data,
-    youtubeUrl: data.youtubeUrl || null,
-    tabContent: data.tabContent || null,
-    tabUrl: data.tabUrl || null,
-    ...musicValues(data),
-    imageUrl,
-    bandId,
-    addedById: session.user.id,
-  });
+  const [created] = await db
+    .insert(songs)
+    .values({
+      ...data,
+      youtubeUrl: data.youtubeUrl || null,
+      tabContent: data.tabContent || null,
+      tabUrl: data.tabUrl || null,
+      ...musicValues(data),
+      imageUrl,
+      bandId,
+      addedById: session.user.id,
+    })
+    .returning({ id: songs.id });
 
   revalidatePath('/songs');
   revalidatePath('/dashboard');
@@ -183,7 +186,7 @@ export async function createSong(formData: FormData) {
     // Spotify auto-add is best-effort
   }
 
-  return { imageFound: !!imageUrl, spotify: spotifyResult };
+  return { id: created.id, imageFound: !!imageUrl, spotify: spotifyResult };
 }
 
 export async function updateSong(id: string, formData: FormData) {

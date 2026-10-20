@@ -91,3 +91,10 @@ Task 15: Ruling: Space toggles the metronome only when no button/link has focus 
 Task 15: Ruling: active tool state uses `bg-primary/10` (no `primary-soft` token exists; same pattern as existing components) — cost if wrong: none.
 Task 15: Step 4 (manual check with the user: real rehearsal, metronome, scroll, video, recording, wake lock) batched into the end-of-run session (Task 11 ruling).
 Task 15: complete (tests: npm test → 43/43 pass (nextBeatTime RED→GREEN); tsc ok; eslint touched: metronome-modal 1 baseline error (`Date.now` in render, was 2 — the hoisting error is gone with the hook), others 0; build ok; /dev/ui?only=practice desktop + 390px control bar fits without overflow)
+Task 16: Ruling: the form became a normal page (max 760px, sticky footer above the bottom nav) instead of the old fixed mobile overlay card; the "Görgess lejjebb" bouncing hint is removed (not in spec A1–A9; the page scrolls naturally) — cost if wrong: none.
+Task 16: Ruling: field errors come from `songSchema.safeParse` on the client before submit (shown under each field with `aria-live="polite"`, focus moves to the first invalid field); server errors still toast — cost if wrong: none.
+Task 16: Ruling: `createSong` now returns the new song's `id` (`.returning`) so the form navigates to `/songs/{id}`; the Spotify offer dialog also continues to the new song's Hub — cost if wrong: none.
+Task 16: Ruling: capo and tuning use native `<select>` styled with tokens (accessible, no extra primitive); tuning "Standard" is stored as NULL, "Egyéni…" reveals a text field — cost if wrong: native popup look differs per OS.
+Task 16: Ruling: new atom `DifficultyPicker` (radio group drawn like DifficultyMeter) replaces the star rating, which used raw palette colors — cost if wrong: none.
+Task 16: Step 2 (manual: create + edit a song with all new fields, check the Hub) batched into the end-of-run session.
+Task 16: complete (tests: npm test → 43/43 pass; tsc ok; eslint touched 0 problems (song-form's 4 baseline warnings removed); build ok; /dev/ui?only=form desktop + 390px: sections, no overflow)

@@ -9,14 +9,6 @@ interface EditSongPageProps {
 export default async function EditSongPage({ params }: EditSongPageProps) {
   const { id } = await params;
   const song = await getSongById(id);
-
   if (!song) notFound();
-
-  return (
-    <>
-      <div>
-        <SongForm song={song} />
-      </div>
-    </>
-  );
+  return <SongForm song={song} />;
 }
