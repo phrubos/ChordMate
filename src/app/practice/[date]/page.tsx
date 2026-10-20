@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { CalendarX } from 'lucide-react';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button-variants';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PracticeView } from '@/components/practice/practice-view';
 import { auth } from '@/lib/auth';
