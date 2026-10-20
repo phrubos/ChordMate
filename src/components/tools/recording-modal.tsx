@@ -352,10 +352,10 @@ function RecordingsList({
                           if (e.key === 'Escape') setEditingId(null);
                         }}
                       />
-                      <Button variant="ghost" size="icon" onClick={() => handleRename(rec.id)}>
+                      <Button variant="ghost" size="icon-xs" aria-label="Név mentése" onClick={() => handleRename(rec.id)}>
                         <Check className="size-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="size-6" onClick={() => setEditingId(null)}>
+                      <Button variant="ghost" size="icon-xs" aria-label="Mégse" onClick={() => setEditingId(null)}>
                         <X className="size-3" />
                       </Button>
                     </div>
@@ -371,8 +371,9 @@ function RecordingsList({
                   <div className="flex items-center gap-0.5 shrink-0 opacity-100 transition-opacity hover-device:opacity-0 hover-device:group-hover:opacity-100">
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="size-7 text-muted-foreground/50 hover:text-foreground"
+                      size="icon-xs"
+                      aria-label={`Átnevezés: ${rec.name}`}
+                      className="text-muted-foreground hover:text-foreground"
                       onClick={() => {
                         setEditingId(rec.id);
                         setEditName(rec.name);
@@ -382,8 +383,9 @@ function RecordingsList({
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      className="size-7 text-muted-foreground/50 hover:text-destructive"
+                      size="icon-xs"
+                      aria-label={`Törlés: ${rec.name}`}
+                      className="text-muted-foreground hover:text-destructive"
                       onClick={() => setDeleteConfirmId(rec.id)}
                     >
                       <Trash2 className="size-3" />

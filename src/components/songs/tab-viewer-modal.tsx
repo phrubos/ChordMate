@@ -295,7 +295,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 border-b border-border/50 pb-2 sm:pb-3 landscape:pb-1.5 shrink-0">
           {/* Zoom */}
           <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5">
-            <Button
+            <Button aria-label="Kisebb betű"
               variant="ghost"
               size="sm"
               className="size-7 p-0"
@@ -304,7 +304,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
               <ZoomOut className="size-3.5" />
             </Button>
             <span className="min-w-[3ch] text-center text-xs text-muted-foreground">{fontSize}</span>
-            <Button
+            <Button aria-label="Nagyobb betű"
               variant="ghost"
               size="sm"
               className="size-7 p-0"
@@ -325,7 +325,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
           {/* Auto-scroll controls */}
           {hasTab && (
             <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5 px-1">
-              <Button
+              <Button aria-label={isAutoScrolling ? 'Görgetés leállítása' : 'Auto-görgetés'}
                 variant="ghost"
                 size="sm"
                 className={`size-7 p-0 ${isAutoScrolling ? 'text-primary bg-primary/10' : ''}`}
@@ -337,8 +337,8 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
               <div className="flex items-center gap-0.5">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="size-6 p-0"
+                  size="icon-xs"
+                  aria-label="Lassabb görgetés"
                   onClick={() => setScrollSpeed((s) => Math.max(0.5, +(s - 0.5).toFixed(1)))}
                   disabled={scrollSpeed <= 0.5}
                 >
@@ -347,8 +347,8 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
                 <span className="min-w-[3.5ch] text-center text-xs text-muted-foreground tabular-nums">{scrollSpeed}x</span>
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="size-6 p-0"
+                  size="icon-xs"
+                  aria-label="Gyorsabb görgetés"
                   onClick={() => setScrollSpeed((s) => Math.min(3, +(s + 0.5).toFixed(1)))}
                   disabled={scrollSpeed >= 3}
                 >
@@ -357,10 +357,10 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
               </div>
               <Button
                 variant="ghost"
-                size="sm"
-                className="size-6 p-0 text-muted-foreground"
+                size="icon-xs"
+                aria-label="Vissza az elejére"
+                className="text-muted-foreground"
                 onClick={handleResetScroll}
-                title="Vissza az elejére"
               >
                 <RotateCcw className="size-3" />
               </Button>
@@ -442,7 +442,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
           {/* Mobile: compact tool buttons */}
           <div className="flex sm:hidden items-center gap-1">
             {/* Metronome — always visible on mobile */}
-            <Button
+            <Button aria-label="Metronóm"
               variant={metronomeActive ? 'default' : 'outline'}
               size="sm"
               className={`size-8 p-0 ${metronomeActive ? 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30' : ''}`}
@@ -468,6 +468,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
                 className="size-8 p-0"
                 onClick={isRecording ? stopRecording : startRecording}
                 title={isProcessingRecording ? 'Mentés...' : isRecording ? 'Leállítás' : 'Felvétel'}
+                aria-label={isProcessingRecording ? 'Mentés…' : isRecording ? 'Felvétel leállítása' : 'Felvétel indítása'}
                 disabled={isProcessingRecording}
               >
                 {isProcessingRecording ? <Loader2 className="size-3.5 animate-spin" /> : isRecording ? <Square className="size-3 fill-current" /> : <Mic className="size-3.5" />}
@@ -475,7 +476,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
             )}
 
             {/* More menu toggle for links */}
-            <Button
+            <Button aria-label="Több eszköz"
               variant="ghost"
               size="sm"
               className={`size-8 p-0 ${showMoreTools ? 'text-primary bg-primary/10' : 'text-muted-foreground'}`}
@@ -489,7 +490,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
 
         {/* Mobile overflow row */}
         {showMoreTools && (
-          <div className="flex sm:hidden items-center gap-1.5 pb-2 shrink-0 animate-fade-up">
+          <div className="flex sm:hidden items-center gap-1.5 pb-2 shrink-0">
             {tabUrl && (
               <a href={tabUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
                 <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
@@ -513,7 +514,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
         <div ref={scrollContainerRef} className="flex-1 overflow-auto rounded-lg bg-background/50 border border-border/30 p-4 landscape:p-2 min-h-0">
           {hasTab ? (
             <pre
-              className="tab-content"
+              className="overflow-x-auto font-mono leading-[1.6] whitespace-pre text-foreground"
               style={{ fontSize: `${fontSize}px` }}
             >
               <TabContentWithChords content={tabContent!} />

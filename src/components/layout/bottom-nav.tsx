@@ -24,7 +24,7 @@ export function BottomNav() {
         key={item.href}
         href={item.href}
         aria-current={active ? 'page' : undefined}
-        className={cn(itemClass, active ? 'font-semibold text-primary-text' : 'text-faint')}
+        className={cn(itemClass, active ? 'font-semibold text-primary-text' : 'text-muted-foreground')}
       >
         <Icon className="size-[22px]" strokeWidth={1.75} />
         {item.label}
@@ -40,7 +40,7 @@ export function BottomNav() {
       >
         {link(home)}
         {link(songs)}
-        <button type="button" onClick={() => setToolsOpen(true)} className={cn(itemClass, toolsOpen ? 'text-primary-text' : 'text-faint')}>
+        <button type="button" onClick={() => setToolsOpen(true)} className={cn(itemClass, toolsOpen ? 'text-primary-text' : 'text-muted-foreground')}>
           <MetronomeIcon className="size-[22px]" />
           Eszközök
         </button>

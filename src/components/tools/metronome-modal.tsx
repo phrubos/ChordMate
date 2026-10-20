@@ -115,7 +115,7 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
             <Button
               variant="outline"
               size="icon"
-              className="size-10 rounded-xl border-border/50"
+              aria-label="Lassabb (−1 BPM)"
               onClick={() => adjustBpm(-1)}
               onMouseDown={(e) => {
                 if (e.detail > 1) e.preventDefault();
@@ -132,7 +132,7 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
             <Button
               variant="outline"
               size="icon"
-              className="size-10 rounded-xl border-border/50"
+              aria-label="Gyorsabb (+1 BPM)"
               onClick={() => adjustBpm(1)}
               onMouseDown={(e) => {
                 if (e.detail > 1) e.preventDefault();

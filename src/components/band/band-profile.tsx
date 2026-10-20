@@ -284,10 +284,10 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
                     }
                   }}
                 />
-                <Button variant="ghost" size="icon" className="size-10 shrink-0 text-primary" onClick={handleSaveName} disabled={loading}>
+                <Button variant="ghost" size="icon" aria-label="Név mentése" className="shrink-0 text-primary-text" onClick={handleSaveName} disabled={loading}>
                   <Check className="size-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="size-10 shrink-0" onClick={() => { setIsEditingName(false); setNewName(band.name); }}>
+                <Button variant="ghost" size="icon" aria-label="Mégse" className="shrink-0" onClick={() => { setIsEditingName(false); setNewName(band.name); }}>
                   <X className="size-5" />
                 </Button>
               </div>
@@ -295,7 +295,7 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
               <div className="flex items-center gap-3 mt-2">
                 <h1 className="display-soft font-display text-[36px] leading-tight font-medium tracking-[-0.02em]">{band.name}</h1>
                 {isAdmin && (
-                  <Button variant="outline" size="icon" className="size-8 rounded-full shadow-sm" onClick={() => setIsEditingName(true)}>
+                  <Button variant="outline" size="icon-sm" aria-label="Banda átnevezése" className="rounded-full" onClick={() => setIsEditingName(true)}>
                     <Pencil className="size-3.5" />
                   </Button>
                 )}
@@ -319,11 +319,11 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
             <div className="flex-1 flex items-center justify-center rounded-lg bg-background/60 border border-border/50 py-2.5 px-4">
               <span className="font-mono text-lg font-bold tracking-[0.25em] text-primary">{inviteCode}</span>
             </div>
-            <Button variant="outline" size="icon" className="size-10 shrink-0" onClick={handleCopyCode} title="Másolás">
+            <Button variant="outline" size="icon" aria-label="Meghívó kód másolása" className="shrink-0" onClick={handleCopyCode}>
               <Copy className="size-4" />
             </Button>
             {isAdmin && (
-              <Button variant="outline" size="icon" className="size-10 shrink-0" onClick={handleRegenerateCode} disabled={loading} title="Új kód">
+              <Button variant="outline" size="icon" aria-label="Új meghívó kód" className="shrink-0" onClick={handleRegenerateCode} disabled={loading}>
                 <RefreshCw className="size-4" />
               </Button>
             )}
@@ -380,8 +380,9 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
                       {isAdmin && !isMe && (
                         <Button
                           variant="ghost"
-                          size="icon"
-                          className="size-7 text-muted-foreground/50 hover:text-destructive"
+                          size="icon-xs"
+                          aria-label="Tag eltávolítása"
+                          className="text-muted-foreground hover:text-destructive"
                           onClick={() => setConfirmRemove(member.userId)}
                         >
                           <Trash2 className="size-3" />

@@ -9,6 +9,7 @@ Gitárgyakorlás-szervező (Next.js 16 App Router, React 19, Tailwind v4, shadcn
 - Lint: `npm run lint` — a master ágon már volt 29 hiba; új hibát ne vigyünk be (`npx eslint <fájlok>`)
 - Build: `npm run build`
 - Képernyőkép (futó dev szerver mellett): `bash scripts/ui-shot.sh "/dev/ui#atoms" desktop out.png`, mobil: `bash scripts/ui-shot.sh "/dev/ui?w=390#atoms" mobile out.png`
+- Egy szekció önmagában (stabil képernyőképhez): `/dev/ui?only=<id>` (pl. `songs`, `hub`, `practice`, `form`, `analytics`), mobilon `/dev/ui?w=390&only=<id>`
 - A `/dev/ui` oldal login nélkül elérhető (csak fejlesztői módban), fixture-adatokkal: `src/app/dev/ui/fixtures.ts`
 - Python fájlt így futtatunk: `py file.py`
 
