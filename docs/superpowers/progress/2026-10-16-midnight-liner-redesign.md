@@ -76,3 +76,10 @@ Task 13: Ruling: extra files `hub-body.tsx` (client: two columns ≥ md, tabs be
 Task 13: Ruling: "Gyakorlás" links to `/practice/{nearest planned date of this song}` or `/practice/next`; the mockup's "Okt. 22. próbán" button is left out (not in spec 5.5's CTA list) — cost if wrong: one extra CTA later.
 Task 13: Ruling: the hub hero background mixes the cover hue (cover-hue exception) with `var(--card)`, so it works in both themes — cost if wrong: cosmetic.
 Task 13: complete (tests: npm test → 38/38 pass (chords 4 RED→GREEN); tsc ok; eslint touched 0 errors (4 baseline unused-import warnings in calendar.ts); build ok, /songs/[id] listed; /dev/ui?only=hub desktop matches hybrid-hub-desktop.png, 390px: tabs, CTA row on one line, no overflow)
+Task 14: Ruling: `?i=` is the 1-based song number (what the user sees as "1/5"); the page converts it with `clampIndex(i - 1)` — cost if wrong: links from Task 13/15 must use 1-based values.
+Task 14: Ruling: `/practice/next` (masthead) redirects to the upcoming rehearsal date, or shows "Nincs tervezett próba"; non-`yyyy-MM-dd` dates → 404 — cost if wrong: none.
+Task 14: Ruling: the sheet renders the free-text tab (`TabSheet`, 15/18px) instead of the mockup's bar grid — songs store free text, not structured bars — cost if wrong: plainer sheet than the mockup.
+Task 14: Ruling: the A3 enter animation (x ±24px + fade, 220ms) runs only for button-initiated changes; no exit animation (an exit would delay the next song); swipe is not added in this task — cost if wrong: swipe can be added in Task 15/19.
+Task 14: Ruling: `PracticeView` takes `syncUrl` and `className` props so `/dev/ui?only=practice` can render it in a fixed-height frame without touching the URL — cost if wrong: none.
+Task 14: note: `tsc` failed on stale generated `.next/types` (from the previous build; did not know the new `/practice` layout); `npm run build` regenerated it. Generated cache only.
+Task 14: complete (tests: npm test → 42/42 pass (practice 4 RED→GREEN); tsc ok; eslint touched 0 problems; build ok, /practice/[date] listed; /dev/ui?only=practice desktop 1440×900 + 390px match hybrid-practice-*.png)
