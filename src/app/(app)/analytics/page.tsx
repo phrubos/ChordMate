@@ -1,129 +1,56 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getAnalyticsData } from '@/actions/analytics';
+import { getCalendarStats } from '@/actions/calendar';
+import { todayIso } from '@/lib/calendar-utils';
+import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/shared/page-header';
 import { PracticeHeatmap } from '@/components/analytics/practice-heatmap';
 import { TopSongsRanking } from '@/components/analytics/top-songs-ranking';
 import { TrendChart } from '@/components/analytics/trend-chart';
 import { NeglectedSongs } from '@/components/analytics/neglected-songs';
-import {
-  CalendarDays,
-  Music,
-  ListMusic,
-  Flame,
-  CheckCircle2,
-  Circle,
-} from 'lucide-react';
+import { PracticeHistory } from '@/components/dashboard/practice-history';
+
+export const metadata = { title: 'Statisztika — ChordMate' };
 
 export default async function AnalyticsPage() {
   const session = await auth();
   if (!session?.user) redirect('/login');
 
-  const data = await getAnalyticsData();
+  const [data, stats] = await Promise.all([getAnalyticsData(), getCalendarStats()]);
+  const kpis: { label: string; value: string | number; hint: string }[] = [
+    { label: 'Lezajlott próbák', value: data.kpis.pastPracticeDays, hint: 'nap, amikor volt setlist' },
+    { label: 'Tervezett próbák', value: data.kpis.futurePracticeDays, hint: 'mától előre' },
+    { label: 'Gyakorolt dalok', value: data.kpis.totalSongsEverPracticed, hint: 'különböző dal próbán' },
+    { label: 'Legutóbbi próba', value: data.kpis.lastPracticeDateFormatted ?? '—', hint: data.kpis.lastPracticeDaysAgo != null ? `${data.kpis.lastPracticeDaysAgo} napja` : 'még nem volt' },
+  ];
 
   return (
-    <>
-      <div>
-        <div>
-          <PageHeader
-            title="Analitika"
-            description="A gyakorlásaid összesítője"
-          />
+    <div className="flex flex-col gap-12">
+      <PageHeader title="Statisztika" description="A banda gyakorlása egy év alatt" />
 
-          {/* KPI Cards */}
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              {
-                label: 'Próba napok',
-                value: (
-                  <span className="flex items-center gap-1.5 text-xs whitespace-nowrap mt-1">
-                    <span className="flex items-center gap-0.5 text-emerald-500 font-medium tracking-tight">
-                      <CheckCircle2 className="size-3.5" />
-                      {data.kpis.pastPracticeDays} volt
-                    </span>
-                    <span className="text-muted-foreground">-</span>
-                    <span className="flex items-center gap-0.5 text-amber-500 font-medium tracking-tight">
-                      <Circle fill="currentColor" className="size-3" />
-                      {data.kpis.futurePracticeDays} lesz
-                    </span>
-                    <span className="text-muted-foreground">=</span>
-                    <span className="font-black text-foreground text-base tabular-nums">
-                      {data.kpis.totalPracticeDays}
-                    </span>
-                  </span>
-                ),
-                isCustomValue: true,
-                icon: CalendarDays,
-                color: 'text-primary',
-                bg: 'bg-primary/10',
-                border: 'border-primary/20',
-              },
-              {
-                label: 'Összes dal',
-                value: data.kpis.totalSongsEverPracticed,
-                icon: Music,
-                color: 'text-emerald-400',
-                bg: 'bg-emerald-500/10',
-                border: 'border-emerald-500/20',
-              },
-              {
-                label: 'Összesen',
-                value: data.kpis.totalPracticeSessions,
-                icon: ListMusic,
-                color: 'text-blue-400',
-                bg: 'bg-blue-500/10',
-                border: 'border-blue-500/20',
-              },
-              {
-                label: 'Legutóbbi próba',
-                value: data.kpis.lastPracticeDateFormatted ?? '-',
-                icon: Flame,
-                color: 'text-amber-400',
-                bg: 'bg-amber-500/10',
-                border: 'border-amber-500/20',
-              },
-            ].map(({ label, value, subText, icon: Icon, color, bg, border, isCustomValue }: any) => (
-              <div
-                key={label}
-                className={`flex flex-col items-center gap-2 rounded-2xl border ${border} bg-card/50 p-4 backdrop-blur-md shadow-sm justify-center`}
-              >
-                <div className={`flex size-9 items-center justify-center rounded-xl ${bg} ${color} shadow-inner`}>
-                  <Icon className="size-4" />
-                </div>
-                <div className="flex flex-col items-center w-full min-w-0">
-                  <span className={isCustomValue ? "" : "text-2xl font-black tabular-nums tracking-tight leading-none"}>
-                    {value}
-                  </span>
-                  {subText && (
-                    <div className="mt-1.5">
-                      {subText}
-                    </div>
-                  )}
-                  <span className={`text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center ${subText || isCustomValue ? 'mt-1.5' : 'mt-1'}`}>
-                    {label}
-                  </span>
-                </div>
-              </div>
-            ))}
+      <dl className="grid grid-cols-2 border-t border-border-strong md:grid-cols-4">
+        {kpis.map((k, i) => (
+          <div
+            key={k.label}
+            className={cn('flex flex-col gap-1 border-border py-5 pr-4', i % 2 === 1 && 'border-l pl-4', i >= 2 && 'border-t md:border-t-0', i > 0 && 'md:border-l md:pl-6')}
+          >
+            <dt className="font-mono text-xs tracking-[0.12em] text-muted-foreground uppercase">{k.label}</dt>
+            <dd className="display-soft font-display text-[40px] leading-none font-medium tabular-nums md:text-[52px]">{k.value}</dd>
+            <dd className="text-[13px] text-muted-foreground">{k.hint}</dd>
           </div>
+        ))}
+      </dl>
 
-          {/* Heatmap */}
-          <div className="mt-8">
-            <PracticeHeatmap data={data.heatmapData} />
-          </div>
+      <PracticeHeatmap data={data.heatmapData} />
 
-          {/* Trend + Top Songs */}
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <TrendChart data={data.monthlyTrend} />
-            <TopSongsRanking songs={data.topSongs} />
-          </div>
-
-          {/* Neglected Songs */}
-          <div className="mt-6">
-            <NeglectedSongs songs={data.neglectedSongs} />
-          </div>
-        </div>
+      <div className="grid gap-12 lg:grid-cols-2">
+        <TrendChart data={data.monthlyTrend} />
+        <TopSongsRanking songs={data.topSongs} />
       </div>
-    </>
+
+      <NeglectedSongs songs={data.neglectedSongs} />
+      <PracticeHistory history={stats.practiceHistory} today={todayIso()} />
+    </div>
   );
 }

@@ -1,10 +1,7 @@
-'use client';
-
-import { format, parseISO, isAfter, startOfDay } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { CalendarCheck, Music } from 'lucide-react';
-import { TruncatedText } from '@/components/shared/truncated-text';
-import { ExpandableText } from '@/components/shared/expandable-text';
+import { SectionHeader } from '@/components/design/section-header';
+import { cn } from '@/lib/utils';
 
 interface PracticeDay {
   date: string;
@@ -12,88 +9,42 @@ interface PracticeDay {
   songs: string[];
 }
 
-interface PracticeHistoryProps {
-  history: PracticeDay[];
-}
-
-export function PracticeHistory({ history }: PracticeHistoryProps) {
-  const today = startOfDay(new Date());
-  const past = history.filter((h) => !isAfter(parseISO(h.date), today));
-  const upcoming = history.filter((h) => isAfter(parseISO(h.date), today));
-
-  if (history.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-8 text-center">
-        <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-primary/5">
-          <CalendarCheck className="size-5 text-primary/30" />
-        </div>
-        <p className="text-sm text-muted-foreground">Még nincs próbanap</p>
-      </div>
-    );
-  }
+/** "Próba történet": upcoming rehearsals first, then the last 10. Today counts as upcoming. */
+export function PracticeHistory({ history, today }: { history: PracticeDay[]; today: string }) {
+  const upcoming = history.filter((h) => h.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  const past = history.filter((h) => h.date < today).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Upcoming */}
-      {upcoming.length > 0 && (
-        <div>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Következő próbák
-          </h4>
-          <div
-            className="flex flex-col gap-1.5"
-          >
-            {upcoming.reverse().map((day) => (
-              <div key={day.date}>
-                <DayRow day={day} variant="upcoming" />
-              </div>
-            ))}
-          </div>
+    <section className="flex flex-col gap-4">
+      <SectionHeader title="Próba történet" />
+      {history.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Még nincs próbanap.</p>
+      ) : (
+        <div className="grid gap-8 md:grid-cols-2">
+          {upcoming.length > 0 && <DayList title="Következő próbák" days={upcoming} planned />}
+          {past.length > 0 && <DayList title="Korábbi próbák" days={past} />}
         </div>
       )}
-
-      {/* Past */}
-      {past.length > 0 && (
-        <div>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Korábbi próbák
-          </h4>
-          <div
-            className="flex flex-col gap-1.5"
-          >
-            {past.slice(0, 10).map((day) => (
-              <div key={day.date}>
-                <DayRow day={day} variant="past" />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    </section>
   );
 }
 
-function DayRow({ day, variant }: { day: PracticeDay; variant: 'upcoming' | 'past' }) {
-  const label = format(parseISO(day.date), 'MMM d., EEEE', { locale: hu });
-
+function DayList({ title, days, planned }: { title: string; days: PracticeDay[]; planned?: boolean }) {
   return (
-    <div className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-      variant === 'upcoming' ? 'bg-primary/5 border border-primary/10' : 'hover:bg-secondary/20'
-    }`}>
-      <div className={`flex size-8 items-center justify-center rounded-lg ${
-        variant === 'upcoming' ? 'bg-primary/15 text-primary' : 'bg-secondary/50 text-muted-foreground'
-      }`}>
-        <Music className="size-3.5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium capitalize">{label}</p>
-        <p className="text-xs text-muted-foreground">
-          <ExpandableText className="block" clampClassName="truncate">{day.songs.join(', ')}</ExpandableText>
-        </p>
-      </div>
-      <span className="shrink-0 rounded-full bg-secondary/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-        {day.songCount} dal
-      </span>
+    <div className="flex min-w-0 flex-col gap-1">
+      <h3 className="font-mono text-xs tracking-[0.12em] text-muted-foreground uppercase">{title}</h3>
+      <ul>
+        {days.map((d) => (
+          <li key={d.date} className="grid grid-cols-[11px_minmax(0,1fr)_auto] items-center gap-3 border-t border-border py-2.5 first:border-t-0">
+            <i className={cn('size-[11px] rounded-full', planned ? 'shadow-[inset_0_0_0_2px_var(--primary)]' : 'bg-done')} aria-hidden />
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="text-[14.5px] font-semibold first-letter:uppercase">{format(parseISO(d.date), 'MMM d., EEEE', { locale: hu })}</span>
+              <span className="truncate text-[13px] text-muted-foreground" title={d.songs.join(', ')}>{d.songs.join(', ')}</span>
+            </span>
+            <span className="font-mono text-[13px] text-muted-foreground tabular-nums">{d.songCount} dal</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

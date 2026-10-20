@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { SectionHeader } from '@/components/design/section-header';
 import { cn } from '@/lib/utils';
 
 interface TrendDataPoint {
@@ -9,206 +10,100 @@ interface TrendDataPoint {
   songCount: number;
 }
 
-interface TrendChartProps {
-  data: TrendDataPoint[];
+type Key = 'practiceDays' | 'songCount';
+
+const W = 500;
+const H = 120;
+
+/** Points in viewBox units (x 0–W, y 0–H, top = max). */
+function pointsOf(data: TrendDataPoint[], key: Key) {
+  const max = Math.max(...data.map((d) => d[key]), 1);
+  const n = Math.max(data.length - 1, 1);
+  return data.map((d, i) => ({ x: (i / n) * W, y: H - (d[key] / max) * (H - 6) }));
 }
 
-const CHART_WIDTH = 500;
-const CHART_HEIGHT = 140;
-const PADDING = { top: 10, right: 10, bottom: 24, left: 10 };
-
-function buildPath(data: TrendDataPoint[], key: 'practiceDays' | 'songCount'): string {
-  const w = CHART_WIDTH - PADDING.left - PADDING.right;
-  const h = CHART_HEIGHT - PADDING.top - PADDING.bottom;
-  const max = Math.max(...data.map((d) => d[key]), 1);
-
-  const points = data.map((d, i) => {
-    const x = PADDING.left + (i / (data.length - 1)) * w;
-    const y = PADDING.top + h - (d[key] / max) * h;
-    return { x, y };
-  });
-
+function curve(points: { x: number; y: number }[]) {
   if (points.length === 0) return '';
-
-  // Smooth curve with catmull-rom
   let path = `M ${points[0].x} ${points[0].y}`;
   for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    const cpx = (prev.x + curr.x) / 2;
-    path += ` C ${cpx} ${prev.y}, ${cpx} ${curr.y}, ${curr.x} ${curr.y}`;
+    const p = points[i - 1];
+    const c = points[i];
+    const cx = (p.x + c.x) / 2;
+    path += ` C ${cx} ${p.y}, ${cx} ${c.y}, ${c.x} ${c.y}`;
   }
-
   return path;
 }
 
-function buildArea(data: TrendDataPoint[], key: 'practiceDays' | 'songCount'): string {
-  const w = CHART_WIDTH - PADDING.left - PADDING.right;
-  const h = CHART_HEIGHT - PADDING.top - PADDING.bottom;
-  const max = Math.max(...data.map((d) => d[key]), 1);
-  const baseY = PADDING.top + h;
-
-  const points = data.map((d, i) => {
-    const x = PADDING.left + (i / (data.length - 1)) * w;
-    const y = PADDING.top + h - (d[key] / max) * h;
-    return { x, y };
-  });
-
-  if (points.length === 0) return '';
-
-  let path = `M ${points[0].x} ${baseY} L ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    const cpx = (prev.x + curr.x) / 2;
-    path += ` C ${cpx} ${prev.y}, ${cpx} ${curr.y}, ${curr.x} ${curr.y}`;
-  }
-  path += ` L ${points[points.length - 1].x} ${baseY} Z`;
-
-  return path;
-}
-
-export function TrendChart({ data }: TrendChartProps) {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-
-  const practicePath = useMemo(() => buildPath(data, 'practiceDays'), [data]);
-  const songPath = useMemo(() => buildPath(data, 'songCount'), [data]);
-  const practiceArea = useMemo(() => buildArea(data, 'practiceDays'), [data]);
-  const songArea = useMemo(() => buildArea(data, 'songCount'), [data]);
-
-  const w = CHART_WIDTH - PADDING.left - PADDING.right;
-  const h = CHART_HEIGHT - PADDING.top - PADDING.bottom;
-  const maxPractice = Math.max(...data.map((d) => d.practiceDays), 1);
-  const maxSongs = Math.max(...data.map((d) => d.songCount), 1);
+/** Static line chart (no draw-in, spec §6). Labels, dots and tooltip are HTML so they never scale below 12px. */
+export function TrendChart({ data }: { data: TrendDataPoint[] }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const practice = useMemo(() => pointsOf(data, 'practiceDays'), [data]);
+  const songs = useMemo(() => pointsOf(data, 'songCount'), [data]);
+  const practicePath = curve(practice);
+  const area = practice.length ? `${practicePath} L ${W} ${H} L 0 ${H} Z` : '';
+  const pct = (x: number) => `${(x / W) * 100}%`;
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/50 p-5 backdrop-blur-md min-w-0">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          Havi trend (1 év)
-        </h3>
-        <div className="flex items-center gap-4 text-[11px]">
-          <div className="flex items-center gap-1.5">
-            <div className="size-2 rounded-full bg-primary" />
-            <span className="text-muted-foreground">Gyakorolt napok</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="size-2 rounded-full bg-emerald-500" />
-            <span className="text-muted-foreground">Dalok száma</span>
-          </div>
-        </div>
-      </div>
+    <section className="flex min-w-0 flex-col gap-4">
+      <SectionHeader
+        title="Havi trend"
+        actions={
+          <span className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5"><i className="size-2 rounded-full bg-primary" />Próbanapok</span>
+            <span className="inline-flex items-center gap-1.5"><i className="size-2 rounded-full bg-muted-foreground" />Dalok</span>
+          </span>
+        }
+      />
+      <div className="relative h-[140px]" onMouseLeave={() => setHover(null)}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible" aria-hidden>
+          {[0.25, 0.5, 0.75].map((f) => (
+            <line key={f} x1={0} x2={W} y1={H * f} y2={H * f} className="stroke-border-strong" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+          ))}
+          <path d={area} className="fill-primary/10" />
+          <path d={curve(songs)} className="fill-none stroke-muted-foreground" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+          <path d={practicePath} className="fill-none stroke-primary" strokeWidth={2.5} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        </svg>
 
-      <div className="w-full">
-        <svg
-          viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-          className="w-full"
-          preserveAspectRatio="none"
-        >
-          {/* Grid lines */}
-          {[0.25, 0.5, 0.75].map((pct) => (
-            <line
-              key={pct}
-              x1={PADDING.left}
-              x2={CHART_WIDTH - PADDING.right}
-              y1={PADDING.top + h * (1 - pct)}
-              y2={PADDING.top + h * (1 - pct)}
-              className="stroke-border/30"
-              strokeWidth={0.5}
-              strokeDasharray="4 4"
+        {hover !== null && (
+          <>
+            <span className="absolute top-0 bottom-0 w-px bg-border-strong" style={{ left: pct(practice[hover].x) }} />
+            <span className="absolute size-2 -translate-1/2 rounded-full bg-muted-foreground" style={{ left: pct(songs[hover].x), top: `${(songs[hover].y / H) * 100}%` }} />
+            <span className="absolute size-2.5 -translate-1/2 rounded-full bg-primary" style={{ left: pct(practice[hover].x), top: `${(practice[hover].y / H) * 100}%` }} />
+            <span
+              role="tooltip"
+              className={cn(
+                'absolute -top-2 rounded-md bg-popover px-2.5 py-1.5 text-xs whitespace-nowrap text-popover-foreground shadow-md ring-1 ring-foreground/10',
+                hover > data.length / 2 ? '-translate-x-[calc(100%+8px)]' : 'translate-x-2'
+              )}
+              style={{ left: pct(practice[hover].x) }}
+            >
+              <b className="block font-semibold capitalize">{data[hover].month}</b>
+              <span className="text-primary-text">{data[hover].practiceDays} nap</span> · {data[hover].songCount} dal
+            </span>
+          </>
+        )}
+
+        <div className="absolute inset-0 flex">
+          {data.map((d, i) => (
+            <button
+              key={d.month}
+              type="button"
+              aria-label={`${d.month}: ${d.practiceDays} próbanap, ${d.songCount} dal`}
+              className="flex-1 outline-none focus-visible:bg-primary/5"
+              onMouseEnter={() => setHover(i)}
+              onFocus={() => setHover(i)}
+              onBlur={() => setHover(null)}
             />
           ))}
-
-          {/* Areas */}
-          <path d={songArea} className="fill-emerald-500/10" />
-          <path d={practiceArea} className="fill-primary/10" />
-
-          {/* Lines */}
-          <path d={songPath} className="fill-none stroke-emerald-500/70" strokeWidth={2} strokeLinecap="round" />
-          <path d={practicePath} className="fill-none stroke-primary" strokeWidth={2.5} strokeLinecap="round" />
-
-          {/* Data points */}
-          {data.map((d, i) => {
-            const x = PADDING.left + (i / (data.length - 1)) * w;
-            const yPractice = PADDING.top + h - (d.practiceDays / maxPractice) * h;
-            const ySong = PADDING.top + h - (d.songCount / maxSongs) * h;
-
-            return (
-              <g key={i}>
-                <circle cx={x} cy={yPractice} r={hoveredIdx === i ? 4 : 2.5} className="fill-primary" />
-                <circle cx={x} cy={ySong} r={hoveredIdx === i ? 3.5 : 2} className="fill-emerald-500" />
-                {/* Hover zone */}
-                <rect
-                  x={x - 15}
-                  y={PADDING.top}
-                  width={30}
-                  height={h}
-                  fill="transparent"
-                  onMouseEnter={() => setHoveredIdx(i)}
-                  onMouseLeave={() => setHoveredIdx(null)}
-                  className="cursor-default"
-                />
-              </g>
-            );
-          })}
-
-          {/* X labels (every month) */}
-          {data.map((d, i) => {
-            const x = PADDING.left + (i / (data.length - 1)) * w;
-            return (
-              <text
-                key={i}
-                x={x}
-                y={CHART_HEIGHT - 4}
-                textAnchor="middle"
-                className="fill-muted-foreground text-[9px] uppercase"
-              >
-                {d.month}
-              </text>
-            );
-          })}
-
-          {/* Hover tooltip */}
-          {hoveredIdx !== null && (
-            <g>
-              <line
-                x1={PADDING.left + (hoveredIdx / (data.length - 1)) * w}
-                x2={PADDING.left + (hoveredIdx / (data.length - 1)) * w}
-                y1={PADDING.top}
-                y2={PADDING.top + h}
-                className="stroke-border/50"
-                strokeWidth={1}
-                strokeDasharray="3 3"
-              />
-              <rect
-                x={PADDING.left + (hoveredIdx / (data.length - 1)) * w - 45}
-                y={PADDING.top - 5}
-                width={90}
-                height={30}
-                rx={6}
-                className="fill-card/90 stroke-border/50"
-                strokeWidth={0.5}
-              />
-              <text
-                x={PADDING.left + (hoveredIdx / (data.length - 1)) * w}
-                y={PADDING.top + 7}
-                textAnchor="middle"
-                className="fill-primary text-[9px] font-bold"
-              >
-                {data[hoveredIdx].practiceDays} nap
-              </text>
-              <text
-                x={PADDING.left + (hoveredIdx / (data.length - 1)) * w}
-                y={PADDING.top + 19}
-                textAnchor="middle"
-                className="fill-emerald-500 text-[9px] font-bold"
-              >
-                {data[hoveredIdx].songCount} dal
-              </text>
-            </g>
-          )}
-        </svg>
+        </div>
       </div>
-    </div>
+      <div className="flex justify-between font-mono text-xs text-muted-foreground uppercase">
+        {data.map((d, i) => (
+          <span key={d.month} className={cn('w-0 text-center whitespace-nowrap', i % 2 === 1 && 'max-sm:invisible')} style={{ flex: '0 0 0' }}>
+            <span className="inline-block -translate-x-1/2">{d.month}</span>
+          </span>
+        ))}
+      </div>
+    </section>
   );
 }

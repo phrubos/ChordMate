@@ -12,6 +12,7 @@ import { SongsSection } from './sections/songs';
 import { HubSection } from './sections/hub';
 import { PracticeSection } from './sections/practice';
 import { FormSection } from './sections/form';
+import { AnalyticsSection } from './sections/analytics';
 
 export const metadata = { title: 'ChordMate — UI showcase (dev)' };
 
@@ -38,6 +39,7 @@ export default async function DevUiPage({ searchParams }: DevUiPageProps) {
       {show('hub') && <HubSection />}
       {show('practice') && <PracticeSection />}
       {show('form') && <FormSection />}
+      {show('analytics') && <AnalyticsSection />}
       {show('tokens') && <TokensSection />}
       {show('atoms') && <AtomsSection />}
       {show('player') && <PlayerSection />}

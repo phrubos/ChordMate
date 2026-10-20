@@ -1,160 +1,116 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { format, subDays, startOfDay, getDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
+import { SectionHeader } from '@/components/design/section-header';
 
 interface PracticeHeatmapProps {
   data: Record<string, number>;
 }
 
-const CELL_SIZE = 14;
+const CELL = 13;
 const GAP = 3;
-const DAY_LABELS = ['H', '', 'Sz', '', 'P', '', 'V'];
-
-function getIntensity(count: number): { fill: string; opacity: number } {
-  if (count === 0) return { fill: 'currentColor', opacity: 0.08 };
-  if (count <= 1) return { fill: '#10b981', opacity: 0.35 };
-  if (count <= 3) return { fill: '#10b981', opacity: 0.55 };
-  if (count <= 5) return { fill: '#10b981', opacity: 0.75 };
-  return { fill: '#10b981', opacity: 0.95 };
-}
+const LEFT = 22;
+const DAY_LABELS = ['H', '', 'Sze', '', 'P', '', 'V'];
+/** 5 amber steps over transparent: 0, 1, 2–3, 4–5, 6+ songs. */
+const STEPS = [8, 30, 50, 72, 95];
+const stepOf = (count: number) => (count === 0 ? 0 : count <= 1 ? 1 : count <= 3 ? 2 : count <= 5 ? 3 : 4);
+const fillOf = (step: number) => `color-mix(in oklch, var(--primary) ${STEPS[step]}%, transparent)`;
 
 export function PracticeHeatmap({ data }: PracticeHeatmapProps) {
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const weeks = useMemo(() => {
+  // Narrow screens: start at the most recent weeks.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, []);
+
+  const cells = useMemo(() => {
     const today = startOfDay(new Date());
-    const cells: { date: string; count: number; dayOfWeek: number; weekIndex: number }[] = [];
-
-    // Go back 364 days (52 weeks)
+    const out: { date: string; count: number; dow: number; week: number }[] = [];
+    let week = 0;
+    let lastDow = -1;
     for (let i = 364; i >= 0; i--) {
       const d = subDays(today, i);
-      const dateStr = format(d, 'yyyy-MM-dd');
-      // getDay: 0=Sunday, but we want Monday=0
-      let dow = getDay(d) - 1;
-      if (dow < 0) dow = 6;
-
-      cells.push({
-        date: dateStr,
-        count: data[dateStr] ?? 0,
-        dayOfWeek: dow,
-        weekIndex: 0, // will be calculated
-      });
+      const dow = (getDay(d) + 6) % 7; // Monday = 0
+      if (dow <= lastDow) week++;
+      lastDow = dow;
+      const date = format(d, 'yyyy-MM-dd');
+      out.push({ date, count: data[date] ?? 0, dow, week });
     }
-
-    // Calculate week indices
-    let weekIdx = 0;
-    let lastDow = -1;
-    for (const cell of cells) {
-      if (cell.dayOfWeek <= lastDow) weekIdx++;
-      cell.weekIndex = weekIdx;
-      lastDow = cell.dayOfWeek;
-    }
-
-    return cells;
+    return out;
   }, [data]);
 
-  const totalWeeks = weeks.length > 0 ? weeks[weeks.length - 1].weekIndex + 1 : 0;
-  const totalDays = Object.values(data).filter(v => v > 0).length;
-  const totalSessions = Object.values(data).reduce((a, b) => a + b, 0);
+  const weeks = cells.length ? cells[cells.length - 1].week + 1 : 0;
+  const activeDays = Object.values(data).filter((v) => v > 0).length;
+  const total = Object.values(data).reduce((a, b) => a + b, 0);
+  const label = (c: { date: string; count: number }) =>
+    `${format(new Date(`${c.date}T00:00:00`), 'yyyy. MMM d.', { locale: hu })}: ${c.count ? `${c.count} dal` : 'nem volt próba'}`;
 
-  const svgWidth = totalWeeks * (CELL_SIZE + GAP) + 30;
-  const svgHeight = 7 * (CELL_SIZE + GAP) + 10;
+  function show(el: Element, text: string) {
+    const r = el.getBoundingClientRect();
+    setTip({ x: r.left + r.width / 2, y: r.top - 8, text });
+  }
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/50 p-5 backdrop-blur-md">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-          Gyakorlás hőtérkép
-        </h3>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span>{totalDays} nap</span>
-          <span>·</span>
-          <span>{totalSessions} gyakorlás</span>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto scrollbar-thin pb-2">
-        <svg
-          width={svgWidth}
-          height={svgHeight + 20}
-          className="block"
-        >
-          {/* Day labels */}
-          {DAY_LABELS.map((label, idx) => (
-            label && (
-              <text
-                key={idx}
-                x={0}
-                y={idx * (CELL_SIZE + GAP) + CELL_SIZE}
-                className="fill-muted-foreground text-[10px]"
-              >
-                {label}
-              </text>
-            )
+    <section className="flex min-w-0 flex-col gap-4">
+      <SectionHeader
+        title="Gyakorlás hőtérkép"
+        actions={<span className="font-mono text-[13px] text-muted-foreground">{activeDays} nap · {total} dal</span>}
+      />
+      <div ref={scrollRef} className="overflow-x-auto pb-2">
+        <svg width={weeks * (CELL + GAP) + LEFT} height={7 * (CELL + GAP)} className="block" role="grid" aria-label="Gyakorlás az elmúlt egy évben">
+          {DAY_LABELS.map(
+            (d, i) =>
+              d && (
+                <text key={i} x={0} y={i * (CELL + GAP) + CELL - 2} className="fill-muted-foreground font-mono text-[10px]">
+                  {d}
+                </text>
+              )
+          )}
+          {cells.map((c) => (
+            <rect
+              key={c.date}
+              x={LEFT + c.week * (CELL + GAP)}
+              y={c.dow * (CELL + GAP)}
+              width={CELL}
+              height={CELL}
+              rx={2}
+              fill={fillOf(stepOf(c.count))}
+              tabIndex={0}
+              role="gridcell"
+              aria-label={label(c)}
+              className="outline-none focus-visible:stroke-ring focus-visible:stroke-2"
+              onMouseEnter={(e) => show(e.currentTarget, label(c))}
+              onMouseLeave={() => setTip(null)}
+              onFocus={(e) => show(e.currentTarget, label(c))}
+              onBlur={() => setTip(null)}
+            />
           ))}
-
-          {/* Cells */}
-          {weeks.map((cell, i) => {
-            const x = cell.weekIndex * (CELL_SIZE + GAP) + 22;
-            const y = cell.dayOfWeek * (CELL_SIZE + GAP);
-            const intensity = getIntensity(cell.count);
-
-            return (
-              <rect
-                key={i}
-                x={x}
-                y={y}
-                width={CELL_SIZE}
-                height={CELL_SIZE}
-                rx={3}
-                fill={intensity.fill}
-                opacity={intensity.opacity}
-                className="transition-all cursor-default"
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const dateFormatted = format(new Date(cell.date + 'T00:00:00'), 'MMM d, yyyy', { locale: hu });
-                  setTooltip({
-                    x: rect.left + rect.width / 2,
-                    y: rect.top - 8,
-                    text: `${dateFormatted}: ${cell.count} dal`,
-                  });
-                }}
-                onMouseLeave={() => setTooltip(null)}
-              />
-            );
-          })}
         </svg>
       </div>
-
-      {/* Legend */}
-      <div className="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground">
+      <div className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground" aria-hidden>
         <span>Kevesebb</span>
-        {[0, 1, 3, 5, 7].map((level) => {
-          const intensity = getIntensity(level);
-          return (
-            <div
-              key={level}
-              className="size-3 rounded-sm"
-              style={{ backgroundColor: intensity.fill, opacity: intensity.opacity }}
-            />
-          );
-        })}
+        {STEPS.map((_, i) => (
+          <span key={i} className="size-3 rounded-[2px]" style={{ background: fillOf(i) }} />
+        ))}
         <span>Több</span>
       </div>
-
-      {/* Tooltip via portal to escape backdrop-blur stacking context */}
-      {tooltip && typeof document !== 'undefined' && createPortal(
-        <div
-          className="pointer-events-none fixed z-[9999] rounded-lg bg-popover/95 px-3 py-1.5 text-xs font-medium text-popover-foreground shadow-lg border border-border/50 backdrop-blur-sm -translate-x-1/2 -translate-y-full"
-          style={{ left: tooltip.x, top: tooltip.y }}
-        >
-          {tooltip.text}
-        </div>,
-        document.body
-      )}
-    </div>
+      {tip &&
+        createPortal(
+          <div
+            role="tooltip"
+            className="pointer-events-none fixed z-[9999] -translate-x-1/2 -translate-y-full rounded-md bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground shadow-md ring-1 ring-foreground/10"
+            style={{ left: tip.x, top: tip.y }}
+          >
+            {tip.text}
+          </div>,
+          document.body
+        )}
+    </section>
   );
 }
