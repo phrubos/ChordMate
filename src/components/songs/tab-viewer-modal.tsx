@@ -26,6 +26,9 @@ interface TabViewerModalProps {
   tabUrl?: string | null;
   trigger?: React.ReactNode;
   date?: string;
+  /** Controlled mode (no trigger is rendered when `open` is given). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 // Build regex from known chord names (longest first to match "Cadd9" before "C")
@@ -91,7 +94,7 @@ function formatRecTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger, date }: TabViewerModalProps) {
+export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger, date, open, onOpenChange }: TabViewerModalProps) {
   const [fontSize, setFontSize] = useState(15);
   const [copied, setCopied] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
@@ -293,23 +296,25 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
   }
 
   return (
-    <Dialog>
-      <DialogTrigger
-        render={
-          trigger ? (
-            trigger as React.ReactElement
-          ) : (
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary" />
-          )
-        }
-      >
-        {!trigger && (
-          <>
-            <FileText className="size-4" />
-            Tab
-          </>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open === undefined && (
+        <DialogTrigger
+          render={
+            trigger ? (
+              trigger as React.ReactElement
+            ) : (
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary" />
+            )
+          }
+        >
+          {!trigger && (
+            <>
+              <FileText className="size-4" />
+              Tab
+            </>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-[90vw] sm:max-w-5xl max-h-[90vh] landscape:max-h-[95vh] landscape:max-w-[95vw] flex flex-col">
         <DialogHeader className="shrink-0">
           <div className="flex items-start justify-between gap-4">

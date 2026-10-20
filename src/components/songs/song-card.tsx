@@ -1,147 +1,58 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
-import { Pencil, Trash2, Play, Star, FileText, Music, Heart } from 'lucide-react';
-import { ImageLightbox } from '@/components/shared/image-lightbox';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import type { SongWithUser } from '@/types';
-import { formatRelativeDate } from '@/lib/utils';
-import { ExpandableText } from '@/components/shared/expandable-text';
-import { memo, useState, useTransition } from 'react';
-import { toggleFavorite } from '@/actions/songs';
-import dynamic from 'next/dynamic';
-import { DeleteSongDialog } from './delete-song-dialog';
-
-const TabViewerModal = dynamic(() => import('./tab-viewer-modal').then(m => ({ default: m.TabViewerModal })), { ssr: false });
-import { TruncatedText } from '@/components/shared/truncated-text';
+import { Heart, Play } from 'lucide-react';
+import { CoverArt } from '@/components/design/cover-art';
+import { ChipList } from '@/components/design/chip';
+import { StatusBadge } from '@/components/design/status-badge';
+import { DifficultyMeter } from '@/components/design/difficulty-meter';
+import type { Song } from '@/types';
+import { SongActionsMenu } from './song-actions-menu';
 
 interface SongCardProps {
-  song: SongWithUser;
-  onPlay?: (song: SongWithUser) => void;
+  song: Song;
+  onPlay?: (song: Song) => void;
 }
 
-const DifficultyStars = memo(function DifficultyStars({ level }: { level: number | null }) {
-  if (!level) return null;
-  const colors = ['text-green-500', 'text-lime-500', 'text-yellow-500', 'text-orange-500', 'text-red-500'];
-  return (
-    <div className="flex items-center gap-0.5 shrink-0">
-      {Array.from({ length: 5 }, (_, i) => (
-        <Star
-          key={i}
-          className={`size-3.5 ${i < level ? colors[level - 1] + ' fill-current' : 'text-muted-foreground/20'}`}
-        />
-      ))}
-    </div>
-  );
-});
-
+/** Liner-style album card: typographic cover, play on cover, always-visible actions menu. */
 export const SongCard = memo(function SongCard({ song, onPlay }: SongCardProps) {
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [isFav, setIsFav] = useState(song.isFavorite);
-  const [, startTransition] = useTransition();
-
   return (
-    <>
-      <div className="group relative rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm transition-all hover:border-border hover:bg-card hover:shadow-md hover:shadow-primary/5 overflow-hidden h-full flex flex-col">
-        {/* Header with album art */}
-        <div className="flex items-start gap-3 min-w-0 flex-1">
-          <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-secondary/50">
-            {song.imageUrl ? (
-              <ImageLightbox
-                src={song.imageUrl}
-                alt={`${song.artist} - ${song.title}`}
-                width={56}
-                height={56}
-                className="size-full object-cover"
-              />
-            ) : (
-              <div className="flex size-full items-center justify-center">
-                <Music className="size-6 text-muted-foreground/30" />
-              </div>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-semibold leading-tight">
-                  <ExpandableText className="block" clampClassName="truncate">{song.title}</ExpandableText>
-                </h3>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  <ExpandableText className="block" clampClassName="truncate">{song.artist}</ExpandableText>
-                </p>
-              </div>
-              <DifficultyStars level={song.difficulty} />
-            </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2 min-w-0">
-              <TruncatedText className="text-xs text-muted-foreground min-w-0 max-w-full shrink">
-                {`${song.addedBy?.name ?? 'Ismeretlen'} · ${formatRelativeDate(song.createdAt)}`}
-              </TruncatedText>
-              {song.tabContent && (
-                <Badge variant="secondary" className="h-5 px-1.5 text-[11px] font-medium bg-primary/15 text-primary border-0 shrink-0">
-                  TAB
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {song.notes && (
-          <p className="mt-2 text-sm text-muted-foreground italic">
-            <ExpandableText className="block" clampClassName="line-clamp-2">{song.notes}</ExpandableText>
-          </p>
+    <article className="group flex min-w-0 flex-col">
+      <div className="relative aspect-square overflow-hidden rounded-[2px] shadow-[0_2px_0_oklch(0_0_0/.2)] transition-[transform,box-shadow] duration-250 ease-(--ease-out) hover-device:group-hover:-translate-y-[3px] hover-device:group-hover:rotate-[-0.4deg] hover-device:group-hover:shadow-[0_18px_36px_oklch(0_0_0/.55),0_0_0_1px_color-mix(in_oklch,var(--primary)_25%,transparent)] motion-reduce:transform-none">
+        <Link href={`/songs/${song.id}`} tabIndex={-1} aria-hidden className="absolute inset-0">
+          <CoverArt title={song.title} artist={song.artist} imageUrl={song.imageUrl} size="fill" showType />
+        </Link>
+        {song.isFavorite && (
+          <span className="absolute top-2.5 right-2.5 grid size-7 place-items-center rounded-full bg-black/35 text-white backdrop-blur-sm" title="Kedvenc">
+            <Heart className="size-3.5 fill-current" aria-label="Kedvenc" />
+          </span>
         )}
-
-        {/* Actions */}
-        <div className="mt-auto flex flex-wrap items-center gap-1.5 border-t border-border/50 pt-3 opacity-100 transition-opacity hover-device:opacity-0 hover-device:group-hover:opacity-100">
-          {onPlay && song.youtubeUrl && (
-            <Button variant="ghost" size="sm" className="h-9 gap-1.5 px-3" onClick={() => onPlay(song)}>
-              <Play className="size-3.5" />
-              <span className="hidden sm:inline">Lejátszás</span>
-            </Button>
-          )}
-          <TabViewerModal
-            songTitle={song.title}
-            artist={song.artist}
-            tabContent={song.tabContent}
-            tabUrl={song.tabUrl}
-            trigger={
-              <Button variant="ghost" size="sm" className="h-9 gap-1.5 px-3 text-muted-foreground">
-                <FileText className="size-3.5" />
-                <span className="hidden sm:inline">Tab</span>
-              </Button>
-            }
-          />
-          <div className="flex-1" />
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`h-9 w-9 p-0 ${isFav ? 'text-pink-500' : 'text-muted-foreground'}`}
-            onClick={() => {
-              setIsFav(!isFav);
-              startTransition(() => toggleFavorite(song.id));
-            }}
+        {onPlay && song.youtubeUrl && (
+          <button
+            type="button"
+            onClick={() => onPlay(song)}
+            aria-label={`Lejátszás: ${song.title}`}
+            className="absolute right-2.5 bottom-2.5 grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0_0_0/.5)] transition-[opacity,transform] duration-200 ease-(--ease-out) active:scale-[.97] hover-device:translate-y-1.5 hover-device:opacity-0 hover-device:group-hover:translate-y-0 hover-device:group-hover:opacity-100 hover-device:focus-visible:translate-y-0 hover-device:focus-visible:opacity-100"
           >
-            <Heart className={`size-3.5 ${isFav ? 'fill-current' : ''}`} />
-          </Button>
-          <Link href={`/songs/${song.id}/edit`} className={buttonVariants({ variant: "ghost", size: "sm", className: "h-9 w-9 p-0 text-muted-foreground" })}>
-            <Pencil className="size-3.5" />
+            <Play className="ml-0.5 size-4 fill-current" />
+          </button>
+        )}
+      </div>
+      <div className="flex min-w-0 flex-col gap-1 pt-3.5">
+        <div className="flex items-start justify-between gap-2">
+          <Link href={`/songs/${song.id}`} className="display-soft min-w-0 font-display text-[17px] leading-tight font-medium tracking-[-0.01em] hover:underline md:text-[21px]">
+            {song.title}
           </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9 w-9 p-0 text-destructive/70 hover:text-destructive"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
+          <SongActionsMenu song={song} className="-mt-1 -mr-2 shrink-0" />
+        </div>
+        <span className="truncate text-[13.5px] text-muted-foreground">{song.artist}</span>
+        <ChipList className="mt-1.5" items={[song.songKey, song.bpm ? `${song.bpm} BPM` : null, song.capo ? `Capo ${song.capo}` : null]} />
+        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2.5">
+          <StatusBadge status={song.status} />
+          <DifficultyMeter level={song.difficulty} showLabel={false} />
         </div>
       </div>
-      <DeleteSongDialog
-        song={song}
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-      />
-    </>
+    </article>
   );
 });

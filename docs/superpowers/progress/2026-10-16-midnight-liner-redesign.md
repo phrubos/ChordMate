@@ -65,3 +65,8 @@ Task 11: Ruling: added pure `buildSongInsights(songs, entries, today)`; the dash
 Task 11: Ruling: "last played" counts only past rehearsals (a song planned for next week is not "recently played") — cost if wrong: such songs may still be suggested.
 Task 11: Ruling (revises Task 7/10 rulings): all real-app manual checks are batched into ONE user browser session at the end of the run (before the final review), so the inline run is not interrupted — cost if wrong: bugs in live flows surface later.
 Task 11: complete (commits c70d1d8..HEAD, tests: npm test → 30/30 pass (neglected 3 + insights 1, RED→GREEN); tsc ok; eslint touched 0 errors; build ok; analytics output shape unchanged; /dev/ui#insights matches mockup)
+Task 12: Ruling: the status filter is applied in the page after `getSongs` (not in SQL) so the segment counts reflect every other active filter — cost if wrong: filtering in memory on a small per-band list.
+Task 12: Ruling: "Tab megnyitása" opens `TabViewerModal` in a new controlled mode (`open`/`onOpenChange`, no trigger rendered) and is shown when the song has tab content OR a tab URL — cost if wrong: none.
+Task 12: Ruling: `/dev/ui?only=<section-id>` renders a single section — headless screenshots with `#hash` came out blank (scroll before paint) — cost if wrong: none (dev only).
+Task 12: Ruling: the favorite badge on the cover uses `bg-black/35 text-white` like the generated cover type itself (cover-hue exception in Global Constraints) — cost if wrong: one exception site.
+Task 12: complete (tests: npm test → 34/34 pass (song-filters 4 RED→GREEN); tsc ok; eslint touched 0 errors; build ok; /dev/ui?only=songs desktop grid+list match hybrid.html#songs, 390px: 2-column grid, no overflow, long titles wrap)

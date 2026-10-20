@@ -1,174 +1,130 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
-import { Search, Star, FileText, Heart, X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowUpDown, LayoutGrid, List, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SegmentedControl } from '@/components/design/segmented-control';
+import { STATUS_BG } from '@/components/design/status-badge';
+import { difficultyLabel, statusLabel, type SongStatus } from '@/lib/song-meta';
+import { parseSongFilters, serializeSongFilters, type SongFilterState } from '@/lib/song-filters';
 import { cn } from '@/lib/utils';
+import { FiltersPopover } from './filters-popover';
+import { useIsDesktop } from '@/hooks/use-is-desktop';
 
-export function SongFilters() {
+type StatusTab = SongStatus | 'all';
+
+/** Songs toolbar: search (debounced, URL replace), status segments with counts, filters, sort, view. */
+export function SongFilters({ counts }: { counts: Record<StatusTab, number> }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get('search') ?? '');
-  const difficulty = searchParams.get('difficulty');
-  const hasTab = searchParams.get('hasTab') === '1';
-  const favOnly = searchParams.get('fav') === '1';
-  const sortBy = searchParams.get('sort') ?? 'artist';
+  const filters = parseSongFilters(Object.fromEntries(searchParams.entries()));
+  const [query, setQuery] = useState(filters.search ?? '');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isDesktop = useIsDesktop();
 
-  const hasFilters = !!difficulty || hasTab || favOnly;
-  const activeCount = (difficulty ? 1 : 0) + (hasTab ? 1 : 0) + (favOnly ? 1 : 0);
-
-  const [filtersOpen, setFiltersOpen] = useState(hasFilters);
-
-  const updateParams = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      for (const [key, value] of Object.entries(updates)) {
-        if (value) {
-          params.set(key, value);
-        } else {
-          params.delete(key);
-        }
-      }
-      router.push(`/songs?${params.toString()}`);
-    },
-    [router, searchParams]
-  );
+  const update = (u: Partial<SongFilterState>) => {
+    const qs = serializeSongFilters(u, new URLSearchParams(searchParams.toString()));
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      updateParams({ search: query || null });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [query, updateParams]);
+    if (searchParams.get('focus') === 'search') inputRef.current?.focus();
+  }, [searchParams]);
 
-  const filterChips = (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Difficulty filter */}
-      {[1, 2, 3, 4, 5].map((d) => (
-        <Button
-          key={d}
-          variant="ghost"
-          size="sm"
-          className={cn(
-            'h-7 gap-1 rounded-full border px-2.5 text-xs transition-all',
-            difficulty === String(d)
-              ? 'border-primary/30 bg-primary/10 text-primary'
-              : 'border-border/50 text-muted-foreground hover:border-border'
-          )}
-          onClick={() => updateParams({ difficulty: difficulty === String(d) ? null : String(d) })}
-        >
-          <Star className="size-3 fill-current" />
-          {d}
-        </Button>
-      ))}
+  useEffect(() => {
+    if (query === (filters.search ?? '')) return;
+    const t = setTimeout(() => update({ search: query.trim() || undefined }), 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce only on query changes
+  }, [query]);
 
-      <div className="h-4 w-px bg-border/50" />
-
-      {/* Has tab filter */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          'h-7 gap-1 rounded-full border px-2.5 text-xs transition-all',
-          hasTab
-            ? 'border-primary/30 bg-primary/10 text-primary'
-            : 'border-border/50 text-muted-foreground hover:border-border'
-        )}
-        onClick={() => updateParams({ hasTab: hasTab ? null : '1' })}
-      >
-        <FileText className="size-3" />
-        Van tab
-      </Button>
-
-      {/* Favorites only */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          'h-7 gap-1 rounded-full border px-2.5 text-xs transition-all',
-          favOnly
-            ? 'border-pink-500/30 bg-pink-500/10 text-pink-500'
-            : 'border-border/50 text-muted-foreground hover:border-border'
-        )}
-        onClick={() => updateParams({ fav: favOnly ? null : '1' })}
-      >
-        <Heart className="size-3" />
-        Kedvencek
-      </Button>
-
-      {/* Clear filters */}
-      {hasFilters && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1 rounded-full px-2.5 text-xs text-muted-foreground"
-          onClick={() => updateParams({ difficulty: null, hasTab: null, fav: null })}
-        >
-          <X className="size-3" />
-          Törlés
-        </Button>
-      )}
-
-      <div className="h-4 w-px bg-border/50" />
-
-      {/* Sort toggle */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          'h-7 gap-1 rounded-full border px-2.5 text-xs transition-all',
-          'border-border/50 text-muted-foreground hover:border-border'
-        )}
-        onClick={() => updateParams({ sort: sortBy === 'artist' ? 'date' : null })}
-      >
-        <ArrowUpDown className="size-3" />
-        {sortBy === 'date' ? 'Dátum szerint' : 'Előadó szerint'}
-      </Button>
-    </div>
-  );
+  const chips: { label: string; clear: Partial<SongFilterState> }[] = [
+    ...(filters.difficulty ? [{ label: `Nehézség: ${difficultyLabel(filters.difficulty)}`, clear: { difficulty: undefined } }] : []),
+    ...(filters.hasTab ? [{ label: 'Van tab', clear: { hasTab: false } }] : []),
+    ...(filters.favOnly ? [{ label: 'Kedvencek', clear: { favOnly: false } }] : []),
+  ];
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Search + mobile filter toggle */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 size-4" />
-          <Input
-            placeholder="Keresés dal vagy előadó alapján..."
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="flex h-10 min-w-0 flex-[1_1_100%] items-center gap-2.5 rounded-full border border-border-strong px-3.5 text-faint focus-within:border-ring md:max-w-[340px] md:flex-[1_1_260px]">
+          <Search className="size-4 shrink-0" aria-hidden />
+          <input
+            ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-10 rounded-lg bg-card/50 border-border/50 pl-9 text-sm placeholder:text-muted-foreground/40"
+            placeholder="Keresés cím vagy előadó szerint…"
+            aria-label="Keresés a dalok között"
+            className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-faint"
           />
+          {query && (
+            <button type="button" aria-label="Keresés törlése" onClick={() => setQuery('')} className="text-faint hover:text-foreground">
+              <X className="size-4" />
+            </button>
+          )}
+        </label>
+
+        <SegmentedControl<StatusTab>
+          ariaLabel="Státusz"
+          size={isDesktop ? 'md' : 'sm'}
+          className="order-3 w-full md:order-none md:w-fit"
+          value={filters.status ?? 'all'}
+          onChange={(v) => update({ status: v === 'all' ? undefined : v })}
+          options={(['all', 'learning', 'ok', 'ready'] as StatusTab[]).map((s) => ({
+            value: s,
+            label: s === 'all' ? 'Mind' : statusLabel(s),
+            count: counts[s],
+            dotClassName: s === 'all' ? undefined : STATUS_BG[s],
+          }))}
+        />
+
+        <div className="ml-auto flex items-center gap-2">
+          <FiltersPopover filters={filters} onChange={update} />
+          <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => update({ sort: filters.sort === 'artist' ? 'date' : 'artist' })}>
+            <ArrowUpDown />
+            {filters.sort === 'date' ? 'Legújabb elöl' : 'Előadó A–Z'}
+          </Button>
+          <div role="group" aria-label="Nézet" className="inline-flex rounded-full border border-border-strong p-[3px]">
+            {(['grid', 'list'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={filters.view === v}
+                aria-label={v === 'grid' ? 'Rács nézet' : 'Lista nézet'}
+                onClick={() => update({ view: v })}
+                className={cn(
+                  'grid size-8 place-items-center rounded-full transition-colors duration-(--dur-fade)',
+                  filters.view === v ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {v === 'grid' ? <LayoutGrid className="size-4" /> : <List className="size-4" />}
+              </button>
+            ))}
+          </div>
         </div>
-
-        {/* Filter toggle — only visible on mobile */}
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn(
-            'sm:hidden h-10 gap-1.5 rounded-lg border px-3 text-xs shrink-0 transition-all',
-            hasFilters
-              ? 'border-primary/30 bg-primary/10 text-primary'
-              : 'border-border/50 text-muted-foreground'
-          )}
-          onClick={() => setFiltersOpen((o) => !o)}
-        >
-          <SlidersHorizontal className="size-3.5" />
-          Szűrők
-          {activeCount > 0 && (
-            <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-              {activeCount}
-            </span>
-          )}
-        </Button>
       </div>
 
-      {/* Filter chips — always visible on desktop, collapsible on mobile */}
-      <div className={cn('sm:block', filtersOpen ? 'block' : 'hidden')}>
-        {filterChips}
-      </div>
+      {chips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {chips.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => update(c.clear)}
+              aria-label={`Szűrő törlése: ${c.label}`}
+              className="inline-flex h-7 items-center gap-1.5 rounded-full pr-1.5 pl-2.5 text-[13px] font-semibold text-primary-text shadow-[inset_0_0_0_1px_var(--primary)]"
+            >
+              {c.label}
+              <X className="size-3.5" />
+            </button>
+          ))}
+          <button type="button" onClick={() => update({ difficulty: undefined, hasTab: false, favOnly: false })} className="text-[13.5px] font-semibold text-primary-text hover:underline">
+            Összes törlése
+          </button>
+        </div>
+      )}
     </div>
   );
 }
