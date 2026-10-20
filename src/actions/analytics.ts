@@ -7,6 +7,7 @@ import { asc, sql, desc, eq, and, isNull } from 'drizzle-orm';
 import { format, subDays, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { getUserBandId } from './bands';
+import { pickNeglectedSongs } from '@/lib/neglected';
 
 export async function getAnalyticsData() {
   const session = await auth();
@@ -89,13 +90,12 @@ export async function getAnalyticsData() {
   // --------------------------------------------------
   // 4. Neglected songs (90+ days since last practice)
   // --------------------------------------------------
-  const ninetyDaysAgo = format(subDays(today, 90), 'yyyy-MM-dd');
   const todayStr = format(today, 'yyyy-MM-dd');
 
-  const neglectedSongs = [...songPracticeCounts.values()]
-    .filter((s) => s.lastDate < ninetyDaysAgo)
-    .sort((a, b) => a.lastDate.localeCompare(b.lastDate))
-    .slice(0, 10);
+  const lastPlayed = Object.fromEntries([...songPracticeCounts].map(([id, s]) => [id, s.lastDate]));
+  const neglectedSongs = pickNeglectedSongs([...songPracticeCounts.keys()], lastPlayed, todayStr, 10, 90).map(
+    ({ songId }) => songPracticeCounts.get(songId)!
+  );
 
   // --------------------------------------------------
   // 5. Summary KPIs

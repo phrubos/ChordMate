@@ -4,7 +4,7 @@ import { useTransition, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Star, ExternalLink, ChevronDown, ChevronUp, Search, Sparkles, Loader2, Play, FileText, Music } from 'lucide-react';
+import { ChevronDown, Search, Sparkles, Loader2, Play, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,7 +22,14 @@ const YouTubePlayer = dynamic(() => import('@/components/youtube/youtube-player'
 import { createSong, updateSong } from '@/actions/songs';
 import { getLinkedSpotifyPlaylist, createSpotifyPlaylist } from '@/actions/spotify';
 import type { Song } from '@/types';
-import { TruncatedText } from '@/components/shared/truncated-text';
+import { SectionHeader } from '@/components/design/section-header';
+import { Eyebrow } from '@/components/design/eyebrow';
+import { SegmentedControl } from '@/components/design/segmented-control';
+import { DifficultyPicker } from '@/components/design/difficulty-picker';
+import { STATUS_BG } from '@/components/design/status-badge';
+import { SONG_STATUSES, statusLabel, type SongStatus } from '@/lib/song-meta';
+import { songSchema } from '@/lib/validators';
+import { cn } from '@/lib/utils';
 import { ExpandableText } from '@/components/shared/expandable-text';
 
 interface TabResult {
@@ -65,6 +72,24 @@ function SpotifyIconSmall() {
   );
 }
 
+const TUNINGS = ['Standard', 'Eb', 'Drop D'] as const;
+type TuningMode = (typeof TUNINGS)[number] | 'custom';
+
+function tuningModeOf(tuning: string | null | undefined): TuningMode {
+  if (!tuning || /standard/i.test(tuning)) return 'Standard';
+  return (TUNINGS as readonly string[]).includes(tuning) ? (tuning as TuningMode) : 'custom';
+}
+
+const selectClass = 'h-10 w-full rounded-lg border border-input bg-background/50 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  return (
+    <p id={id} aria-live="polite" className="min-h-0 text-[13px] text-destructive empty:hidden">
+      {message}
+    </p>
+  );
+}
+
 interface SongFormProps {
   song?: Song;
 }
@@ -74,12 +99,16 @@ export function SongForm({ song }: SongFormProps) {
   const [isPending, startTransition] = useTransition();
   const [youtubeUrl, setYoutubeUrl] = useState(song?.youtubeUrl ?? '');
   const [difficulty, setDifficulty] = useState(song?.difficulty ?? 3);
+  const [status, setStatus] = useState<SongStatus>(song?.status ?? 'learning');
+  const [capo, setCapo] = useState(String(song?.capo ?? 0));
+  const [tuningMode, setTuningMode] = useState(() => tuningModeOf(song?.tuning));
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const [showTabSection, setShowTabSection] = useState(!!(song?.tabContent || song?.tabUrl));
   const [title, setTitle] = useState(song?.title ?? '');
   const [artist, setArtist] = useState(song?.artist ?? '');
   const isEdit = !!song;
   const [isDirty, setIsDirty] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
   const [ytResults, setYtResults] = useState<YouTubeResult[]>([]);
   const [ytSearching, setYtSearching] = useState(false);
   const [ytShowResults, setYtShowResults] = useState(false);
@@ -90,30 +119,12 @@ export function SongForm({ song }: SongFormProps) {
   const [tabFetching, setTabFetching] = useState<number | null>(null);
   const tabContentRef = useRef<HTMLTextAreaElement>(null);
   const tabUrlRef = useRef<HTMLInputElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [showScrollHint, setShowScrollHint] = useState(true);
   const [showSpotifyOffer, setShowSpotifyOffer] = useState(false);
   const [spotifyPlaylistName, setSpotifyPlaylistName] = useState('');
   const [spotifyCreating, setSpotifyCreating] = useState(false);
 
   // Track form changes
   const markDirty = useCallback(() => { if (!isDirty) setIsDirty(true); }, [isDirty]);
-
-  // Track scroll position to show/hide scroll indicator
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    function checkScroll() {
-      if (!el) return;
-      const hasMore = el.scrollHeight - el.scrollTop - el.clientHeight > 40;
-      setShowScrollHint(hasMore);
-    }
-    checkScroll();
-    el.addEventListener('scroll', checkScroll, { passive: true });
-    const ro = new ResizeObserver(checkScroll);
-    ro.observe(el);
-    return () => { el.removeEventListener('scroll', checkScroll); ro.disconnect(); };
-  }, [showTabSection]);
 
   // Warn before browser close/refresh
   useEffect(() => {
@@ -242,7 +253,7 @@ export function SongForm({ song }: SongFormProps) {
         },
       });
       setShowSpotifyOffer(false);
-      router.push('/songs');
+      router.push(createdId ? `/songs/${createdId}` : '/songs');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '';
       if (message === 'SPOTIFY_SCOPE_MISMATCH') {
@@ -257,15 +268,35 @@ export function SongForm({ song }: SongFormProps) {
 
   function handleSubmit(formData: FormData) {
     formData.set('difficulty', String(difficulty));
+    formData.set('status', status);
+    formData.set('capo', capo);
+    if (tuningMode !== 'custom') formData.set('tuning', tuningMode === 'Standard' ? '' : tuningMode);
+
+    const check = songSchema.safeParse(
+      Object.fromEntries([...formData.entries()].filter(([, v]) => v !== '').map(([k, v]) => [k, String(v).trim()]))
+    );
+    if (!check.success) {
+      const next: Record<string, string> = {};
+      for (const issue of check.error.issues) next[String(issue.path[0])] ??= issue.message;
+      setErrors(next);
+      document.getElementById(Object.keys(next)[0])?.focus();
+      return;
+    }
+    setErrors({});
 
     startTransition(async () => {
       try {
         let result;
+        let hubId: string;
         if (isEdit) {
           result = await updateSong(song.id, formData);
+          hubId = song.id;
           toast.success('Dal sikeresen frissítve');
         } else {
-          result = await createSong(formData);
+          const created = await createSong(formData);
+          result = created;
+          hubId = created.id;
+          setCreatedId(created.id);
 
           // Handle Spotify auto-add result — combine into single toast
           const sp = result?.spotify;
@@ -314,64 +345,44 @@ export function SongForm({ song }: SongFormProps) {
         if (result?.imageFound) {
           toast.success('Borítókép automatikusan betöltve', { icon: '🎵' });
         }
-        router.push('/songs');
+        router.push(`/songs/${hubId}`);
       } catch {
         toast.error('Hiba történt, próbáld újra');
       }
     });
   }
 
-  const difficultyColors = ['text-green-500', 'text-lime-500', 'text-yellow-500', 'text-orange-500', 'text-red-500'];
+  const err = (name: string) => (errors[name] ? { 'aria-invalid': true, 'aria-describedby': `${name}-error` } : {});
 
   return (
     <>
-    {/* Mobile: blurred backdrop overlay (like Dialog/TAB modal) */}
-    <div className="fixed inset-0 z-[60] bg-black/10 backdrop-blur-sm md:hidden" />
-    <div className="mx-auto max-w-lg animate-fade-up md:h-[calc(100dvh-8rem)] max-md:fixed max-md:inset-0 max-md:z-[60] max-md:max-w-none">
-      <div className="flex flex-col h-full rounded-xl border border-border/50 overflow-hidden md:bg-card/50 md:shadow-sm max-md:bg-card max-md:shadow-2xl max-md:ring-1 max-md:ring-foreground/10">
-        <div className="p-6 pb-4 shrink-0">
-          <h2 className="text-lg font-semibold tracking-tight">
-            {isEdit ? 'Dal szerkesztése' : 'Új dal hozzáadása'}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isEdit ? 'Módosítsd a dal adatait' : 'Adj hozzá egy új dalt a közös listához'}
-          </p>
-        </div>
+    <div className="mx-auto flex max-w-[760px] flex-col gap-6">
+      <header className="flex flex-col gap-1">
+        <Eyebrow>Dalok</Eyebrow>
+        <h1 className="display-soft font-display text-[40px] leading-[1.1] font-medium tracking-[-0.02em] md:text-[52px]">
+          {isEdit ? 'Dal szerkesztése' : 'Új dal'}
+        </h1>
+      </header>
 
-        <form action={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div ref={scrollRef} className="relative flex-1 overflow-y-auto px-6 pb-6 pt-2">
-            <div className="flex flex-col gap-5">
-            {/* Title */}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="title" className="text-sm font-medium">Dal címe *</Label>
-              <Input
-                id="title"
-                name="title"
-                defaultValue={song?.title}
-                placeholder="pl. Hotel California"
-                className="h-10 rounded-lg bg-background/50"
-                onChange={(e) => { setTitle(e.target.value); markDirty(); }}
-                required
-              />
+        <form action={handleSubmit} noValidate className="flex flex-col gap-10">
+          <section className="flex flex-col gap-4">
+            <SectionHeader title="Alapok" />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="title">Dal címe *</Label>
+                <Input id="title" name="title" defaultValue={song?.title} placeholder="pl. Hotel California" required {...err('title')}
+                  onChange={(e) => { setTitle(e.target.value); markDirty(); }} />
+                <FieldError id="title-error" message={errors.title} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="artist">Előadó *</Label>
+                <Input id="artist" name="artist" defaultValue={song?.artist} placeholder="pl. Eagles" required {...err('artist')}
+                  onChange={(e) => { setArtist(e.target.value); markDirty(); }} />
+                <FieldError id="artist-error" message={errors.artist} />
+              </div>
             </div>
-
-            {/* Artist */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="artist" className="text-sm font-medium">Előadó *</Label>
-              <Input
-                id="artist"
-                name="artist"
-                defaultValue={song?.artist}
-                placeholder="pl. Eagles"
-                className="h-10 rounded-lg bg-background/50"
-                onChange={(e) => { setArtist(e.target.value); markDirty(); }}
-                required
-              />
-            </div>
-
-            {/* YouTube (optional) */}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="youtubeUrl" className="text-sm font-medium">
+              <Label htmlFor="youtubeUrl">
                 YouTube link <span className="text-muted-foreground">(opcionális)</span>
               </Label>
               <div className="flex gap-2">
@@ -382,156 +393,134 @@ export function SongForm({ song }: SongFormProps) {
                   value={youtubeUrl}
                   placeholder="https://youtube.com/watch?v=..."
                   onChange={(e) => { setYoutubeUrl(e.target.value); markDirty(); }}
-                  className="h-10 rounded-lg bg-background/50 flex-1"
+                  className="flex-1"
+                  {...err('youtubeUrl')}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10 gap-1.5 shrink-0 text-xs"
-                  onClick={handleYoutubeSearch}
-                  disabled={ytSearching || !title.trim() || !artist.trim()}
-                >
-                  {ytSearching ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="size-3.5" />
-                  )}
+                <Button type="button" variant="outline" className="h-10 shrink-0" onClick={handleYoutubeSearch} disabled={ytSearching || !title.trim() || !artist.trim()}>
+                  {ytSearching ? <Loader2 className="animate-spin motion-reduce:animate-none" /> : <Sparkles />}
                   <span className="hidden sm:inline">Ajánló</span>
                 </Button>
               </div>
-
+              <FieldError id="youtubeUrl-error" message={errors.youtubeUrl} />
             </div>
-
             {youtubeUrl && youtubeUrl.includes('youtu') && (
-              <div className="overflow-hidden rounded-lg">
+              <div className="overflow-hidden rounded-lg md:max-w-[420px]">
                 <YouTubePlayer url={youtubeUrl} />
               </div>
             )}
+          </section>
 
-            {/* Difficulty */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-medium">Nehézség</Label>
-              <div className="flex items-center gap-1.5">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setDifficulty(i + 1 === difficulty ? 0 : i + 1)}
-                    className="rounded-md p-1 transition-colors hover:bg-secondary/50"
-                  >
-                    <Star
-                      className={`size-5 cursor-pointer transition-colors ${
-                        i < difficulty
-                          ? difficultyColors[difficulty - 1] + ' fill-current'
-                          : 'text-muted-foreground/20 hover:text-muted-foreground/40'
-                      }`}
-                    />
-                  </button>
-                ))}
-                {difficulty > 0 && (
-                  <span className="ml-1 text-sm text-muted-foreground">{difficulty}/5</span>
-                )}
+          <section className="flex flex-col gap-4">
+            <SectionHeader title="Zenei adatok" />
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="songKey">Hangnem</Label>
+                <Input id="songKey" name="songKey" defaultValue={song?.songKey ?? ''} placeholder="pl. Am" maxLength={8} autoComplete="off" className="font-mono"
+                  onChange={markDirty} {...err('songKey')} />
+                <FieldError id="songKey-error" message={errors.songKey} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="bpm">BPM</Label>
+                <Input id="bpm" name="bpm" type="number" inputMode="numeric" min={30} max={300} defaultValue={song?.bpm ?? ''} placeholder="pl. 96" className="font-mono"
+                  onChange={markDirty} {...err('bpm')} />
+                <FieldError id="bpm-error" message={errors.bpm} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="capo">Capo</Label>
+                <select id="capo" value={capo} onChange={(e) => { setCapo(e.target.value); markDirty(); }} className={selectClass}>
+                  {Array.from({ length: 13 }, (_, i) => (
+                    <option key={i} value={i}>{i === 0 ? 'Nincs' : `${i}. érintő`}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="tuningMode">Hangolás</Label>
+                <select id="tuningMode" value={tuningMode} onChange={(e) => { setTuningMode(e.target.value as TuningMode); markDirty(); }} className={selectClass}>
+                  {TUNINGS.map((t) => <option key={t} value={t}>{t}</option>)}
+                  <option value="custom">Egyéni…</option>
+                </select>
               </div>
             </div>
+            {tuningMode === 'custom' && (
+              <div className="flex flex-col gap-1.5 md:max-w-[260px]">
+                <Label htmlFor="tuning">Egyéni hangolás</Label>
+                <Input id="tuning" name="tuning" defaultValue={tuningModeOf(song?.tuning) === 'custom' ? song?.tuning ?? '' : ''} placeholder="pl. DADGAD" maxLength={40}
+                  onChange={markDirty} {...err('tuning')} />
+                <FieldError id="tuning-error" message={errors.tuning} />
+              </div>
+            )}
+          </section>
 
-            {/* Notes */}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="notes" className="text-sm font-medium">
-                Megjegyzés <span className="text-muted-foreground">(opcionális)</span>
-              </Label>
-              <Textarea
-                id="notes"
-                name="notes"
-                defaultValue={song?.notes ?? ''}
-                placeholder='pl. "Capo 2. érintőn"'
-                rows={2}
-                className="rounded-lg bg-background/50 resize-none"
-                onChange={markDirty}
-              />
-            </div>
+          <section className="flex flex-col gap-4">
+            <SectionHeader title="Hol tartunk?" />
+            <SegmentedControl<SongStatus>
+              ariaLabel="Státusz"
+              value={status}
+              onChange={(v) => { setStatus(v); markDirty(); }}
+              options={SONG_STATUSES.map((st) => ({ value: st, label: statusLabel(st), dotClassName: STATUS_BG[st] }))}
+            />
+            <DifficultyPicker value={difficulty} onChange={(v) => { setDifficulty(v); markDirty(); }} />
+          </section>
 
-            {/* Tab section (collapsible) */}
-            <div className="border-t border-border/30 pt-4">
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowTabSection(!showTabSection)}
-                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <span>Gitár tab / akkordok</span>
-                  {showTabSection ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+          <section className="flex flex-col gap-4">
+            <SectionHeader title="Jegyzet" />
+            <Textarea id="notes" name="notes" defaultValue={song?.notes ?? ''} placeholder="pl. a szólónál lassítunk, figyelj a basszusra" rows={3} maxLength={1000}
+              className="resize-y" onChange={markDirty} aria-label="Jegyzet" {...err('notes')} />
+            <FieldError id="notes-error" message={errors.notes} />
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <SectionHeader
+              title={
+                <button type="button" onClick={() => setShowTabSection(!showTabSection)} aria-expanded={showTabSection} className="inline-flex items-center gap-2">
+                  Tab / akkordok
+                  <ChevronDown className={cn('size-5 text-muted-foreground transition-transform duration-(--dur-fade)', showTabSection && 'rotate-180')} />
                 </button>
-                <div className="flex items-center gap-2">
+              }
+              actions={
+                <>
                   {title && artist && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 text-xs h-8"
-                      onClick={handleTabSearch}
-                      disabled={tabSearching}
-                    >
-                      {tabSearching ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="size-3.5" />
-                      )}
+                    <Button type="button" variant="outline" size="sm" onClick={handleTabSearch} disabled={tabSearching}>
+                      {tabSearching ? <Loader2 className="animate-spin motion-reduce:animate-none" /> : <Sparkles />}
                       Tab ajánló
                     </Button>
                   )}
                   {searchUrl && (
-                    <a
-                      href={searchUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                    >
+                    <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold text-primary-text hover:underline">
                       <Search className="size-3.5" />
                       <span className="hidden sm:inline">Ultimate Guitar</span>
                     </a>
                   )}
+                </>
+              }
+            />
+            {showTabSection && (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="tabUrl">
+                    Tab URL <span className="text-muted-foreground">(Ultimate Guitar, stb.)</span>
+                  </Label>
+                  <Input ref={tabUrlRef} id="tabUrl" name="tabUrl" defaultValue={song?.tabUrl ?? ''} placeholder="https://tabs.ultimate-guitar.com/..." {...err('tabUrl')} />
+                  <FieldError id="tabUrl-error" message={errors.tabUrl} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="tabContent">
+                    Tab tartalom <span className="text-muted-foreground">(másold be ide)</span>
+                  </Label>
+                  <Textarea
+                    ref={tabContentRef}
+                    id="tabContent"
+                    name="tabContent"
+                    defaultValue={song?.tabContent ?? ''}
+                    placeholder={"Am        C\nHello, it's me\nF             G\nI was wondering..."}
+                    rows={10}
+                    className="resize-y font-mono text-sm"
+                    onChange={markDirty}
+                  />
                 </div>
               </div>
-
-
-              {showTabSection && (
-                <div className="mt-4 flex flex-col gap-4 animate-fade-up">
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="tabUrl" className="text-sm font-medium">
-                        Tab URL <span className="text-muted-foreground">(Ultimate Guitar, stb.)</span>
-                      </Label>
-                    </div>
-                    <Input
-                      ref={tabUrlRef}
-                      id="tabUrl"
-                      name="tabUrl"
-                      defaultValue={song?.tabUrl ?? ''}
-                      placeholder="https://tabs.ultimate-guitar.com/..."
-                      className="h-10 rounded-lg bg-background/50"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="tabContent" className="text-sm font-medium">
-                      Tab tartalom <span className="text-muted-foreground">(másold be ide)</span>
-                    </Label>
-                    <Textarea
-                      ref={tabContentRef}
-                      id="tabContent"
-                      name="tabContent"
-                      defaultValue={song?.tabContent ?? ''}
-                      placeholder={"Am        C\nHello, it's me\nF             G\nI was wondering..."}
-                      rows={8}
-                      className="rounded-lg bg-background/50 font-mono text-sm resize-y"
-                      onChange={markDirty}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-            </div>
-          </div>
+            )}
+          </section>
 
           {/* YouTube Recommendations Dialog */}
           <Dialog open={ytShowResults} onOpenChange={setYtShowResults}>
@@ -582,11 +571,11 @@ export function SongForm({ song }: SongFormProps) {
                             unoptimized
                           />
                         )}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <Play className="size-5 text-white fill-white" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-scrim/30">
+                          <Play className="size-5 fill-current text-on-media" />
                         </div>
                         {result.duration > 0 && (
-                          <span className="absolute bottom-0.5 right-0.5 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white tabular-nums">
+                          <span className="absolute bottom-0.5 right-0.5 rounded bg-scrim/80 px-1 py-0.5 text-xs font-medium text-on-media tabular-nums">
                             {formatDuration(result.duration)}
                           </span>
                         )}
@@ -710,30 +699,15 @@ export function SongForm({ song }: SongFormProps) {
             </DialogContent>
           </Dialog>
 
-          {/* Scroll indicator */}
-          {showScrollHint && (
-            <div className="shrink-0 relative">
-              <div className="absolute -top-10 left-0 right-0 h-10 bg-gradient-to-t from-card to-transparent pointer-events-none" />
-              <div className="flex justify-center py-2 border-t border-border/30">
-                <div className="flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 animate-bounce">
-                  <ChevronDown className="size-4 text-primary" />
-                  <span className="text-xs font-medium text-primary">Görgess lejjebb</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="shrink-0 flex justify-end gap-2 border-t border-border/30 bg-card/50 px-6 py-4">
+          <div className="sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 -mx-4 flex justify-end gap-2 border-t border-border bg-background/90 px-4 py-3 backdrop-blur md:bottom-0 md:mx-0 md:px-0">
             <Button type="button" variant="ghost" onClick={handleBack} disabled={isPending}>
               Mégse
             </Button>
-            <Button type="submit" disabled={isPending} className="min-w-[100px]">
-              {isPending ? 'Mentés...' : 'Mentés'}
+            <Button type="submit" disabled={isPending} className="min-w-[110px]">
+              {isPending ? 'Mentés…' : 'Mentés'}
             </Button>
           </div>
         </form>
-      </div>
     </div>
 
     {/* Spotify Playlist Creation Offer Dialog */}
@@ -742,7 +716,7 @@ export function SongForm({ song }: SongFormProps) {
       onOpenChange={(open) => {
         if (!open && !spotifyCreating) {
           setShowSpotifyOffer(false);
-          router.push('/songs');
+          router.push(createdId ? `/songs/${createdId}` : '/songs');
         }
       }}
     >
@@ -778,7 +752,7 @@ export function SongForm({ song }: SongFormProps) {
               variant="ghost"
               onClick={() => {
                 setShowSpotifyOffer(false);
-                router.push('/songs');
+                router.push(createdId ? `/songs/${createdId}` : '/songs');
               }}
               disabled={spotifyCreating}
             >

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { useState, useCallback, useEffect } from 'react';
+import { useMetronome } from '@/hooks/use-metronome';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Eyebrow } from '@/components/design/eyebrow';
+import { cn } from '@/lib/utils';
 import { Play, Pause, Minus, Plus } from 'lucide-react';
 
 const TIME_SIGNATURES = [
@@ -28,106 +30,25 @@ function tempoName(bpm: number): string {
   return 'Prestissimo';
 }
 
-// --- Beat visualization ---
+// --- Beat visualization (spec A4: active dot scale(1.35) + color, beat 1 amber; reduced motion → color only) ---
 function BeatDots({ beats, currentBeat, isPlaying }: { beats: number; currentBeat: number; isPlaying: boolean }) {
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex items-center justify-center gap-3" aria-hidden>
       {Array.from({ length: beats }, (_, i) => {
-        const isActive = isPlaying && currentBeat === i;
-        const isFirst = i === 0;
-        const baseSize = isFirst ? 'size-5' : 'size-4';
-
+        const active = isPlaying && currentBeat === i;
         return (
-          <div key={i} className="relative flex items-center justify-center">
-            {isActive && (
-              <motion.div
-                className={`absolute rounded-full ${isFirst ? 'size-8' : 'size-7'}`}
-                initial={{ scale: 0.5, opacity: 0.8 }}
-                animate={{ scale: 1.5, opacity: 0 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                key={`pulse-${currentBeat}-${Date.now()}`}
-                style={{ background: isFirst ? 'oklch(0.78 0.155 65 / 30%)' : 'oklch(0.78 0.155 65 / 20%)' }}
-              />
+          <span
+            key={i}
+            className={cn(
+              'rounded-full transition-[transform,background-color] duration-100 ease-(--ease-out) motion-reduce:transition-colors',
+              i === 0 ? 'size-4' : 'size-3',
+              active ? 'scale-[1.35] motion-reduce:scale-100' : 'scale-100',
+              active ? (i === 0 ? 'bg-primary' : 'bg-foreground') : 'bg-border-strong'
             )}
-            <motion.div
-              className={`${baseSize} rounded-full transition-colors duration-100 ${
-                isActive
-                  ? isFirst
-                    ? 'bg-primary shadow-[0_0_12px_theme(colors.primary/60%)]'
-                    : 'bg-primary/80 shadow-[0_0_8px_theme(colors.primary/40%)]'
-                  : 'bg-muted-foreground/20'
-              }`}
-              animate={isActive ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-              transition={{ duration: 0.15 }}
-            />
-          </div>
+          />
         );
       })}
     </div>
-  );
-}
-
-// --- Pendulum visualization ---
-function Pendulum({ isPlaying, bpm, currentBeat }: { isPlaying: boolean; bpm: number; currentBeat: number }) {
-  const duration = 60 / bpm;
-  const direction = currentBeat % 2 === 0 ? 1 : -1;
-
-  return (
-    <svg viewBox="0 0 200 120" className="w-full max-w-[200px] mx-auto">
-      {/* Pivot point */}
-      <circle cx="100" cy="10" r="3" fill="oklch(0.5 0.01 260)" />
-
-      {/* Tick marks */}
-      <line x1="30" y1="105" x2="30" y2="110" stroke="oklch(0.4 0.01 260)" strokeWidth="1" />
-      <line x1="65" y1="105" x2="65" y2="110" stroke="oklch(0.4 0.01 260)" strokeWidth="1" />
-      <line x1="100" y1="105" x2="100" y2="112" stroke="oklch(0.5 0.01 260)" strokeWidth="1.5" />
-      <line x1="135" y1="105" x2="135" y2="110" stroke="oklch(0.4 0.01 260)" strokeWidth="1" />
-      <line x1="170" y1="105" x2="170" y2="110" stroke="oklch(0.4 0.01 260)" strokeWidth="1" />
-
-      {/* Arc guide */}
-      <path
-        d="M 30 105 A 80 80 0 0 1 170 105"
-        fill="none"
-        stroke="oklch(0.35 0.01 260)"
-        strokeWidth="0.5"
-      />
-
-      {/* Pendulum arm + weight */}
-      <motion.g
-        style={{ transformOrigin: '100px 10px' }}
-        animate={
-          isPlaying
-            ? { rotate: direction * 25 }
-            : { rotate: 0 }
-        }
-        transition={
-          isPlaying
-            ? { duration: duration / 2, ease: [0.4, 0, 0.6, 1] }
-            : { type: 'spring', stiffness: 200, damping: 20 }
-        }
-      >
-        <line
-          x1="100" y1="10" x2="100" y2="95"
-          stroke="oklch(0.65 0.02 260)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <circle
-          cx="100" cy="95" r="8"
-          fill={isPlaying ? 'oklch(0.78 0.155 65)' : 'oklch(0.5 0.02 260)'}
-          className="transition-colors duration-300"
-        />
-        {isPlaying && (
-          <circle
-            cx="100" cy="95" r="8"
-            fill="none"
-            stroke="oklch(0.78 0.155 65 / 30%)"
-            strokeWidth="4"
-            className="animate-glow-pulse"
-          />
-        )}
-      </motion.g>
-    </svg>
   );
 }
 
@@ -142,107 +63,16 @@ interface MetronomeModalProps {
 
 export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, onPlayingChange, onStop }: MetronomeModalProps) {
   const [bpm, setBpm] = useState(120);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [timeSigIdx, setTimeSigIdx] = useState(2); // 4/4 default
-  const [currentBeat, setCurrentBeat] = useState(0);
-  const [tapTimes, setTapTimes] = useState<number[]>([]);
-
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const nextBeatTimeRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const beatRef = useRef(0);
-  const isPlayingRef = useRef(false);
+  const [, setTapTimes] = useState<number[]>([]);
 
   const timeSig = TIME_SIGNATURES[timeSigIdx];
-
-  const playClick = useCallback((accent: boolean) => {
-    if (!audioCtxRef.current) return;
-    const ctx = audioCtxRef.current;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.frequency.value = accent ? 1000 : 800;
-    osc.type = 'sine';
-
-    const now = ctx.currentTime;
-    gain.gain.setValueAtTime(accent ? 0.5 : 0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-
-    osc.start(now);
-    osc.stop(now + 0.08);
-  }, []);
-
-  const scheduleNextBeat = useCallback(() => {
-    if (!isPlayingRef.current || !audioCtxRef.current) return;
-
-    const ctx = audioCtxRef.current;
-    const beatInterval = 60 / bpm;
-
-    // Play current beat
-    const isAccent = beatRef.current === 0;
-    playClick(isAccent);
-    setCurrentBeat(beatRef.current);
-
-    // Advance beat
-    beatRef.current = (beatRef.current + 1) % timeSig.beats;
-    nextBeatTimeRef.current += beatInterval;
-
-    // Schedule next
-    const delay = (nextBeatTimeRef.current - ctx.currentTime) * 1000;
-    timerRef.current = setTimeout(scheduleNextBeat, Math.max(0, delay - 25));
-  }, [bpm, timeSig.beats, playClick]);
-
-  const start = useCallback(() => {
-    const ctx = audioCtxRef.current ?? new AudioContext();
-    audioCtxRef.current = ctx;
-
-    if (ctx.state === 'suspended') ctx.resume();
-
-    beatRef.current = 0;
-    nextBeatTimeRef.current = ctx.currentTime;
-    isPlayingRef.current = true;
-    setIsPlaying(true);
-    setCurrentBeat(0);
-    onPlayingChange?.(true);
-
-    scheduleNextBeat();
-  }, [scheduleNextBeat, onPlayingChange]);
-
-  const stop = useCallback(() => {
-    isPlayingRef.current = false;
-    setIsPlaying(false);
-    setCurrentBeat(0);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    onPlayingChange?.(false);
-    onStop?.();
-  }, [onPlayingChange, onStop]);
-
-  const togglePlay = useCallback(() => {
-    if (isPlaying) stop();
-    else start();
-  }, [isPlaying, start, stop]);
-
-  // Restart metronome when BPM or time sig changes while playing
-  useEffect(() => {
-    if (isPlaying) {
-      stop();
-      // Small delay to allow cleanup
-      const t = setTimeout(start, 50);
-      return () => clearTimeout(t);
-    }
-  }, [bpm, timeSigIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { isPlaying, currentBeat, toggle: togglePlay, dispose } = useMetronome({ bpm, beatsPerBar: timeSig.beats, onPlayingChange, onStop });
 
   // Cleanup on close — only when not keeping alive
   useEffect(() => {
-    if (!open && !keepAliveOnClose) {
-      stop();
-      audioCtxRef.current?.close();
-      audioCtxRef.current = null;
-    }
-  }, [open, stop, keepAliveOnClose]);
+    if (!open && !keepAliveOnClose) dispose();
+  }, [open, dispose, keepAliveOnClose]);
 
   // Tap tempo
   const handleTap = useCallback(() => {
@@ -275,9 +105,9 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
 
         <div className="flex flex-col items-center px-6 pt-6 pb-5 gap-5">
           {/* Header */}
-          <div className="text-center">
-            <h2 className="text-lg font-bold tracking-tight">Metronóm</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{tempoName(bpm)}</p>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <Eyebrow>{tempoName(bpm)}</Eyebrow>
+            <h2 className="display-soft font-display text-[26px] leading-tight font-medium">Metronóm</h2>
           </div>
 
           {/* BPM display */}
@@ -285,7 +115,7 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
             <Button
               variant="outline"
               size="icon"
-              className="size-10 rounded-xl border-border/50"
+              aria-label="Lassabb (−1 BPM)"
               onClick={() => adjustBpm(-1)}
               onMouseDown={(e) => {
                 if (e.detail > 1) e.preventDefault();
@@ -302,7 +132,7 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
             <Button
               variant="outline"
               size="icon"
-              className="size-10 rounded-xl border-border/50"
+              aria-label="Gyorsabb (+1 BPM)"
               onClick={() => adjustBpm(1)}
               onMouseDown={(e) => {
                 if (e.detail > 1) e.preventDefault();
@@ -328,9 +158,6 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
             </div>
           </div>
 
-          {/* Pendulum */}
-          <Pendulum isPlaying={isPlaying} bpm={bpm} currentBeat={currentBeat} />
-
           {/* Beat dots */}
           <BeatDots beats={timeSig.beats} currentBeat={currentBeat} isPlaying={isPlaying} />
 
@@ -340,7 +167,7 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
               <button
                 key={ts.label}
                 onClick={() => setTimeSigIdx(idx)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-bold transition-all ${
+                className={`rounded-lg px-3 py-1.5 text-sm font-bold transition-[color,background-color,border-color,opacity,transform] ${
                   timeSigIdx === idx
                     ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
@@ -365,9 +192,9 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
             {/* Play / Stop */}
             <Button
               size="lg"
-              className={`flex-1 h-12 rounded-xl gap-2 text-sm font-semibold transition-all ${
+              className={`flex-1 h-12 rounded-xl gap-2 text-sm font-semibold transition-[color,background-color,border-color,opacity,transform] ${
                 isPlaying
-                  ? 'bg-destructive/90 hover:bg-destructive text-white'
+                  ? 'bg-destructive/90 hover:bg-destructive text-background'
                   : 'bg-primary hover:bg-primary/90'
               }`}
               onClick={togglePlay}
@@ -392,7 +219,7 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
               <button
                 key={preset}
                 onClick={() => setBpm(preset)}
-                className={`rounded-md px-2 py-1 text-xs font-medium transition-all ${
+                className={`rounded-md px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,opacity,transform] ${
                   bpm === preset
                     ? 'bg-primary/15 text-primary'
                     : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/50'

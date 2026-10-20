@@ -30,7 +30,7 @@ export function ExpandableText({
   }, []);
 
   useEffect(() => {
-    checkTruncation();
+    // ResizeObserver also fires once on observe(), which covers the initial check.
     const ro = new ResizeObserver(checkTruncation);
     if (textRef.current) ro.observe(textRef.current);
     return () => ro.disconnect();

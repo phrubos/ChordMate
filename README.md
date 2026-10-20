@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ChordMate
 
-## Getting Started
+Gitárgyakorlás-szervező bandáknak: közös dallista, próbanaptár setlistekkel, kották és akkordok, Próba mód (metronóm, auto-görgetés, videó, felvétel), globális mini-player és statisztika. A felület nyelve magyar, az arculat a „Midnight Liner” (sötét alapértelmezés, világos „Liner Notes” téma).
 
-First, run the development server:
+## Tech stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · shadcn (base-nova) + Base UI · Motion 12 · Drizzle ORM + Neon Postgres · NextAuth v5 (Google, opcionálisan GitHub) · react-youtube · Vitest
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Parancsok
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Parancs | Mit csinál |
+|---|---|
+| `npm run dev` | Fejlesztői szerver: http://localhost:3000 |
+| `npm test` | Vitest egységtesztek (`src/**/*.test.ts`, tiszta függvények) |
+| `npx tsc --noEmit` | Típusellenőrzés |
+| `npm run lint` | ESLint |
+| `npm run build` | Éles build |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fejlesztői UI-katalógus login nélkül: `/dev/ui` (csak fejlesztői módban, fixture-adatokkal). Egy szekció: `/dev/ui?only=<id>` (pl. `songs`, `hub`, `practice`, `analytics`), mobil keretben: `/dev/ui?w=390&only=<id>`.
+Képernyőkép futó dev szerver mellett: `bash scripts/ui-shot.sh "/dev/ui?only=hub" desktop out.png`.
 
-## Learn More
+## Környezeti változók
 
-To learn more about Next.js, take a look at the following resources:
+`.env.local`: `DATABASE_URL` (Neon), `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`; opcionálisan `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` és `NEXT_PUBLIC_GITHUB_ENABLED=1`, valamint a Spotify-integrációhoz `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Dokumentáció
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Arculat és elfogadási kritériumok: `docs/superpowers/specs/2026-10-16-midnight-liner-design.md`
+- Megvalósítási terv és napló: `docs/superpowers/plans/…`, `docs/superpowers/progress/…`
+- Termékleírás: `docs/PRD.md`, UI-leírás: `docs/UI-SPEC.md`

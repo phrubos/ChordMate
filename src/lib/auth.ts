@@ -22,7 +22,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     verificationTokensTable: verificationTokens,
   }),
   providers,
-  debug: true,
   pages: {
     signIn: '/login',
   },

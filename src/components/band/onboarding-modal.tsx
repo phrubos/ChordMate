@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { LogoMark } from '@/components/layout/logo';
 import { Input } from '@/components/ui/input';
 import { Users, User, ArrowRight, Loader2, Ticket } from 'lucide-react';
 import { createBand, joinBand, startSolo } from '@/actions/bands';
@@ -27,8 +27,8 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
       toast.success('Banda létrehozva!');
       onSuccess?.();
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     } finally {
       setLoading(false);
     }
@@ -42,8 +42,8 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
       toast.success(`Csatlakoztál: ${band.name}`);
       onSuccess?.();
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     } finally {
       setLoading(false);
     }
@@ -56,8 +56,8 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
       toast.success('Solo mód aktiválva!');
       onSuccess?.();
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     } finally {
       setLoading(false);
     }
@@ -71,27 +71,23 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
       >
         <DialogTitle className="sr-only">Üdvözlünk a ChordMate-ben!</DialogTitle>
 
-        <div className="px-6 pt-6 pb-2 text-center">
-          <h2 className="text-xl font-bold tracking-tight">Üdvözlünk! 🎸</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Hogyan szeretnéd használni a ChordMate-et?
-          </p>
+        <div className="flex flex-col items-center gap-3 px-6 pt-7 pb-2 text-center">
+          <LogoMark className="size-11" />
+          <div className="flex flex-col gap-1">
+            <h2 className="display-soft font-display text-[28px] leading-tight font-medium">Üdvözlünk!</h2>
+            <p className="text-sm text-muted-foreground">Hogyan szeretnéd használni a ChordMate-et?</p>
+          </div>
         </div>
 
         <div className="px-6 pb-6 pt-2">
-          <AnimatePresence mode="wait">
             {step === 'choose' && (
-              <motion.div
-                key="choose"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
+              <div key="choose"
                 className="flex flex-col gap-3"
               >
                 {/* Create band */}
                 <button
                   onClick={() => setStep('create')}
-                  className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-4 text-left transition-all hover:border-primary/30 hover:bg-primary/5"
+                  className="group flex items-center gap-4 rounded-md border border-border-strong p-4 transition-[transform,border-color,background-color] duration-(--dur-press) ease-(--ease-out) active:scale-[.97] text-left hover:border-primary/30 hover:bg-primary/5"
                 >
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                     <Users className="size-6" />
@@ -108,7 +104,7 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
                 {/* Join band */}
                 <button
                   onClick={() => setStep('join')}
-                  className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-4 text-left transition-all hover:border-primary/30 hover:bg-primary/5"
+                  className="group flex items-center gap-4 rounded-md border border-border-strong p-4 transition-[transform,border-color,background-color] duration-(--dur-press) ease-(--ease-out) active:scale-[.97] text-left hover:border-primary/30 hover:bg-primary/5"
                 >
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                     <Ticket className="size-6" />
@@ -126,7 +122,7 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
                 <button
                   onClick={handleSolo}
                   disabled={loading}
-                  className="group flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-4 text-left transition-all hover:border-border hover:bg-secondary/30"
+                  className="group flex items-center gap-4 rounded-md border border-border-strong p-4 transition-[transform,border-color,background-color] duration-(--dur-press) ease-(--ease-out) active:scale-[.97] text-left hover:border-border hover:bg-secondary/30"
                 >
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-secondary/50 text-muted-foreground transition-colors group-hover:bg-secondary">
                     {loading ? <Loader2 className="size-6 animate-spin" /> : <User className="size-6" />}
@@ -139,15 +135,11 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
                   </div>
                   <ArrowRight className="size-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
                 </button>
-              </motion.div>
+              </div>
             )}
 
             {step === 'create' && (
-              <motion.div
-                key="create"
-                initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -24 }}
+              <div key="create"
                 className="flex flex-col gap-4"
               >
                 <div>
@@ -184,15 +176,11 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
                     Létrehozás
                   </Button>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {step === 'join' && (
-              <motion.div
-                key="join"
-                initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -24 }}
+              <div key="join"
                 className="flex flex-col gap-4"
               >
                 <div>
@@ -230,9 +218,8 @@ export function OnboardingModal({ open, onSuccess }: { open: boolean, onSuccess?
                     Csatlakozás
                   </Button>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       </DialogContent>
     </Dialog>

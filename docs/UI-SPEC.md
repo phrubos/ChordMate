@@ -2,18 +2,16 @@
 
 ## 1. Design irányelvek
 
-### Vizuális stílus
-- **Téma**: Meleg, zenei hangulatú dark-first design
-- **Színpaletta**:
-  - Primary: Narancs/amber tónus (`amber-500`, `orange-500`) — energikus, zenei feeling
-  - Background dark: Mély szénszürke (`zinc-950`, `neutral-950`)
-  - Background light: Meleg fehér (`stone-50`)
-  - Accent: Teal/cyan másodlagos kiemelőszín
-  - Danger: `red-500` törléshez
-  - Nehézség színek: 1=zöld, 2=lime, 3=sárga, 4=narancs, 5=piros
-- **Tipográfia**: Modern sans-serif (Geist vagy hasonló Next.js-native font)
-- **Kerekítések**: `rounded-xl` kártyákra, `rounded-lg` gombokra
-- **Shadows**: Finom emelkedés kártyákon, hover-re erősödő árnyék
+> **Érvényes arculat: „Midnight Liner”** — a részletes, mérvadó leírás: `docs/superpowers/specs/2026-10-16-midnight-liner-design.md` (tokenek, képernyők, animációk A1–A9). Ahol ez a dokumentum eltér tőle, a spec az érvényes.
+
+### Vizuális stílus (token-összefoglaló)
+- **Témák**: sötét az alapértelmezett (`.dark`, meleg fekete, amber kiemelés), világos a „Liner Notes” (`:root`, papírszín). A színek CSS-változók a `src/app/globals.css`-ben; komponensben csak tokenosztály szerepel (`bg-background`, `text-primary-text`, `text-status-ready` stb.), nyers hex vagy Tailwind-palettaszín nem.
+- **Fő tokenek**: `background`, `card`, `foreground`, `muted-foreground`, `faint` (csak nem kritikus szöveg), `border`, `border-strong`, `primary` (amber) / `primary-text`, `destructive`, `done`, státusz: `status-learning` / `status-ok` / `status-ready`, `fav`; témafüggetlen: `scrim` (takaró réteg), `on-media` (szöveg borítón/videón).
+- **Kivételek**: generált borító- és avatar-hue (`hueFromString`), márkalogók (Google, Spotify).
+- **Tipográfia**: display — Fraunces (`font-display`, `display-soft`); szöveg — sans (`font-sans`); számok, címkék — mono (`font-mono`). Minimum 12px.
+- **Forma**: hajszálvonalas szekciók `SectionHeader`-rel (vonal + amber aláhúzás), kártyák helyett; borítók 2px sarokkal.
+- **Mozgás**: csak `transform`/`opacity`, `prefers-reduced-motion` tisztelete; a listát a spec 6. fejezete adja.
+- **Hozzáférhetőség**: ikongomb-célterület ≥ 40×40px (az `icon-xs`/`icon-sm` gomb láthatatlan kiterjesztéssel), minden ikon-only gombnak `aria-label`.
 
 ### shadcn/ui komponensek használata
 A következő shadcn/ui komponensek szükségesek:

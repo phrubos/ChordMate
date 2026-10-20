@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { ExternalLink, FileText, ZoomIn, ZoomOut, Copy, Check, Play, Pause, Minus, Plus, RotateCcw, Mic, Square, Timer, MoreHorizontal, Loader2 } from 'lucide-react';
 import { ChordTooltip } from '@/components/shared/chord-tooltip';
-import { chordNames } from '@/lib/chord-diagrams';
+import { splitChordText } from '@/lib/chords';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,50 +26,19 @@ interface TabViewerModalProps {
   tabUrl?: string | null;
   trigger?: React.ReactNode;
   date?: string;
+  /** Controlled mode (no trigger is rendered when `open` is given). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-// Build regex from known chord names (longest first to match "Cadd9" before "C")
-const chordPattern = new RegExp(
-  `(?<=^|\\s)(${chordNames.map((c) => c.replace(/[#/]/g, '\\$&')).join('|')})(?=\\s|$)`,
-  'gm'
-);
-
 function TabContentWithChords({ content }: { content: string }) {
-  const parts = useMemo(() => {
-    const result: { text: string; isChord: boolean; chord?: string }[] = [];
-    const lines = content.split('\n');
-
-    for (let li = 0; li < lines.length; li++) {
-      const line = lines[li];
-      let lastIndex = 0;
-      let match: RegExpExecArray | null;
-      const lineRegex = new RegExp(chordPattern.source, chordPattern.flags);
-
-      while ((match = lineRegex.exec(line)) !== null) {
-        if (match.index > lastIndex) {
-          result.push({ text: line.slice(lastIndex, match.index), isChord: false });
-        }
-        result.push({ text: match[1], isChord: true, chord: match[1] });
-        lastIndex = match.index + match[0].length;
-      }
-
-      if (lastIndex < line.length) {
-        result.push({ text: line.slice(lastIndex), isChord: false });
-      }
-
-      if (li < lines.length - 1) {
-        result.push({ text: '\n', isChord: false });
-      }
-    }
-
-    return result;
-  }, [content]);
+  const parts = useMemo(() => splitChordText(content), [content]);
 
   return (
     <>
       {parts.map((part, i) =>
-        part.isChord && part.chord ? (
-          <ChordTooltip key={i} chordName={part.chord}>
+        part.isChord ? (
+          <ChordTooltip key={i} chordName={part.text}>
             <span className="text-primary font-semibold cursor-help underline decoration-primary/30 decoration-dotted underline-offset-2">
               {part.text}
             </span>
@@ -91,7 +60,7 @@ function formatRecTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger, date }: TabViewerModalProps) {
+export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger, date, open, onOpenChange }: TabViewerModalProps) {
   const [fontSize, setFontSize] = useState(15);
   const [copied, setCopied] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
@@ -293,23 +262,25 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
   }
 
   return (
-    <Dialog>
-      <DialogTrigger
-        render={
-          trigger ? (
-            trigger as React.ReactElement
-          ) : (
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary" />
-          )
-        }
-      >
-        {!trigger && (
-          <>
-            <FileText className="size-4" />
-            Tab
-          </>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open === undefined && (
+        <DialogTrigger
+          render={
+            trigger ? (
+              trigger as React.ReactElement
+            ) : (
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary" />
+            )
+          }
+        >
+          {!trigger && (
+            <>
+              <FileText className="size-4" />
+              Tab
+            </>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-[90vw] sm:max-w-5xl max-h-[90vh] landscape:max-h-[95vh] landscape:max-w-[95vw] flex flex-col">
         <DialogHeader className="shrink-0">
           <div className="flex items-start justify-between gap-4">
@@ -324,7 +295,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 border-b border-border/50 pb-2 sm:pb-3 landscape:pb-1.5 shrink-0">
           {/* Zoom */}
           <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5">
-            <Button
+            <Button aria-label="Kisebb betű"
               variant="ghost"
               size="sm"
               className="size-7 p-0"
@@ -333,7 +304,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
               <ZoomOut className="size-3.5" />
             </Button>
             <span className="min-w-[3ch] text-center text-xs text-muted-foreground">{fontSize}</span>
-            <Button
+            <Button aria-label="Nagyobb betű"
               variant="ghost"
               size="sm"
               className="size-7 p-0"
@@ -346,7 +317,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
           {/* Copy */}
           {hasTab && (
             <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-7 px-2" onClick={handleCopy}>
-              {copied ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
+              {copied ? <Check className="size-3.5 text-done" /> : <Copy className="size-3.5" />}
               <span className="hidden sm:inline">{copied ? 'Másolva' : 'Másolás'}</span>
             </Button>
           )}
@@ -354,7 +325,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
           {/* Auto-scroll controls */}
           {hasTab && (
             <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5 px-1">
-              <Button
+              <Button aria-label={isAutoScrolling ? 'Görgetés leállítása' : 'Auto-görgetés'}
                 variant="ghost"
                 size="sm"
                 className={`size-7 p-0 ${isAutoScrolling ? 'text-primary bg-primary/10' : ''}`}
@@ -366,8 +337,8 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
               <div className="flex items-center gap-0.5">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="size-6 p-0"
+                  size="icon-xs"
+                  aria-label="Lassabb görgetés"
                   onClick={() => setScrollSpeed((s) => Math.max(0.5, +(s - 0.5).toFixed(1)))}
                   disabled={scrollSpeed <= 0.5}
                 >
@@ -376,8 +347,8 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
                 <span className="min-w-[3.5ch] text-center text-xs text-muted-foreground tabular-nums">{scrollSpeed}x</span>
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="size-6 p-0"
+                  size="icon-xs"
+                  aria-label="Gyorsabb görgetés"
                   onClick={() => setScrollSpeed((s) => Math.min(3, +(s + 0.5).toFixed(1)))}
                   disabled={scrollSpeed >= 3}
                 >
@@ -386,10 +357,10 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
               </div>
               <Button
                 variant="ghost"
-                size="sm"
-                className="size-6 p-0 text-muted-foreground"
+                size="icon-xs"
+                aria-label="Vissza az elejére"
+                className="text-muted-foreground"
                 onClick={handleResetScroll}
-                title="Vissza az elejére"
               >
                 <RotateCcw className="size-3" />
               </Button>
@@ -415,9 +386,9 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
             {canRecord && (
               <div className="flex items-center gap-1.5">
                 {isRecording && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-0.5">
-                    <span className="size-1.5 rounded-full bg-red-500 animate-pulse" />
-                    <span className="text-xs font-bold tabular-nums text-red-400">{formatRecTime(recElapsed)}</span>
+                  <div className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-0.5">
+                    <span className="size-1.5 rounded-full bg-destructive" />
+                    <span className="text-xs font-bold tabular-nums text-destructive">{formatRecTime(recElapsed)}</span>
                   </div>
                 )}
                 <Button
@@ -471,7 +442,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
           {/* Mobile: compact tool buttons */}
           <div className="flex sm:hidden items-center gap-1">
             {/* Metronome — always visible on mobile */}
-            <Button
+            <Button aria-label="Metronóm"
               variant={metronomeActive ? 'default' : 'outline'}
               size="sm"
               className={`size-8 p-0 ${metronomeActive ? 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30' : ''}`}
@@ -483,9 +454,9 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
 
             {/* Recording timer (mobile) */}
             {isRecording && (
-              <div className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5">
-                <span className="size-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[11px] font-bold tabular-nums text-red-400">{formatRecTime(recElapsed)}</span>
+              <div className="flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5">
+                <span className="size-1.5 rounded-full bg-destructive" />
+                <span className="text-xs font-bold tabular-nums text-destructive">{formatRecTime(recElapsed)}</span>
               </div>
             )}
 
@@ -497,6 +468,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
                 className="size-8 p-0"
                 onClick={isRecording ? stopRecording : startRecording}
                 title={isProcessingRecording ? 'Mentés...' : isRecording ? 'Leállítás' : 'Felvétel'}
+                aria-label={isProcessingRecording ? 'Mentés…' : isRecording ? 'Felvétel leállítása' : 'Felvétel indítása'}
                 disabled={isProcessingRecording}
               >
                 {isProcessingRecording ? <Loader2 className="size-3.5 animate-spin" /> : isRecording ? <Square className="size-3 fill-current" /> : <Mic className="size-3.5" />}
@@ -504,7 +476,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
             )}
 
             {/* More menu toggle for links */}
-            <Button
+            <Button aria-label="Több eszköz"
               variant="ghost"
               size="sm"
               className={`size-8 p-0 ${showMoreTools ? 'text-primary bg-primary/10' : 'text-muted-foreground'}`}
@@ -518,7 +490,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
 
         {/* Mobile overflow row */}
         {showMoreTools && (
-          <div className="flex sm:hidden items-center gap-1.5 pb-2 shrink-0 animate-fade-up">
+          <div className="flex sm:hidden items-center gap-1.5 pb-2 shrink-0">
             {tabUrl && (
               <a href={tabUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
                 <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
@@ -542,14 +514,14 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
         <div ref={scrollContainerRef} className="flex-1 overflow-auto rounded-lg bg-background/50 border border-border/30 p-4 landscape:p-2 min-h-0">
           {hasTab ? (
             <pre
-              className="tab-content"
+              className="overflow-x-auto font-mono leading-[1.6] whitespace-pre text-foreground"
               style={{ fontSize: `${fontSize}px` }}
             >
               <TabContentWithChords content={tabContent!} />
             </pre>
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-4 py-12">
-              <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/5 ring-1 ring-primary/10">
+              <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
                 <FileText className="size-7 text-primary/40" />
               </div>
               <div className="text-center">

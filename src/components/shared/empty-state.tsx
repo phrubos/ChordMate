@@ -76,7 +76,7 @@ export function EmptyState({ icon: Icon, title, description, illustration, child
       {Illustration ? (
         <Illustration />
       ) : (
-        <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/5 ring-1 ring-primary/10">
+        <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10">
           <Icon className="size-6 text-primary/30" />
         </div>
       )}

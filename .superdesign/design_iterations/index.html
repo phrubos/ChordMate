@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChordMate — UI/UX mockupok</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0e0e10; color: #e4e4e7; font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 56px 28px 80px; }
+  h1 { font-size: 34px; letter-spacing: -.02em; margin: 0 0 8px; color: #fff; }
+  .lead { color: #a1a1aa; max-width: 72ch; margin: 0 0 40px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; }
+  .dir { display: flex; flex-direction: column; border: 1px solid #27272a; border-radius: 16px; overflow: hidden; background: #141417; transition: border-color .2s, transform .2s; }
+  .dir:hover { border-color: #52525b; transform: translateY(-2px); }
+  .thumb { aspect-ratio: 16 / 10; overflow: hidden; background: #000; }
+  .thumb img { width: 100%; display: block; }
+  .body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .body h2 { margin: 0; font-size: 19px; color: #fff; }
+  .body p { margin: 0; color: #a1a1aa; font-size: 14px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: #27272a; color: #d4d4d8; }
+  .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 8px; }
+  .links a { font-size: 13px; padding: 6px 10px; border-radius: 8px; background: #fff; color: #111; text-decoration: none; font-weight: 600; }
+  .links a + a { background: #27272a; color: #e4e4e7; font-weight: 500; }
+  h3 { margin: 56px 0 12px; font-size: 18px; color: #fff; }
+  ul { color: #a1a1aa; padding-left: 20px; } li { margin: 4px 0; } b { color: #e4e4e7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ChordMate — négy vizuális irány</h1>
+  <p class="lead">Mind a négy mockup <b>ugyanazt az új információs architektúrát és UX-et</b> mutatja (Következő próba hero, új naptárcella, mini-player, Song Hub, Próba mód). Csak a vizuális nyelv különbözik, így tisztán a stílust tudod összehasonlítani. A felső sávban válthatsz irányt, képernyőt és desktop/mobil nézetet. A mockupok interaktívak: naptárnap-választás, státuszszűrő, rács/lista nézet, lejátszás, Próba módban metronóm, léptetés és auto-görgetés.</p>
+  <div class="grid">
+    <article class="dir">
+      <a class="thumb" href="studio.html#dashboard"><img src="shots/studio-dashboard-desktop.png" alt="Late-Night Studio kezdőlap"></a>
+      <div class="body">
+        <h2>1. Late-Night Studio</h2>
+        <p>Meleg szénfekete, volfrámlámpa-amber fény, analóg stúdió-hardver részletek (VU-sáv, LED-jelölések, domború gombok), kondenzált címkék, mono számok, finom filmszemcse. A mostani sötét, narancsos irány érett, „prémium” változata.</p>
+        <div class="tags"><span>Archivo</span><span>Instrument Sans</span><span>JetBrains Mono</span><span>dark-first</span></div>
+        <div class="links"><a href="studio.html#dashboard">Megnyitás</a><a href="studio.html#songs">Dalok</a><a href="studio.html#hub">Song Hub</a><a href="studio.html#practice">Próba mód</a></div>
+      </div>
+    </article>
+    <article class="dir">
+      <a class="thumb" href="liner.html#dashboard"><img src="shots/liner-dashboard-desktop.png" alt="Liner Notes kezdőlap"></a>
+      <div class="body">
+        <h2>2. Liner Notes</h2>
+        <p>Lemezborító- és magazinhangulat: krémpapír és tinta, vermilion akcent, nagy serif címek dőlt dátumokkal, hajszálvonalas rovatok dobozok helyett. A borítók a főszereplők. A legegyedibb, legerősebb karakterű irány.</p>
+        <div class="tags"><span>Fraunces</span><span>Hanken Grotesk</span><span>IBM Plex Mono</span><span>light + sötét színpad</span></div>
+        <div class="links"><a href="liner.html#dashboard">Megnyitás</a><a href="liner.html#songs">Dalok</a><a href="liner.html#hub">Song Hub</a><a href="liner.html#practice">Próba mód</a></div>
+      </div>
+    </article>
+    <article class="dir">
+      <a class="thumb" href="precision.html#dashboard"><img src="shots/precision-dashboard-desktop.png" alt="Precision Utility kezdőlap"></a>
+      <div class="body">
+        <h2>3. Precision Utility</h2>
+        <p>Linear/Apple-szerű precizitás: világos, sűrű, nyugodt felület, egyetlen narancs akcent, finom árnyékok, vízszintes dalkártyák. A Próba mód automatikusan sötét „színpadra” vált. A leggyorsabban használható, leginkább „eszköz” jellegű.</p>
+        <div class="tags"><span>Onest</span><span>Geist Mono</span><span>light-first</span><span>sűrű</span></div>
+        <div class="links"><a href="precision.html#dashboard">Megnyitás</a><a href="precision.html#songs">Dalok</a><a href="precision.html#hub">Song Hub</a><a href="precision.html#practice">Próba mód</a></div>
+      </div>
+    </article>
+    <article class="dir">
+      <a class="thumb" href="hybrid.html#dashboard"><img src="shots/hybrid-dashboard-desktop.png" alt="Midnight Liner kezdőlap"></a>
+      <div class="body">
+        <h2>4. Midnight Liner <small style="color:#a1a1aa;font-weight:500">(2 + 1 keverék)</small></h2>
+        <p>A Liner Notes szerkezete és tipográfiája (Fraunces serif, dőlt dátumok, hajszálvonalas rovatok, masthead fejléc, borítók tipográfiával) a Studio meleg szénfekete alapján, amber lámpafénnyel, LED-jelölésekkel és filmszemcsével. Egyszerre szerkesztőségi és esti próbatermi hangulatú.</p>
+        <div class="tags"><span>Fraunces</span><span>Hanken Grotesk</span><span>IBM Plex Mono</span><span>dark-first</span><span>amber</span></div>
+        <div class="links"><a href="hybrid.html#dashboard">Megnyitás</a><a href="hybrid.html#songs">Dalok</a><a href="hybrid.html#hub">Song Hub</a><a href="hybrid.html#practice">Próba mód</a></div>
+      </div>
+    </article>
+  </div>
+
+  <h3>Mire figyelj összehasonlításkor?</h3>
+  <ul>
+    <li><b>Kezdőlap:</b> egy pillantásra látszik-e, mi a következő próba, és egy kattintással el lehet-e indítani?</li>
+    <li><b>Naptár:</b> érthető-e a „lezajlott” (kitöltött) és a „tervezett” (körvonal) jelölés? Mobilon heti szalag látszik havi grid helyett.</li>
+    <li><b>Dalok:</b> rács vagy lista nézet; szintjelző sáv csillagok helyett; státusz (Tanuljuk / Megy / Kész).</li>
+    <li><b>Song Hub:</b> akkorddiagramok, kotta ütemrácsban, videó, próbaelőzmények, felvételek hullámformával.</li>
+    <li><b>Próba mód:</b> nagy kotta, léptethető setlist, BPM-re állított vizuális metronóm, auto-görgetés, felvétel.</li>
+    <li><b>Mini-player:</b> oldalváltáskor sem áll le a zene; mobilon a bottom nav felett ül.</li>
+  </ul>
+</div>
+</body>
+</html>

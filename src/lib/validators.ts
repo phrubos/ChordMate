@@ -20,6 +20,11 @@ export const songSchema = z.object({
     .url('Érvénytelen URL')
     .optional()
     .or(z.literal('')),
+  status: z.enum(['learning', 'ok', 'ready']).default('learning'),
+  bpm: z.coerce.number().int().min(30, 'Legalább 30 BPM').max(300, 'Legfeljebb 300 BPM').optional(),
+  songKey: z.string().regex(/^[A-G](#|b)?m?$/, 'Pl. Am, F#, Bb').optional().or(z.literal('')),
+  capo: z.coerce.number().int().min(0).max(12).optional(),
+  tuning: z.string().max(40).optional(),
 });
 
 export type SongFormValues = z.infer<typeof songSchema>;

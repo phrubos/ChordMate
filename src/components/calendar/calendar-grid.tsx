@@ -1,142 +1,81 @@
 'use client';
 
-import { useRef, useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import {
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  isSameMonth,
-  isSameDay,
-  isBefore,
-  startOfDay,
-  format,
-} from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { useMemo, useRef } from 'react';
+import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek } from 'date-fns';
+import { dayState } from '@/lib/calendar-utils';
+import { hueFromString } from '@/lib/song-meta';
 import { CalendarDayCell } from './calendar-day-cell';
 
-const WEEKDAY_LABELS = ['H', 'K', 'Sz', 'Cs', 'P', 'Sz', 'V'];
+const WEEKDAY_LABELS = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'];
+const MAX_MARKS = 3;
+
+export interface DaySong {
+  title: string;
+  artist: string;
+}
 
 interface CalendarGridProps {
   year: number;
   month: number;
+  today: string;
   selectedDate: string | null;
-  songCountByDate: Record<string, number>;
-  onSelectDate: (dateStr: string) => void;
-  onAddSong?: (dateStr: string) => void;
-  onCopyDate?: (dateStr: string) => void;
-  onDeleteDate?: (dateStr: string) => void;
+  songsByDate: Record<string, DaySong[]>;
+  onSelectDate: (date: string) => void;
   onSwipePrev?: () => void;
   onSwipeNext?: () => void;
 }
 
-export function CalendarGrid({
-  year,
-  month,
-  selectedDate,
-  songCountByDate,
-  onSelectDate,
-  onAddSong,
-  onCopyDate,
-  onDeleteDate,
-  onSwipePrev,
-  onSwipeNext,
-}: CalendarGridProps) {
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const [direction, setDirection] = useState<1 | -1>(1);
+/** Hairline month grid. Swipe left/right changes month on touch devices. */
+export function CalendarGrid({ year, month, today, selectedDate, songsByDate, onSelectDate, onSwipePrev, onSwipeNext }: CalendarGridProps) {
+  const touch = useRef<{ x: number; y: number } | null>(null);
 
-  function handleTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  }
-
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    touchStartX.current = null;
-    touchStartY.current = null;
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-    if (dx > 0) {
-      setDirection(-1);
-      onSwipePrev?.();
-    } else {
-      setDirection(1);
-      onSwipeNext?.();
-    }
-  }
-
-  const monthKey = `${year}-${month}`;
-
-  const { days, monthDate, today, todayStart } = useMemo(() => {
+  const days = useMemo(() => {
     const md = new Date(year, month - 1);
-    const monthStart = startOfMonth(md);
-    const monthEnd = endOfMonth(md);
-    const calStart = startOfWeek(monthStart, { locale: hu });
-    const calEnd = endOfWeek(monthEnd, { locale: hu });
-    const t = new Date();
-    return {
-      days: eachDayOfInterval({ start: calStart, end: calEnd }),
-      monthDate: md,
-      today: t,
-      todayStart: startOfDay(t),
-    };
+    return eachDayOfInterval({
+      start: startOfWeek(startOfMonth(md), { weekStartsOn: 1 }),
+      end: endOfWeek(endOfMonth(md), { weekStartsOn: 1 }),
+    }).map((d) => ({ date: format(d, 'yyyy-MM-dd'), day: d.getDate(), inMonth: isSameMonth(d, md) }));
   }, [year, month]);
 
   return (
     <div
-      className="rounded-xl border border-border/50 bg-card/30 p-3 overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      onTouchStart={(e) => (touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY })}
+      onTouchEnd={(e) => {
+        if (!touch.current) return;
+        const dx = e.changedTouches[0].clientX - touch.current.x;
+        const dy = e.changedTouches[0].clientY - touch.current.y;
+        touch.current = null;
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+        if (dx > 0) onSwipePrev?.();
+        else onSwipeNext?.();
+      }}
     >
-      <div className="grid grid-cols-7 gap-0.5 mb-1">
-        {WEEKDAY_LABELS.map((label, i) => (
-          <div
-            key={i}
-            className="flex h-8 items-center justify-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50"
-          >
+      <div className="grid grid-cols-7">
+        {WEEKDAY_LABELS.map((label) => (
+          <span key={label} className="px-2 pb-1.5 font-mono text-xs font-medium tracking-[0.05em] text-faint uppercase">
             {label}
-          </div>
+          </span>
         ))}
       </div>
-      <AnimatePresence mode="popLayout" custom={direction} initial={false}>
-        <motion.div
-          key={monthKey}
-          custom={direction}
-          variants={{
-            enter: (d: number) => ({ x: `${d * 100}%`, opacity: 0 }),
-            center: { x: 0, opacity: 1 },
-            exit: (d: number) => ({ x: `${d * -100}%`, opacity: 0 }),
-          }}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="grid grid-cols-7 gap-0.5"
-        >
-          {days.map((day) => {
-            const dateStr = format(day, 'yyyy-MM-dd');
-            return (
-              <CalendarDayCell
-                key={dateStr}
-                day={day.getDate()}
-                isCurrentMonth={isSameMonth(day, monthDate)}
-                isToday={isSameDay(day, today)}
-                isSelected={selectedDate === dateStr}
-                isPast={isBefore(day, todayStart)}
-                songCount={songCountByDate[dateStr] ?? 0}
-                onClick={() => onSelectDate(dateStr)}
-                onAddSong={onAddSong ? () => onAddSong(dateStr) : undefined}
-                onCopyDate={onCopyDate ? () => onCopyDate(dateStr) : undefined}
-                onDeleteDate={onDeleteDate ? () => onDeleteDate(dateStr) : undefined}
-              />
-            );
-          })}
-        </motion.div>
-      </AnimatePresence>
+      <div role="grid" className="grid grid-cols-7 border-t border-l border-border">
+        {days.map(({ date, day, inMonth }) => {
+          const songs = songsByDate[date] ?? [];
+          return (
+            <CalendarDayCell
+              key={date}
+              date={date}
+              day={day}
+              isCurrentMonth={inMonth}
+              isToday={date === today}
+              isSelected={date === selectedDate}
+              state={dayState(date, today, songs.length)}
+              markHues={songs.slice(0, MAX_MARKS).map((s) => hueFromString(`${s.artist} — ${s.title}`))}
+              extraCount={Math.max(0, songs.length - MAX_MARKS)}
+              onSelect={onSelectDate}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }

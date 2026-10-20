@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { chordDiagrams, type ChordDiagram } from '@/lib/chord-diagrams';
 
@@ -108,15 +108,14 @@ interface ChordTooltipProps {
   children: React.ReactNode;
 }
 
+const noopSubscribe = () => () => {};
+
 export function ChordTooltip({ chordName, children }: ChordTooltipProps) {
   const chord = chordDiagrams[chordName];
   const triggerRef = useRef<HTMLSpanElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // false on the server and during hydration, true on the client (portal target exists).
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
   const show = useCallback(() => {
     const el = triggerRef.current;

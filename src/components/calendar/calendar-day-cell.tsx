@@ -1,159 +1,79 @@
 'use client';
 
 import { memo } from 'react';
+import { format, parseISO } from 'date-fns';
+import { hu } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Plus, Copy, X, Check, Music } from 'lucide-react';
+import type { DayState } from '@/lib/calendar-utils';
 
 interface CalendarDayCellProps {
+  date: string;
   day: number;
   isCurrentMonth: boolean;
   isToday: boolean;
   isSelected: boolean;
-  isPast?: boolean;
-  songCount: number;
-  onClick: () => void;
-  onAddSong?: () => void;
-  onCopyDate?: () => void;
-  onDeleteDate?: () => void;
+  state: DayState;
+  markHues: number[];
+  extraCount: number;
+  onSelect: (date: string) => void;
 }
 
+const PLAN_STRIPES =
+  'bg-[repeating-linear-gradient(-45deg,transparent_0_6px,color-mix(in_oklch,var(--primary)_5%,transparent)_6px_7px)]';
+
 export const CalendarDayCell = memo(function CalendarDayCell({
+  date,
   day,
   isCurrentMonth,
   isToday,
   isSelected,
-  isPast,
-  songCount,
-  onClick,
-  onAddSong,
-  onCopyDate,
-  onDeleteDate,
+  state,
+  markHues,
+  extraCount,
+  onSelect,
 }: CalendarDayCellProps) {
-  const hasSongs = songCount > 0 && isCurrentMonth;
-  const isPastWithSongs = hasSongs && isPast;
-  const isFutureWithSongs = hasSongs && !isPast;
-  // Adjacent-month days with events (faded indicators)
-  const adjacentHasSongs = songCount > 0 && !isCurrentMonth;
-  const adjacentPast = adjacentHasSongs && isPast;
-  const adjacentFuture = adjacentHasSongs && !isPast;
+  const count = markHues.length + extraCount;
+  const label = `${format(parseISO(date), 'MMMM d., EEEE', { locale: hu })}${
+    count ? `, ${count} dal, ${state === 'done' ? 'lezajlott próba' : 'tervezett próba'}` : ''
+  }`;
 
   return (
-    <div
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') onClick();
-      }}
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
+      onClick={() => onSelect(date)}
+      aria-label={label}
+      aria-pressed={isSelected}
       className={cn(
-        'relative group outline-none flex h-14 w-full flex-col items-center justify-center rounded-lg text-sm transition-all duration-200 md:h-[4.5rem]',
-        isCurrentMonth
-          ? 'hover:bg-card/80 cursor-pointer'
-          : 'text-muted-foreground/30 cursor-pointer',
-        // State: Today (subtle bottom bar via CSS class)
-        isToday && !isSelected && 'today-marker',
-        // State: Selected (interaction feedback)
-        isSelected && 'bg-primary/10 ring-1 ring-primary/30 font-semibold text-primary',
-        // State: Future practice (warm amber right stripe)
-        isFutureWithSongs && !isSelected && 'practice-day-upcoming',
-        // State: Past practice (emerald green left stripe)
-        isPastWithSongs && !isSelected && 'practice-day-completed',
-        // Adjacent month with future events (very subtle indicator)
-        adjacentFuture && !isSelected && 'practice-day-upcoming-faded',
-        // Adjacent month with past events (very subtle indicator)
-        adjacentPast && !isSelected && 'practice-day-completed-faded'
+        'relative flex min-h-14 flex-col items-start justify-between border-r border-b border-border p-1.5 text-left transition-colors duration-(--dur-fade) outline-none hover:bg-muted/50 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring md:min-h-[84px] md:p-2',
+        !isCurrentMonth && 'text-faint opacity-55',
+        state === 'plan' && !isSelected && PLAN_STRIPES,
+        isSelected && 'bg-primary/12 shadow-[inset_0_0_0_1px_var(--primary)]'
       )}
     >
-      {/* Day number */}
-      <span className={cn(
-        'relative z-10 text-[15px]',
-        isToday && 'font-bold',
-        isFutureWithSongs && !isSelected && 'text-primary',
-        isPastWithSongs && !isSelected && 'text-muted-foreground',
-        adjacentFuture && !isSelected && 'text-primary/40',
-        adjacentPast && !isSelected && 'text-muted-foreground/40'
-      )}>
+      <span
+        className={cn(
+          'display-soft grid size-7 place-items-center rounded-full font-display text-base md:text-lg',
+          isToday && 'bg-primary font-semibold text-primary-foreground shadow-[0_0_12px_color-mix(in_oklch,var(--primary)_50%,transparent)]'
+        )}
+      >
         {day}
       </span>
-
-      {/* Upcoming badge: small filled amber dot, top-left */}
-      {isFutureWithSongs && (
-        <div className={cn(
-          'absolute top-1.5 left-1.5 flex items-center justify-center size-4 rounded-full z-10',
-          'bg-primary/15 ring-1 ring-primary/25',
-          isSelected && 'bg-primary/25 ring-primary/40'
-        )}>
-          <Music className="size-2 text-primary" />
-        </div>
+      {count > 0 && (
+        <span aria-hidden className="flex items-center gap-[3px]">
+          {markHues.map((h, i) => (
+            <span
+              key={i}
+              className="size-2 rounded-[1px] md:size-2.5"
+              style={
+                state === 'done'
+                  ? { backgroundColor: `oklch(.66 .13 ${h})`, boxShadow: `0 0 6px oklch(.66 .13 ${h} / .55)` }
+                  : { boxShadow: `inset 0 0 0 2px oklch(.7 .13 ${h})` }
+              }
+            />
+          ))}
+          {extraCount > 0 && <span className="ml-0.5 font-mono text-xs text-muted-foreground">+{extraCount}</span>}
+        </span>
       )}
-
-      {/* Adjacent-month upcoming badge (faded) */}
-      {adjacentFuture && (
-        <div className="absolute top-1.5 left-1.5 flex items-center justify-center size-4 rounded-full z-10 bg-primary/8 ring-1 ring-primary/12">
-          <Music className="size-2 text-primary/40" />
-        </div>
-      )}
-
-      {/* Completed badge: emerald check, bottom-right */}
-      {isPastWithSongs && (
-        <div className={cn(
-          'absolute bottom-1 right-1 flex items-center justify-center size-4 rounded-full z-10',
-          'bg-emerald-500/20 ring-1 ring-emerald-500/30',
-          isSelected && 'bg-emerald-500/30 ring-emerald-400/40'
-        )}>
-          <Check className="size-2.5 stroke-[3] text-emerald-400" />
-        </div>
-      )}
-
-      {/* Adjacent-month completed badge (faded) */}
-      {adjacentPast && (
-        <div className="absolute bottom-1 right-1 flex items-center justify-center size-4 rounded-full z-10 bg-emerald-500/10 ring-1 ring-emerald-500/15">
-          <Check className="size-2.5 stroke-[3] text-emerald-400/40" />
-        </div>
-      )}
-
-      {/* Subtle glow pulse for upcoming events only */}
-      {isFutureWithSongs && !isSelected && (
-        <div className="absolute inset-0 rounded-lg bg-primary/3 animate-glow-pulse pointer-events-none" />
-      )}
-
-      {/* Hover Actions (desktop only) */}
-      {isCurrentMonth && (
-        <div className="absolute top-1 right-1 gap-1 z-20 transition-opacity hidden hover-device:group-hover:flex">
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddSong?.();
-            }}
-            title="Dal hozzáadása"
-            className="flex size-5 items-center justify-center rounded-md bg-background/80 text-muted-foreground hover:text-primary hover:bg-background shadow-sm ring-1 ring-border/50 cursor-pointer"
-          >
-            <Plus className="size-3" />
-          </div>
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onCopyDate?.();
-            }}
-            title="Másolás másik napról"
-            className="flex size-5 items-center justify-center rounded-md bg-background/80 text-muted-foreground hover:text-primary hover:bg-background shadow-sm ring-1 ring-border/50 cursor-pointer"
-          >
-            <Copy className="size-3" />
-          </div>
-          {hasSongs && (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteDate?.();
-              }}
-              title="Próba törlése"
-              className="flex size-5 items-center justify-center rounded-md bg-background/80 text-muted-foreground hover:text-destructive hover:bg-background shadow-sm ring-1 ring-border/50 cursor-pointer"
-            >
-              <X className="size-3" />
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    </button>
   );
 });

@@ -8,14 +8,17 @@
 
 | Réteg | Technológia |
 |-------|------------|
-| Framework | **Next.js 14** (App Router, Server Components, Server Actions) |
+| Framework | **Next.js 16** (App Router, Server Components, Server Actions) + **React 19** |
 | Nyelv | **TypeScript** (strict mode) |
 | ORM | **Drizzle ORM** |
 | Adatbázis | **PostgreSQL** (Vercel Postgres / Neon) |
 | Auth | **NextAuth.js v5** (Auth.js) Google + GitHub provider |
-| Styling | **Tailwind CSS 3** + **shadcn/ui** komponensek |
+| Styling | **Tailwind CSS 4** (CSS-first `@theme` tokenek) + **shadcn (base-nova) + Base UI** |
+| Animáció | **Motion 12** (csak a spec 6. fejezete szerinti A1–A9) |
+| Tesztek | **Vitest** (tiszta függvények, `src/**/*.test.ts`) |
 | Hosting | **Vercel** |
-| YouTube | **react-youtube** (YouTube IFrame API wrapper) |
+| YouTube | **react-youtube** (YouTube IFrame API wrapper), globális mini-player |
+| Arculat | „Midnight Liner” — `docs/superpowers/specs/2026-10-16-midnight-liner-design.md` |
 
 ## 3. Felhasználók
 

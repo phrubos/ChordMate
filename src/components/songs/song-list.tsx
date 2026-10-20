@@ -1,86 +1,61 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { useState } from 'react';
-import { ListMusic, X } from 'lucide-react';
-import dynamic from 'next/dynamic';
-import { SongCard } from './song-card';
-import { EmptyState } from '@/components/shared/empty-state';
-
-const YouTubePlayer = dynamic(() => import('@/components/youtube/youtube-player').then(m => ({ default: m.YouTubePlayer })), { ssr: false });
-import type { SongWithUser } from '@/types';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { staggerContainer, staggerItem } from '@/lib/motion';
+import { ListMusic } from 'lucide-react';
+import { buttonVariants } from '@/components/ui/button';
+import { EmptyState } from '@/components/shared/empty-state';
+import { usePlayer } from '@/components/player/player-provider';
+import type { Song } from '@/types';
+import { SongCard } from './song-card';
+import { SongRow, SongTableHead } from './song-row';
 
 interface SongListProps {
-  songs: SongWithUser[];
+  songs: Song[];
+  view: 'grid' | 'list';
   searchQuery?: string;
+  filtered?: boolean;
 }
 
-export function SongList({ songs, searchQuery }: SongListProps) {
-  const [playingSong, setPlayingSong] = useState<SongWithUser | null>(null);
+export function SongList({ songs, view, searchQuery, filtered }: SongListProps) {
+  const player = usePlayer();
+  const onPlay = (song: Song) => player.play(song, songs);
 
   if (songs.length === 0) {
-    if (searchQuery) {
+    if (searchQuery || filtered) {
       return (
         <EmptyState
           icon={ListMusic}
           illustration="search"
           title="Nincs találat"
-          description={`Nincs találat erre: "${searchQuery}"`}
+          description={searchQuery ? `Nincs találat erre: „${searchQuery}”` : 'Egyik dal sem felel meg a szűrőknek.'}
         />
       );
     }
     return (
-      <EmptyState
-        icon={ListMusic}
-        illustration="songs"
-        title="Még nincsenek dalok"
-        description="Adj hozzá az első dalt, hogy elkezdhessétek a gyakorlást!"
-      >
-        <Link href="/songs/new">
-          <Button>Első dal hozzáadása</Button>
+      <EmptyState icon={ListMusic} illustration="songs" title="Még nincsenek dalok" description="Adj hozzá az első dalt, hogy elkezdhessétek a gyakorlást!">
+        <Link href="/songs/new" className={buttonVariants()}>
+          Első dal hozzáadása
         </Link>
       </EmptyState>
     );
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <Dialog open={!!playingSong} onOpenChange={(open) => !open && setPlayingSong(null)}>
-        <DialogContent showCloseButton={false} className="sm:max-w-3xl p-0 overflow-visible bg-transparent border-none shadow-none">
-          <DialogTitle className="sr-only">Videó lejátszása: {playingSong?.title}</DialogTitle>
-          <div className="relative">
-            <Button
-              variant="outline"
-              size="icon"
-              className="absolute -top-12 right-0 rounded-full bg-background/80 hover:bg-background shadow-md border-border/50"
-              onClick={() => setPlayingSong(null)}
-            >
-              <X className="size-4" />
-            </Button>
-            <div className="aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-border/50 shadow-2xl">
-              {playingSong && playingSong.youtubeUrl && (
-                <YouTubePlayer url={playingSong.youtubeUrl} autoplay />
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-      >
+  if (view === 'list') {
+    return (
+      <div role="table" aria-label="Dalok" className="border-t border-border-strong">
+        <SongTableHead />
         {songs.map((song) => (
-          <motion.div key={song.id} variants={staggerItem} className="min-w-0 h-full">
-            <SongCard song={song} onPlay={setPlayingSong} />
-          </motion.div>
+          <SongRow key={song.id} song={song} onPlay={onPlay} />
         ))}
-      </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 md:grid-cols-[repeat(auto-fill,minmax(230px,1fr))] md:gap-x-7 md:gap-y-10">
+      {songs.map((song) => (
+        <SongCard key={song.id} song={song} onPlay={onPlay} />
+      ))}
     </div>
   );
 }

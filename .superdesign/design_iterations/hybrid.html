@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="hu" data-dir="hybrid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChordMate — 4. Midnight Liner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..800,0..100;1,9..144,300..800,0..100&family=Hanken+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/base.css">
+<style>
+/* ===== 4. MIDNIGHT LINER (Liner Notes × Late-Night Studio) =====
+   A Liner Notes szerkesztőségi tipográfiája és szerkezete (serif címek, hajszálvonalas
+   rovatok, borítók tipográfiával) a Studio meleg szénfekete alapján, amber lámpafénnyel.
+   Megjegyzés: itt a --ink a világos „nyomdafesték” (vonalak, kiemelés), a --cream a sötét papír. */
+:root {
+  --font-display: "Fraunces", serif;
+  --font-body: "Hanken Grotesk", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --ink: oklch(.93 .018 82);
+  --cream: oklch(.165 .008 60);
+  --page: oklch(.13 .006 60);
+  --bg: var(--cream);
+  --bg-2: var(--cream);
+  --surface: oklch(.2 .009 62);
+  --surface-2: oklch(.235 .01 62);
+  --line: oklch(.93 .02 82 / .1);
+  --line-strong: oklch(.93 .02 82 / .2);
+  --text: var(--ink);
+  --text-2: oklch(.74 .018 75);
+  --text-3: oklch(.57 .016 70);
+  --accent: oklch(.8 .145 72);
+  --accent-2: oklch(.85 .135 78);
+  --accent-text: oklch(.84 .13 76);
+  --on-accent: oklch(.19 .03 60);
+  --accent-soft: oklch(.8 .145 72 / .12);
+  --done: oklch(.76 .11 150);
+  --fav: oklch(.72 .16 25);
+  --st-learning: oklch(.72 .15 35);
+  --st-ok: oklch(.84 .13 92);
+  --st-ready: oklch(.76 .12 152);
+  --diff: var(--accent);
+  --radius: 4px; --radius-sm: 3px; --radius-lg: 4px; --radius-xl: 6px; --radius-chip: 2px; --radius-cover: 2px; --radius-btn: 99px;
+  --display-weight: 500; --display-track: -0.02em; --display-track-sm: -0.01em;
+  --eyebrow-track: .1em;
+  --hero: 64px; --hero-sm: 40px; --h1: 60px; --h1-sm: 40px; --h3: 26px; --hub-title: 80px; --hub-title-sm: 32px;
+  --cv-l1: .7; --cv-l2: .46; --cv-c: .15;
+  --seg-shadow: none;
+  --icon-stroke: 1.5;
+}
+body { color-scheme: dark; }
+/* filmszemcse (Studio) */
+body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 999; opacity: .06; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.eyebrow, .cal-wd, .song-row-head, .sheet-label { font-family: var(--font-mono); font-weight: 500; }
+.page-title, .hero-title, .hub-title, .pr-title, .card-title, .brand-name { font-variation-settings: "SOFT" 50, "opsz" 144; }
+.page-title .count { font-family: var(--font-display); font-style: italic; font-size: .45em; color: var(--accent-text); }
+.hero-date, .hub-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+
+/* masthead: a sidebar vízszintes fejléccé alakul */
+.app { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "side top" "main main" "dock dock"; }
+.sidebar { height: 68px; flex-direction: row; align-items: center; gap: 36px; padding: 0 0 0 40px; border-right: 0; border-bottom: 2px solid var(--ink); z-index: 21; }
+.brand { padding: 0; }
+.brand-name { font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
+.logo-bg { fill: var(--ink); } .logo-mark { stroke: var(--cream); }
+.band-switch, .side-tools, .side-user { display: none; }
+.side-nav { flex-direction: row; gap: 4px; }
+.nav-item { padding: 6px 10px; border-radius: 0; font-size: 15px; color: var(--text-2); }
+.nav-item .i { display: none; }
+.nav-item:hover { background: none; color: var(--text); }
+.nav-item.active { background: none; color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.topbar { height: 68px; padding: 0 40px 0 24px; border-bottom: 2px solid var(--ink); background: var(--bg); backdrop-filter: none; }
+.search-trigger { margin-left: auto; width: 300px; border-radius: 99px; background: transparent; border-color: var(--line-strong); }
+.top-actions { margin-left: 0; }
+.main { margin: 0 auto; padding: 44px 40px 56px; max-width: 1320px; }
+
+/* gombok, chipek */
+.btn-ghost { background: transparent; border-color: var(--ink); }
+.btn-ghost:hover { background: var(--ink); color: var(--cream); }
+.btn-chip { border-radius: 99px; }
+.chip { background: none; border: 0; padding: 0; margin-right: 10px; color: var(--text-2); font-size: 13px; }
+.chip + .chip::before { content: "·"; margin-right: 10px; color: var(--text-3); }
+.seg { border-radius: 99px; background: transparent; border-color: var(--line-strong); }
+.seg button { border-radius: 99px; }
+.seg button.on { background: var(--ink); color: var(--cream); }
+.seg button.on em { color: oklch(.8 .02 85); }
+.af-chip { border-radius: 99px; background: transparent; box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* kártyák: hajszálvonalas rovatok */
+.card { background: transparent; border: 0; border-top: 2px solid var(--ink); border-radius: 0; padding: 16px 0 0; }
+.card-head { margin-bottom: 18px; align-items: flex-start; }
+.card-foot { border-top-color: var(--line); }
+.dash-grid { gap: 48px 48px; }
+.sl-row { border-radius: 0; border-bottom: 1px solid var(--line); }
+.sl-row:hover { background: var(--surface-2); }
+.sl-n { color: var(--accent-text); font-weight: 500; }
+.sl-meta b { font-family: var(--font-display); font-weight: 500; font-size: 17px; letter-spacing: -.01em; }
+
+/* borítók tipográfiával */
+.cover-fill .cover-type, .hub-cover .cover-type, .hero-cover .cover-type, .pr-cover .cover-type {
+  display: block; position: absolute; z-index: 1; left: 14px; right: 14px; bottom: 12px;
+  font-family: var(--font-display); font-style: italic; font-weight: 400; font-size: 26px; line-height: .98; letter-spacing: -.02em; color: #fff; text-wrap: balance; }
+.cover-fill .cover-artist, .hub-cover .cover-artist, .hero-cover .cover-artist, .pr-cover .cover-artist {
+  display: block; position: absolute; z-index: 1; left: 14px; top: 12px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: rgb(255 255 255 / .85); }
+.hub-cover .cover-type { font-size: 40px; left: 20px; bottom: 18px; }
+.hub-cover .cover-artist { left: 20px; top: 18px; }
+
+/* hero: sötét lemezborító */
+.hero { --text: var(--cream); --text-2: oklch(.8 .02 85); --text-3: oklch(.65 .02 85); --line: oklch(1 0 0 / .14); --line-strong: oklch(1 0 0 / .3); --surface-2: oklch(1 0 0 / .06); --surface: oklch(1 0 0 / .04); --hero-ring: var(--ink); --accent-text: oklch(.72 .17 38);
+  background: var(--ink); color: var(--text); border: 0; border-radius: var(--radius-xl);
+  grid-template-areas: "art art" "main list"; padding: 40px; gap: 32px 56px; }
+.hero-art { display: grid; grid-area: art; grid-template-columns: repeat(4, 1fr); margin: -40px -40px 8px; height: 210px; }
+.hero-cover { width: 100%; height: 100%; border-radius: 0; }
+.hero-cover .cover-type { font-size: 30px; }
+.hero-main { grid-area: main; }
+.hero-setlist { grid-area: list; }
+.hero .btn-ghost { border-color: var(--cream); color: var(--cream); }
+.hero .btn-ghost:hover { background: var(--cream); color: var(--ink); }
+.hero .seg button.on { background: var(--cream); color: var(--ink); }
+.hero .chip { color: var(--text-2); }
+.hero .sl-row { border-bottom-color: oklch(1 0 0 / .12); }
+.hero .status { --st-learning: oklch(.78 .13 70); --st-ok: oklch(.75 .1 250); --st-ready: oklch(.78 .12 155); }
+
+/* naptár: rácsos lap */
+.cal-grid { gap: 0; border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+.cal-wd { border: 0; padding: 8px; background: var(--bg); }
+.cal-cell { border-radius: 0; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-height: 84px; }
+.cal-cell.selected { background: var(--surface); box-shadow: inset 0 0 0 2px var(--ink); }
+.cal-cell .cal-d { font-family: var(--font-display); font-size: 18px; font-weight: 400; }
+.cal-cell.plan { background: repeating-linear-gradient(-45deg, transparent 0 6px, oklch(.6 .19 35 / .06) 6px 7px); }
+.cal-marks i { border-radius: 1px; width: 12px; height: 12px; }
+
+/* dalok */
+.song-grid { gap: 40px 28px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.song-card { background: transparent; border: 0; border-radius: 0; overflow: visible; }
+.song-card:hover { transform: none; }
+.song-card:hover .sc-art { transform: translateY(-3px) rotate(-.4deg); box-shadow: 0 18px 30px oklch(.2 .02 60 / .22); }
+.sc-art { border-radius: var(--radius-cover); overflow: hidden; transition: transform .25s, box-shadow .25s; box-shadow: 0 2px 0 oklch(.2 .02 60 / .08); }
+.sc-play { background: var(--cream); color: var(--ink); opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; }
+.song-card:hover .sc-play, .song-card:focus-within .sc-play { opacity: 1; transform: none; }
+.sc-fav { left: auto; right: 12px; background: rgb(255 255 255 / .2); }
+.sc-body { padding: 14px 0 0; }
+.sc-title { font-family: var(--font-display); font-size: 21px; font-weight: 500; letter-spacing: -.01em; }
+.sc-foot { border-top-color: var(--line); }
+.song-table { background: transparent; border: 0; border-top: 2px solid var(--ink); border-radius: 0; }
+.sr-title b { font-family: var(--font-display); font-weight: 500; font-size: 17px; }
+
+/* song hub */
+.hub-hero { --hub-bg: linear-gradient(120deg, oklch(.88 .05 var(--h)), oklch(.94 .02 var(--h))); border: 0; padding: 40px; gap: 44px; grid-template-columns: 280px minmax(0, 1fr); }
+.hub-cover { width: 280px; height: 280px; box-shadow: 0 30px 50px oklch(.2 .03 var(--h) / .3); }
+.hub-artist { font-family: var(--font-display); font-style: italic; font-size: 24px; }
+.chord { background: transparent; border-color: var(--line-strong); border-radius: var(--radius); }
+.ch-dot { fill: var(--ink); } .ch-nut { fill: var(--ink); }
+.bars { border-left-color: var(--ink); }
+.ch { font-family: var(--font-display); font-weight: 600; font-style: italic; font-size: 1.35em; color: var(--accent-text); }
+.tab { background: transparent; border: 1px solid var(--line); color: var(--text); }
+.note { background: transparent; border-left: 3px solid var(--accent); border-radius: 0; font-family: var(--font-display); font-size: 16px; font-style: italic; }
+.note b { font-style: normal; font-family: var(--font-body); font-size: 14px; }
+.video { border-radius: var(--radius); }
+.video-card { border: 0; }
+
+/* mini player — tinta pirula */
+.mini { --text: var(--cream); --text-2: oklch(.8 .02 85); --text-3: oklch(.65 .02 85); --line: oklch(1 0 0 / .14); --surface-2: oklch(1 0 0 / .08); background: var(--ink); color: var(--cream); border: 0; border-radius: 99px; padding: 8px 10px 8px 8px; box-shadow: 0 16px 40px oklch(.2 .02 60 / .35); }
+.mini .cover { border-radius: 50%; }
+.mini .play-btn { background: var(--accent); color: #fff; }
+.mini-progress { left: 60px; right: 60px; bottom: 5px; border-radius: 2px; }
+.dock { padding-bottom: 20px; }
+
+/* próba mód — sötét színpad */
+.practice { --text: var(--cream); --text-2: oklch(.8 .02 85); --text-3: oklch(.62 .02 85); --line: oklch(1 0 0 / .12); --line-strong: oklch(1 0 0 / .24); --surface: oklch(1 0 0 / .05); --surface-2: oklch(1 0 0 / .07); --accent-text: oklch(.72 .17 38); --accent-soft: oklch(.6 .19 35 / .2); --pr-bg: var(--ink); --pr-bar-bg: oklch(.17 .012 60); }
+.practice .ch-dot, .practice .ch-nut { fill: var(--cream); }
+.practice .bars { border-left-color: var(--accent); }
+.practice .pr-title { font-size: 44px; font-style: italic; font-weight: 400; }
+.practice .chip { color: var(--text-2); }
+
+@container app (max-width: 760px) {
+  .sidebar { display: none; }
+  .topbar { height: 60px; border-bottom-width: 2px; padding: 0 12px 0 16px; }
+  .top-actions { margin-left: auto; }
+  .m-brand .logo-bg { fill: var(--ink); }
+  .m-brand .band-meta b { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+  .main { padding: 24px 16px 28px; }
+  .hero { padding: 20px; grid-template-areas: "art" "main" "list"; gap: 20px; }
+  .hero-art { margin: -20px -20px 0; height: 120px; }
+  .hero-cover .cover-type { font-size: 16px; left: 8px; right: 8px; bottom: 8px; }
+  .hero-cover .cover-artist { display: none; }
+  .dash-grid { gap: 32px; }
+  .song-grid { gap: 24px 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sc-title { font-size: 17px; }
+  .cover-fill .cover-type { font-size: 19px; left: 10px; right: 10px; bottom: 9px; }
+  .cover-fill .cover-artist { font-size: 9.5px; left: 10px; top: 9px; }
+  .sc-play { opacity: 1; transform: none; }
+  .hub-hero { grid-template-columns: 108px minmax(0, 1fr); padding: 18px; gap: 14px 16px; }
+  .hub-cover { width: 108px; height: 108px; }
+  .hub-cover .cover-type { font-size: 15px; left: 8px; bottom: 8px; }
+  .hub-cover .cover-artist { display: none; }
+  .hub-artist { font-size: 18px; }
+  .dock { padding: 0; background: var(--bg); border-top: 2px solid var(--ink); }
+  .mini { margin: 8px 8px 0; border-radius: 99px; }
+  .mini-progress { left: 56px; right: 24px; }
+  .ws-day { border-radius: 99px; padding: 10px 0 12px; }
+  .ws-day.today { background: var(--ink); border-color: var(--ink); color: var(--cream); }
+  .ws-day b { font-family: var(--font-display); font-weight: 500; font-size: 19px; }
+  .practice .pr-title { font-size: 28px; }
+}
+
+/* ===== Midnight Liner — Studio réteg a Liner szerkezet fölött ===== */
+.sidebar, .topbar { border-bottom: 1px solid var(--line-strong); background: oklch(.15 .007 60 / .92); }
+.sidebar { box-shadow: inset 0 -2px 0 oklch(.8 .145 72 / .0); }
+.card { border-top: 1px solid var(--line-strong); }
+.card-title::after { content: ""; display: block; width: 28px; height: 2px; margin-top: 10px; background: var(--accent); }
+.song-table { border-top: 1px solid var(--line-strong); }
+.logo-bg { fill: var(--accent); } .logo-mark { stroke: var(--on-accent); }
+.nav-item.active { box-shadow: inset 0 -2px 0 var(--accent); }
+.btn-primary { box-shadow: inset 0 1px 0 oklch(1 0 0 / .3), 0 6px 20px oklch(.8 .145 72 / .2); }
+.btn-ghost { border-color: var(--line-strong); }
+.btn-ghost:hover { background: var(--surface-2); color: var(--text); border-color: var(--ink); }
+.seg button.on { background: var(--ink); color: var(--cream); }
+.af-chip { color: var(--accent-text); }
+.ch, .page-title .count { color: var(--accent-text); }
+
+/* hero: lámpafényes sötét lemezborító (nem invertált) */
+.hero { --text: var(--ink); --text-2: oklch(.78 .02 78); --text-3: oklch(.6 .016 70); --line: oklch(.93 .02 82 / .12); --line-strong: oklch(.93 .02 82 / .24); --surface-2: oklch(1 0 0 / .05); --hero-ring: oklch(.18 .009 62); --accent-text: oklch(.84 .13 76);
+  background:
+    radial-gradient(90% 80% at 0% 100%, oklch(.8 .145 72 / .16), transparent 60%),
+    linear-gradient(180deg, oklch(.2 .01 62), oklch(.165 .008 60));
+  border: 1px solid oklch(.8 .145 72 / .2); box-shadow: 0 30px 60px oklch(0 0 0 / .4); }
+.hero-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 55%, oklch(.18 .009 62 / .85)); pointer-events: none; }
+.hero-art { position: relative; }
+.hero-date { color: var(--accent); }
+.hero .btn-ghost { border-color: var(--line-strong); color: var(--ink); }
+.hero .btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
+.hero .seg button.on { background: var(--ink); color: var(--cream); }
+.hero .status { --st-learning: oklch(.72 .15 35); --st-ok: oklch(.84 .13 92); --st-ready: oklch(.76 .12 152); }
+.hero .sl-n { color: var(--accent); }
+
+/* naptár */
+.cal-wd { background: transparent; }
+.cal-cell.selected { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.cal-cell.today .cal-d { box-shadow: 0 0 12px oklch(.8 .145 72 / .5); }
+.cal-cell.plan { background: repeating-linear-gradient(-45deg, transparent 0 6px, oklch(.8 .145 72 / .05) 6px 7px); }
+.cal-marks i { box-shadow: 0 0 6px oklch(.66 .13 var(--h) / .55); }
+
+/* dalok / hub */
+.song-card:hover .sc-art { box-shadow: 0 18px 36px oklch(0 0 0 / .55), 0 0 0 1px oklch(.8 .145 72 / .25); }
+.sc-play { background: var(--accent); color: var(--on-accent); }
+.hub-hero { --hub-bg: radial-gradient(90% 120% at 0% 100%, oklch(.5 .12 var(--h) / .38), transparent 60%), linear-gradient(180deg, oklch(.23 .02 var(--h)), oklch(.17 .008 60)); }
+.hub-cover { box-shadow: 0 30px 60px oklch(0 0 0 / .55); }
+.chord { border-color: var(--line-strong); background: oklch(.15 .007 60); }
+.ch-dot { fill: var(--accent); filter: drop-shadow(0 0 2px oklch(.8 .145 72 / .5)); }
+.ch-nut { fill: var(--ink); }
+.bars { border-left-color: var(--accent); }
+.tab { background: oklch(.14 .007 60); color: oklch(.82 .05 80); border-color: var(--line); }
+.note { color: var(--text); }
+
+/* mini player — sötét üveg pirula amber gombbal */
+.mini { --text: var(--ink); --text-2: oklch(.76 .018 75); --text-3: oklch(.58 .016 70); --line: oklch(.93 .02 82 / .14); --surface-2: oklch(1 0 0 / .07);
+  background: oklch(.22 .01 62 / .9); color: var(--ink); box-shadow: 0 16px 40px oklch(0 0 0 / .5), inset 0 0 0 1px oklch(.93 .02 82 / .1); }
+.mini .play-btn { background: var(--accent); color: var(--on-accent); }
+.dock { background: linear-gradient(transparent, var(--bg) 45%); padding-top: 24px; }
+
+/* próba mód — színpad */
+.practice { --text: var(--ink); --text-2: oklch(.78 .02 78); --text-3: oklch(.6 .016 70); --line: oklch(.93 .02 82 / .1); --line-strong: oklch(.93 .02 82 / .2); --surface: oklch(1 0 0 / .04); --surface-2: oklch(1 0 0 / .06); --accent-text: oklch(.84 .13 76); --accent-soft: oklch(.8 .145 72 / .14);
+  --pr-bg: radial-gradient(80% 60% at 70% 0%, oklch(.45 .1 var(--h) / .22), transparent 60%), oklch(.12 .006 60); --pr-bar-bg: oklch(.15 .007 60); }
+.practice .ch-dot { fill: var(--accent); } .practice .ch-nut { fill: var(--ink); }
+.pr-progress .cur { box-shadow: 0 0 10px var(--accent); }
+.practice[data-metro="true"] .beats i { --beat-c: var(--st-ready); }
+.practice[data-metro="true"] .beats i:nth-child(1) { --beat-c: var(--accent); }
+
+@container app (max-width: 760px) {
+  .topbar { border-bottom: 1px solid var(--line-strong); }
+  .dock { padding: 0; background: oklch(.14 .007 60); border-top: 1px solid var(--line-strong); }
+  .ws-day.today { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .ws-day { background: var(--surface); }
+}
+</style>
+<script src="shared/data.js"></script>
+<script src="shared/screens.js"></script>
+<script src="shared/frame.js"></script>
+</head>
+<body></body>
+</html>

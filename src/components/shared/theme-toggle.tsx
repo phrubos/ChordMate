@@ -1,39 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const STORAGE_KEY = 'chordmate-theme';
+
+function subscribe(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  return () => observer.disconnect();
+}
+
+const getIsDark = () => document.documentElement.classList.contains('dark');
+
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(true);
+  const isDark = useSyncExternalStore(subscribe, getIsDark, () => true);
 
   useEffect(() => {
-    const saved = localStorage.getItem('chordmate-theme');
-    if (saved === 'light') {
-      document.documentElement.classList.remove('dark');
-      setIsDark(false);
-    }
+    if (localStorage.getItem(STORAGE_KEY) === 'light') document.documentElement.classList.remove('dark');
   }, []);
 
   function toggle() {
     const next = !isDark;
-    setIsDark(next);
-    if (next) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('chordmate-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('chordmate-theme', 'light');
-    }
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem(STORAGE_KEY, next ? 'dark' : 'light');
   }
 
+  const label = isDark ? 'Világos mód' : 'Sötét mód';
   return (
     <Button
       variant="ghost"
-      size="sm"
-      className="size-8 p-0 text-muted-foreground"
+      size="icon"
+      className="text-muted-foreground hover:text-foreground"
       onClick={toggle}
-      title={isDark ? 'Világos mód' : 'Sötét mód'}
+      title={label}
+      aria-label={label}
     >
       {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </Button>

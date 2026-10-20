@@ -1,50 +1,43 @@
-import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
 import { LoginForm } from '@/components/auth/login-form';
-import { LoginPlayer } from '@/components/auth/remotion/login-player';
+import { CoverArt } from '@/components/design/cover-art';
+
+export const metadata = { title: 'Bejelentkezés — ChordMate' };
+
+const COVERS = [
+  { title: 'Most múlik pontosan', artist: 'Kispál és a Borz', tilt: '-rotate-3' },
+  { title: 'Wish You Were Here', artist: 'Pink Floyd', tilt: 'rotate-2 translate-y-6' },
+  { title: 'Gyöngyhajú lány', artist: 'Omega', tilt: 'rotate-1 -translate-y-2' },
+  { title: 'Hotel California', artist: 'Eagles', tilt: '-rotate-2 translate-y-4' },
+];
 
 export default async function LoginPage() {
   try {
     const session = await auth();
     if (session) redirect('/dashboard');
-  } catch {
-    // Auth not configured yet — show login page anyway
+  } catch (e) {
+    // redirect() throws on purpose; only swallow "auth not configured" errors.
+    if (e && typeof e === 'object' && 'digest' in e) throw e;
   }
 
   return (
-    <div className="login-panel relative flex min-h-screen flex-col xl:flex-row overflow-hidden">
-      {/* Global Background Light Effect (Top Left) */}
-      <div className="hidden xl:block pointer-events-none absolute inset-0 z-0">
-        <div className="absolute -left-[10%] -top-[10%] size-[600px] rounded-full bg-primary/10 blur-[150px] animate-float opacity-50 [animation-delay:1.5s]" />
-      </div>
-
-      {/* Left: Remotion Animation Panel */}
-      <div className="hidden xl:flex xl:w-[55%] relative z-10 items-center justify-center">
-        <LoginPlayer />
-        {/* Subtle brand watermark */}
-        <div className="absolute bottom-6 left-6 z-10 flex items-center gap-2 opacity-30">
-          <span className="text-xs font-medium tracking-widest text-amber-500/60 uppercase">
-            ChordMate
-          </span>
+    <main className="grid min-h-dvh lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <section aria-hidden className="relative hidden flex-col justify-center gap-14 overflow-hidden border-r border-border px-16 lg:flex">
+        <div className="grid w-full max-w-[520px] grid-cols-2 gap-6">
+          {COVERS.map((c) => (
+            <div key={c.title} className={`aspect-square shadow-[0_24px_48px_oklch(0_0_0/.45)] ${c.tilt}`}>
+              <CoverArt title={c.title} artist={c.artist} size="fill" showType />
+            </div>
+          ))}
         </div>
-      </div>
-
-      {/* Vertical accent divider removed for seamless blend */}
-
-      {/* Right: Login Panel */}
-      <div className="relative flex flex-1 items-center justify-center min-h-screen xl:min-h-0">
-        {/* Background orbs (visible on both mobile and desktop) */}
-        <div className="pointer-events-none absolute inset-0 z-0">
-          <div className="absolute -right-20 -top-20 size-80 rounded-full bg-primary/8 blur-[100px] animate-float" />
-          <div className="absolute -bottom-20 -left-20 size-64 rounded-full bg-accent/5 blur-[80px] animate-float [animation-delay:3s]" />
-          <div className="absolute left-1/2 top-1/3 size-48 -translate-x-1/2 rounded-full bg-primary/3 blur-[60px]" />
-        </div>
-
-        {/* Removed Mobile: mini guitar icon header */}
-
-
+        <p className="display-soft max-w-[520px] font-display text-[44px] leading-[1.05] font-medium tracking-[-0.02em]">
+          Minden próba egy <em className="font-normal text-primary-text">új lemezoldal</em>.
+        </p>
+      </section>
+      <section className="flex items-center justify-center px-6 py-16">
         <LoginForm />
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
