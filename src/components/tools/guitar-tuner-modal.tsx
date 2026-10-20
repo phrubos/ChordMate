@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion } from 'motion/react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Eyebrow } from '@/components/design/eyebrow';
+import { cn } from '@/lib/utils';
 import { Mic, MicOff } from 'lucide-react';
 
 const GUITAR_STRINGS = [
@@ -93,17 +94,17 @@ function TuningLEDs({ cents, active }: { cents: number; active: boolean }) {
 
         let color = 'bg-muted-foreground/15';
         if (isLit && active) {
-          if (absDot <= 1) color = 'bg-emerald-400 shadow-[0_0_8px_theme(colors.emerald.400/60%)]';
-          else if (absDot <= 3) color = 'bg-lime-400 shadow-[0_0_6px_theme(colors.lime.400/50%)]';
-          else if (absDot <= 5) color = 'bg-yellow-400 shadow-[0_0_6px_theme(colors.yellow.400/50%)]';
-          else if (absDot <= 7) color = 'bg-orange-400 shadow-[0_0_6px_theme(colors.orange.400/50%)]';
-          else color = 'bg-red-400 shadow-[0_0_6px_theme(colors.red.400/50%)]';
+          if (absDot <= 1) color = 'bg-done';
+          else if (absDot <= 3) color = 'bg-status-ready';
+          else if (absDot <= 5) color = 'bg-status-ok';
+          else if (absDot <= 7) color = 'bg-status-learning';
+          else color = 'bg-destructive';
         } else if (isDimLit && active) {
-          if (absDot <= 1) color = 'bg-emerald-400/40';
-          else if (absDot <= 3) color = 'bg-lime-400/30';
-          else if (absDot <= 5) color = 'bg-yellow-400/30';
-          else if (absDot <= 7) color = 'bg-orange-400/30';
-          else color = 'bg-red-400/30';
+          if (absDot <= 1) color = 'bg-done/40';
+          else if (absDot <= 3) color = 'bg-status-ready/30';
+          else if (absDot <= 5) color = 'bg-status-ok/30';
+          else if (absDot <= 7) color = 'bg-status-learning/30';
+          else color = 'bg-destructive/30';
         }
 
         return (
@@ -131,28 +132,19 @@ function GuitarStringsViz({ activeString }: { activeString: number | null }) {
             {/* Tuning peg */}
             <circle
               cx={x} cy={8} r={5}
-              fill={isActive ? 'oklch(0.78 0.155 65)' : 'oklch(0.4 0.01 260)'}
-              stroke={isActive ? 'oklch(0.78 0.155 65 / 50%)' : 'oklch(0.5 0.01 260)'}
+              fill={isActive ? 'var(--primary)' : 'var(--border-strong)'}
+              stroke={isActive ? 'var(--primary)' : 'var(--border-strong)'}
               strokeWidth={1}
-              className="transition-all duration-300"
+              className="transition-colors duration-(--dur-fade)"
             />
             {/* String */}
             <line
               x1={x} y1={14} x2={x} y2={50}
-              stroke={isActive ? 'oklch(0.78 0.155 65)' : 'oklch(0.55 0.01 260)'}
+              stroke={isActive ? 'var(--primary)' : 'var(--muted-foreground)'}
               strokeWidth={thicknesses[i]}
               strokeLinecap="round"
-              className="transition-all duration-300"
+              className="transition-colors duration-(--dur-fade)"
             />
-            {isActive && (
-              <line
-                x1={x} y1={14} x2={x} y2={50}
-                stroke="oklch(0.78 0.155 65 / 30%)"
-                strokeWidth={thicknesses[i] + 4}
-                strokeLinecap="round"
-                className="animate-glow-pulse"
-              />
-            )}
           </g>
         );
       })}
@@ -191,6 +183,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
     setIsListening(false);
   }, []);
 
+  const detectRef = useRef<() => void>(() => {});
   const detect = useCallback(() => {
     if (!analyserRef.current || !bufferRef.current || !audioCtxRef.current) return;
     analyserRef.current.getFloatTimeDomainData(bufferRef.current);
@@ -205,7 +198,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
         if (gs) {
           const ratio = freq / gs.freq;
           if (ratio < 0.85 || ratio > 1.18) {
-            rafRef.current = requestAnimationFrame(detect);
+            rafRef.current = requestAnimationFrame(() => detectRef.current());
             return;
           }
         }
@@ -220,8 +213,11 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
       setMatchedString(matched?.string ?? null);
     }
 
-    rafRef.current = requestAnimationFrame(detect);
+    rafRef.current = requestAnimationFrame(() => detectRef.current());
   }, [selectedString]);
+  useEffect(() => {
+    detectRef.current = detect;
+  }, [detect]);
 
   const startListening = useCallback(async () => {
     try {
@@ -251,36 +247,22 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
     }
   }, [detect]);
 
-  // Cleanup on close
+  // Stop listening when the dialog closes (cleanup of the open phase) or unmounts.
+  // The rAF loop reads detectRef, so a string change needs no restart.
   useEffect(() => {
-    if (!open) stopListening();
+    if (!open) return;
+    return () => stopListening();
   }, [open, stopListening]);
-
-  // Restart detection if selectedString changes while listening
-  useEffect(() => {
-    if (isListening && analyserRef.current) {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(detect);
-    }
-  }, [selectedString, isListening, detect]);
 
   const absCents = Math.abs(cents);
   const inTune = detectedNote !== null && absCents <= 5;
   const noteColor = !detectedNote
     ? 'text-muted-foreground/40'
     : inTune
-    ? 'text-emerald-400'
+    ? 'text-done'
     : absCents <= 15
-    ? 'text-yellow-400'
-    : 'text-orange-400';
-
-  const glowColor = !detectedNote
-    ? 'transparent'
-    : inTune
-    ? 'oklch(0.65 0.18 155 / 15%)'
-    : absCents <= 15
-    ? 'oklch(0.8 0.18 90 / 10%)'
-    : 'oklch(0.7 0.18 45 / 10%)';
+    ? 'text-status-ok'
+    : 'text-status-learning';
 
   const statusText = !detectedNote
     ? 'Pengesd meg egy húrt'
@@ -297,39 +279,33 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
 
         <div className="flex flex-col items-center px-6 pt-6 pb-5 gap-5">
           {/* Header */}
-          <div className="text-center">
-            <h2 className="text-lg font-bold tracking-tight">Hangoló</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Standard hangolás (EADGBe)</p>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <Eyebrow>Standard hangolás · EADGBe</Eyebrow>
+            <h2 className="display-soft font-display text-[26px] leading-tight font-medium">Hangoló</h2>
           </div>
 
           {/* Note display circle */}
           <div className="relative">
-            <motion.div
-              className="flex size-32 items-center justify-center rounded-full border-2 transition-colors duration-500"
-              style={{
-                borderColor: detectedNote ? (inTune ? 'oklch(0.65 0.18 155 / 50%)' : 'oklch(0.78 0.155 65 / 30%)') : 'oklch(0.5 0.01 260 / 30%)',
-                background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
-              }}
-              animate={inTune ? { scale: [1, 1.03, 1] } : { scale: 1 }}
-              transition={inTune ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' } : {}}
+            <div
+              className={cn(
+                'flex size-32 items-center justify-center rounded-full border-2 transition-colors duration-(--dur-fade)',
+                !detectedNote ? 'border-border-strong' : inTune ? 'border-done bg-done/10' : 'border-primary/40'
+              )}
             >
               <div className="text-center">
-                <motion.p
-                  key={detectedNote ?? 'empty'}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={`text-4xl font-black tracking-tight transition-colors duration-300 ${noteColor}`}
+                <p
+                  className={`text-4xl font-black tracking-tight transition-colors duration-(--dur-fade) ${noteColor}`}
                 >
                   {detectedNote ?? '—'}
                   {detectedOctave !== null && (
                     <span className="text-lg font-semibold opacity-60">{detectedOctave}</span>
                   )}
-                </motion.p>
+                </p>
                 {detectedFreq !== null && (
                   <p className="text-xs text-muted-foreground font-mono mt-0.5">{detectedFreq} Hz</p>
                 )}
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* Cents offset text */}
@@ -339,7 +315,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
                 {cents > 0 ? '+' : ''}{cents} cent
               </p>
             )}
-            <p className={`text-xs mt-1 ${inTune ? 'text-emerald-400 font-semibold' : 'text-muted-foreground'}`}>
+            <p className={`text-xs mt-1 ${inTune ? 'text-done font-semibold' : 'text-muted-foreground'}`}>
               {isListening ? statusText : 'Kattints a mikrofonra a kezdéshez'}
             </p>
           </div>
@@ -391,7 +367,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
             size="lg"
             className={`w-full h-12 rounded-xl gap-2 text-sm font-semibold transition-all ${
               isListening
-                ? 'bg-destructive/90 hover:bg-destructive text-white'
+                ? 'bg-destructive/90 hover:bg-destructive text-background'
                 : 'bg-primary hover:bg-primary/90'
             }`}
             onClick={isListening ? stopListening : startListening}

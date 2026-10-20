@@ -20,7 +20,7 @@ function SheetClose(props: DialogPrimitive.Close.Props) {
 function SheetContent({ className, children, ...props }: DialogPrimitive.Popup.Props) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Backdrop className="fixed inset-0 z-[70] bg-black/60 duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+      <DialogPrimitive.Backdrop className="fixed inset-0 z-[70] bg-scrim/60 duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
       <DialogPrimitive.Popup
         data-slot="sheet-content"
         className={cn(

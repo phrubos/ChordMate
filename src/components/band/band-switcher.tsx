@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { getUserBands, getUserBandId, setActiveBand } from '@/actions/bands';
 import { toast } from 'sonner';
 
@@ -68,8 +69,8 @@ export function BandSwitcher() {
       toast.success(`Váltás: ${bands.find(b => b.id === bandId)?.name}`);
       setMobileOpen(false);
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     }
   }
 
@@ -93,7 +94,7 @@ export function BandSwitcher() {
       </div>
       {/* Band name */}
       <div className="hidden sm:flex flex-col items-start min-w-0">
-        <span className="text-[11px] leading-none text-muted-foreground/50 font-medium">Banda</span>
+        <span className="text-xs leading-none text-muted-foreground/50 font-medium">Banda</span>
         <span className="text-xs font-semibold truncate max-w-[100px]">
           {activeBand?.name ?? 'Nincs banda'}
         </span>
@@ -249,35 +250,13 @@ export function BandSwitcher() {
         </Button>
       </div>
 
-      {/* Mobile modal — portalled to body */}
-      {mobileOpen && createPortal(
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center md:hidden animate-in fade-in-0 duration-150"
-          onClick={() => setMobileOpen(false)}
-        >
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-          <div
-            className="relative z-10 w-[90%] max-w-sm max-h-[80vh] overflow-y-auto rounded-2xl bg-background border border-border/50 shadow-2xl animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border/30 bg-background/95 backdrop-blur-sm rounded-t-2xl -mt-px">
-              <span className="text-sm font-semibold">Bandáid</span>
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="flex size-8 items-center justify-center rounded-full hover:bg-secondary/50 transition-colors cursor-pointer"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-            {/* Band list */}
-            <div className="p-2">
-              {bandListItems(() => setMobileOpen(false))}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Mobile: bottom sheet (A2) */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent>
+          <SheetTitle>Bandáid</SheetTitle>
+          <div className="-mx-2">{bandListItems(() => setMobileOpen(false))}</div>
+        </SheetContent>
+      </Sheet>
 
       {/* Lightbox for band logo — portalled to body */}
       {lightboxSrc && createPortal(
@@ -287,6 +266,8 @@ export function BandSwitcher() {
         >
           <div className="relative flex items-center justify-center animate-in zoom-in-90 duration-200">
             <button
+              type="button"
+              aria-label="Bezárás"
               onClick={() => { setLightboxSrc(null); if (returnToModal) { setMobileOpen(true); setReturnToModal(false); } }}
               className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-all shadow-md cursor-pointer"
             >

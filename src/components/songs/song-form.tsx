@@ -571,11 +571,11 @@ export function SongForm({ song }: SongFormProps) {
                             unoptimized
                           />
                         )}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <Play className="size-5 text-white fill-white" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-scrim/30">
+                          <Play className="size-5 fill-current text-on-media" />
                         </div>
                         {result.duration > 0 && (
-                          <span className="absolute bottom-0.5 right-0.5 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white tabular-nums">
+                          <span className="absolute bottom-0.5 right-0.5 rounded bg-scrim/80 px-1 py-0.5 text-xs font-medium text-on-media tabular-nums">
                             {formatDuration(result.duration)}
                           </span>
                         )}

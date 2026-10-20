@@ -99,7 +99,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           aria-hidden={!state.isExpanded}
           className={cn(
             state.isExpanded
-              ? 'fixed inset-0 z-[80] flex items-end justify-center bg-black/70 animate-in fade-in-0 duration-200 md:items-center'
+              ? 'fixed inset-0 z-[80] flex items-end justify-center bg-scrim/70 animate-in fade-in-0 duration-200 md:items-center'
               : 'pointer-events-none fixed top-0 left-0 size-px overflow-hidden opacity-0'
           )}
           onClick={(e) => e.target === e.currentTarget && dispatch({ type: 'expand', value: false })}
@@ -125,7 +125,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 </Button>
               </div>
             )}
-            <div className={cn('relative overflow-hidden rounded-lg bg-black', state.isExpanded ? 'aspect-video w-full' : 'size-px')}>
+            <div className={cn('relative overflow-hidden rounded-lg bg-scrim', state.isExpanded ? 'aspect-video w-full' : 'size-px')}>
               <YouTube
                 videoId={videoId}
                 opts={{ width: '100%', height: '100%', playerVars: { autoplay: 1, modestbranding: 1, playsinline: 1 } }}

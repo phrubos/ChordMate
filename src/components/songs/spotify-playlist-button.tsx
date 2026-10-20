@@ -21,7 +21,9 @@ import {
 } from '@/actions/spotify';
 
 // Spotify brand color
+/** Spotify brand colors (brand exception to the token rule). */
 const SPOTIFY_GREEN = '#1DB954';
+const SPOTIFY_INK = '#000';
 
 function SpotifyIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
@@ -194,7 +196,7 @@ export function SpotifyPlaylistButton({ bandName }: SpotifyPlaylistButtonProps) 
                 </div>
                 <Button
                   className="w-full gap-2"
-                  style={{ backgroundColor: SPOTIFY_GREEN, color: '#000' }}
+                  style={{ backgroundColor: SPOTIFY_GREEN, color: SPOTIFY_INK }}
                   onClick={handleConnect}
                 >
                   <SpotifyIcon className="size-4" />
@@ -243,7 +245,7 @@ export function SpotifyPlaylistButton({ bandName }: SpotifyPlaylistButtonProps) 
                   </Button>
                   <Button
                     className="gap-2"
-                    style={{ backgroundColor: SPOTIFY_GREEN, color: '#000' }}
+                    style={{ backgroundColor: SPOTIFY_GREEN, color: SPOTIFY_INK }}
                     onClick={handleCreatePlaylist}
                     disabled={isPending || !playlistName.trim()}
                   >
@@ -282,12 +284,12 @@ export function SpotifyPlaylistButton({ bandName }: SpotifyPlaylistButtonProps) 
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Check className="size-5 text-green-500" />
+                  <Check className="size-5 text-done" />
                   Playlist elkészült!
                 </DialogTitle>
               </DialogHeader>
               <div className="flex flex-col gap-4 mt-2">
-                <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4 text-center">
+                <div className="rounded-lg bg-done/10 border border-done/20 p-4 text-center">
                   <p className="text-2xl font-bold" style={{ color: SPOTIFY_GREEN }}>
                     {result.tracksFound}/{result.tracksTotal}
                   </p>
@@ -316,8 +318,8 @@ export function SpotifyPlaylistButton({ bandName }: SpotifyPlaylistButtonProps) 
                   href={result.playlistUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-black transition-colors hover:opacity-90"
-                  style={{ backgroundColor: SPOTIFY_GREEN }}
+                  className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:opacity-90"
+                  style={{ backgroundColor: SPOTIFY_GREEN, color: SPOTIFY_INK }}
                 >
                   <SpotifyIcon className="size-5" />
                   Megnyitás a Spotify-ban

@@ -331,7 +331,7 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries }: D
           <AlertDialogFooter>
             <AlertDialogCancel>Mégse</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-background hover:bg-destructive/90"
               onClick={() =>
                 startTransition(async () => {
                   try {

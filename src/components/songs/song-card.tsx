@@ -24,7 +24,7 @@ export const SongCard = memo(function SongCard({ song, onPlay }: SongCardProps) 
           <CoverArt title={song.title} artist={song.artist} imageUrl={song.imageUrl} size="fill" showType />
         </Link>
         {song.isFavorite && (
-          <span className="absolute top-2.5 right-2.5 grid size-7 place-items-center rounded-full bg-black/35 text-white backdrop-blur-sm" title="Kedvenc">
+          <span className="absolute top-2.5 right-2.5 grid size-7 place-items-center rounded-full bg-scrim/35 text-on-media backdrop-blur-sm" title="Kedvenc">
             <Heart className="size-3.5 fill-current" aria-label="Kedvenc" />
           </span>
         )}

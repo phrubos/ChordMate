@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'motion/react';
 import { Users, Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield, Camera, Image as ImageIcon, Eye, Plus, Ticket, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -11,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { SectionHeader } from '@/components/design/section-header';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -64,8 +64,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
       setIsEditingName(false);
       toast.success('Banda neve frissítve');
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     } finally {
       setLoading(false);
     }
@@ -77,8 +77,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
       const newCode = await regenerateInviteCode();
       setInviteCode(newCode);
       toast.success('Új meghívó kód generálva');
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     } finally {
       setLoading(false);
     }
@@ -97,8 +97,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
       toast.success('Tag eltávolítva');
       setConfirmRemove(null);
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     } finally {
       setLoading(false);
     }
@@ -111,8 +111,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
       toast.success('Kiléptél a bandából');
       router.push('/dashboard');
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     } finally {
       setLoading(false);
     }
@@ -127,8 +127,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
       setAddMode('none');
       setNewBandName('');
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     } finally {
       setAddLoading(false);
     }
@@ -143,8 +143,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
       setAddMode('none');
       setJoinCode('');
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt');
     } finally {
       setAddLoading(false);
     }
@@ -158,8 +158,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
       const base64 = await compressImageBase64(file, { maxWidth: 800, maxHeight: 800 });
       await updateBandImages(band.id, base64, undefined);
       toast.success('Logó frissítve');
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt a logó feltöltésekor');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a logó feltöltésekor');
     } finally {
       setLoading(false);
     }
@@ -173,8 +173,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
       const base64 = await compressImageBase64(file, { maxWidth: 1920, maxHeight: 1080 });
       await updateBandImages(band.id, undefined, base64);
       toast.success('Háttérkép frissítve');
-    } catch (err: any) {
-      toast.error(err?.message ?? 'Hiba történt a háttérkép feltöltésekor');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Hiba történt a háttérkép feltöltésekor');
     } finally {
       setLoading(false);
     }
@@ -183,10 +183,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
   return (
     <div className="mx-auto max-w-lg">
       {/* Band Hero Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative mb-8 overflow-hidden rounded-2xl border border-border/50 bg-card/30 shadow-lg"
+      <div
+        className="relative mb-8 overflow-hidden rounded-[6px] border border-border-strong bg-card"
       >
         <div className="relative h-48 w-full bg-background">
           {band.backgroundData ? (
@@ -203,7 +201,7 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
           {(isAdmin || band.backgroundData) && (
             <div className="absolute right-4 top-4">
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex cursor-pointer items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-black/80">
+                <DropdownMenuTrigger className="flex cursor-pointer items-center gap-2 rounded-full bg-scrim/60 px-3 py-1.5 text-xs font-medium text-on-media backdrop-blur-md transition-colors hover:bg-black/80">
                   <ImageIcon className="size-4" />
                   <span className="hidden sm:inline">Háttér</span>
                 </DropdownMenuTrigger>
@@ -243,9 +241,9 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
                   </Avatar>
                   
                   {(isAdmin || band.logoData) && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
-                      <Camera className="mb-1 size-6 text-white" />
-                      <span className="text-[10px] font-medium text-white">{band.logoData ? 'Kezelés' : 'Új logó'}</span>
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-scrim/60 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                      <Camera className="mb-1 size-6 text-on-media" />
+                      <span className="text-xs font-medium text-on-media">{band.logoData ? 'Kezelés' : 'Új logó'}</span>
                     </div>
                   )}
                 </DropdownMenuTrigger>
@@ -295,7 +293,7 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
               </div>
             ) : (
               <div className="flex items-center gap-3 mt-2">
-                <h1 className="text-2xl font-bold tracking-tight">{band.name}</h1>
+                <h1 className="display-soft font-display text-[36px] leading-tight font-medium tracking-[-0.02em]">{band.name}</h1>
                 {isAdmin && (
                   <Button variant="outline" size="icon" className="size-8 rounded-full shadow-sm" onClick={() => setIsEditingName(true)}>
                     <Pencil className="size-3.5" />
@@ -308,18 +306,15 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       <div className="mt-2 flex flex-col gap-5">
 
         {/* Invite code */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="rounded-xl border border-border/50 bg-card/50 p-5"
+        <div
+          className="flex flex-col"
         >
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">Meghívó kód</p>
+          <SectionHeader title="Meghívó kód" className="mb-4" />
           <div className="flex items-center gap-2">
             <div className="flex-1 flex items-center justify-center rounded-lg bg-background/60 border border-border/50 py-2.5 px-4">
               <span className="font-mono text-lg font-bold tracking-[0.25em] text-primary">{inviteCode}</span>
@@ -333,19 +328,16 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
               </Button>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground/50 mt-2 text-center">
+          <p className="text-xs text-muted-foreground/50 mt-2 text-center">
             Oszd meg ezt a kódot, hogy mások is csatlakozhassanak
           </p>
-        </motion.div>
+        </div>
 
         {/* Members */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-xl border border-border/50 bg-card/50 p-5"
+        <div
+          className="flex flex-col"
         >
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">Tagok</p>
+          <SectionHeader title="Tagok" className="mb-4" />
           <div className="flex flex-col gap-2">
             {band.members
               .sort((a, b) => (a.role === 'admin' ? -1 : 1))
@@ -369,18 +361,18 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <TruncatedText as="p" className="text-sm font-medium">{member.user.name ?? 'Ismeretlen'}</TruncatedText>
-                        {isMe && <span className="text-[10px] text-muted-foreground/50">(te)</span>}
+                        {isMe && <span className="text-xs text-muted-foreground/50">(te)</span>}
                       </div>
                       <TruncatedText as="p" className="text-xs text-muted-foreground/60">{member.user.email ?? ''}</TruncatedText>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {member.role === 'admin' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                           <Crown className="size-3" />
                           Admin
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
                           <Shield className="size-3" />
                           Tag
                         </span>
@@ -400,16 +392,13 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
                 );
               })}
           </div>
-        </motion.div>
+        </div>
 
         {/* Add new band / Join */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="rounded-xl border border-border/50 bg-card/50 p-5"
+        <div
+          className="flex flex-col"
         >
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">Új banda</p>
+          <SectionHeader title="Új banda" className="mb-4" />
 
           {addMode === 'none' && (
             <div className="flex gap-2">
@@ -482,13 +471,10 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
               </div>
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Leave band */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+        <div
         >
           <Button
             variant="outline"
@@ -498,7 +484,7 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
             <LogOut className="size-4" />
             {band.members.length === 1 ? 'Banda törlése' : 'Kilépés a bandából'}
           </Button>
-        </motion.div>
+        </div>
       </div>
 
       {/* Confirm leave dialog */}

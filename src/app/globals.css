@@ -33,6 +33,9 @@
   --color-status-ready: var(--status-ready);
   --color-done: var(--done);
   --color-fav: var(--fav);
+  /* Theme-independent: dark layer under modals / over media, and text on media. */
+  --color-scrim: oklch(0 0 0);
+  --color-on-media: oklch(1 0 0);
 
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);

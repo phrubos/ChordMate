@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -14,8 +13,9 @@ import {
   AlertDialogTitle as AlertTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Eyebrow } from '@/components/design/eyebrow';
 import { Input } from '@/components/ui/input';
-import { Mic, Square, Play, Pause, Trash2, Pencil, Check, X, Save } from 'lucide-react';
+import { Mic, Square, Play, Pause, Trash2, Pencil, Check, X, Save, Loader2 } from 'lucide-react';
 import {
   saveRecording as dbSave,
   getRecordingsByDate,
@@ -25,7 +25,6 @@ import {
 } from '@/actions/recordings';
 import type { RecordingMeta } from '@/types';
 import { toast } from 'sonner';
-import { TruncatedText } from '@/components/shared/truncated-text';
 import { ExpandableText } from '@/components/shared/expandable-text';
 
 function blobToBase64(blob: Blob): Promise<string> {
@@ -47,361 +46,23 @@ function formatTime(seconds: number): string {
 }
 
 // ─── SVG Turntable ─────────────────────────────────────────────
-function TurntableSVG({ isRecording }: { isRecording: boolean }) {
+/** Static record disc (no decorative motion, spec §6); recording shows a REC chip. */
+function RecorderDisc({ recording, label }: { recording: boolean; label: string }) {
   return (
-    <div className="relative w-full max-w-[260px] mx-auto select-none">
-      {/* Ambient glow when recording */}
-      {isRecording && (
-        <div className="absolute inset-0 -m-4 rounded-3xl bg-red-500/5 blur-xl animate-pulse pointer-events-none" />
-      )}
-      <svg viewBox="0 0 260 200" className="w-full drop-shadow-2xl">
-        <defs>
-          <linearGradient id="tt-base" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#1e1b2e" />
-            <stop offset="100%" stopColor="#12101c" />
-          </linearGradient>
-          <linearGradient id="tt-base-edge" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2a2540" />
-            <stop offset="100%" stopColor="#1a1628" />
-          </linearGradient>
-          <radialGradient id="tt-platter" cx="50%" cy="50%">
-            <stop offset="0%" stopColor="#222030" />
-            <stop offset="100%" stopColor="#18162a" />
-          </radialGradient>
-          <radialGradient id="tt-vinyl" cx="50%" cy="48%">
-            <stop offset="0%" stopColor="#1a1a2e" />
-            <stop offset="40%" stopColor="#0f0f1a" />
-            <stop offset="100%" stopColor="#080810" />
-          </radialGradient>
-          <radialGradient id="tt-label" cx="40%" cy="35%">
-            <stop offset="0%" stopColor="#f5c842" />
-            <stop offset="100%" stopColor="#d4960a" />
-          </radialGradient>
-          <linearGradient id="tt-arm" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#a0a0b0" />
-            <stop offset="50%" stopColor="#d8d8e8" />
-            <stop offset="100%" stopColor="#909098" />
-          </linearGradient>
-          <filter id="tt-shadow">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.4" />
-          </filter>
-          <filter id="tt-glow-red">
-            <feGaussianBlur stdDeviation="2.5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* Base / chassis */}
-        <rect x="8" y="12" width="244" height="176" rx="14" fill="url(#tt-base-edge)" />
-        <rect x="10" y="14" width="240" height="172" rx="12" fill="url(#tt-base)" />
-
-        {/* Subtle wood grain texture lines */}
-        {[0, 1, 2, 3, 4].map((i) => (
-          <line key={i} x1="20" y1={40 + i * 35} x2="240" y2={38 + i * 35} stroke="#ffffff" strokeWidth="0.3" opacity="0.02" />
+    <div className="flex flex-col items-center gap-3 py-2" aria-hidden>
+      <div className="relative grid size-36 place-items-center rounded-full bg-foreground/[0.06] shadow-[inset_0_0_0_1px_var(--border-strong)]">
+        {[0.82, 0.66, 0.5].map((f) => (
+          <span key={f} className="absolute rounded-full shadow-[inset_0_0_0_1px_var(--border)]" style={{ width: `${f * 100}%`, height: `${f * 100}%` }} />
         ))}
-
-        {/* Platter */}
-        <circle cx="110" cy="100" r="72" fill="url(#tt-platter)" />
-        <circle cx="110" cy="100" r="71" fill="none" stroke="#2a2845" strokeWidth="1" />
-
-        {/* Vinyl record */}
-        <g style={{ transformOrigin: '110px 100px' }} className={isRecording ? 'animate-[spin_2s_linear_infinite]' : 'transition-transform duration-1000'}>
-          <circle cx="110" cy="100" r="66" fill="url(#tt-vinyl)" />
-
-          {/* Groove rings — realistic density */}
-          {Array.from({ length: 22 }, (_, i) => 18 + i * 2.2).map((r, i) => (
-            <circle
-              key={i}
-              cx="110"
-              cy="100"
-              r={r}
-              fill="none"
-              stroke={i % 3 === 0 ? '#1c1c34' : '#16162a'}
-              strokeWidth={i % 5 === 0 ? '0.6' : '0.3'}
-              opacity={0.5 + (i % 3) * 0.15}
-            />
-          ))}
-
-          {/* Vinyl highlight / light reflection */}
-          <ellipse cx="88" cy="78" rx="30" ry="14" fill="white" opacity="0.025" transform="rotate(-35 88 78)" />
-          <ellipse cx="135" cy="120" rx="20" ry="8" fill="white" opacity="0.015" transform="rotate(30 135 120)" />
-
-          {/* Label */}
-          <circle cx="110" cy="100" r="16" fill="url(#tt-label)" />
-          <circle cx="110" cy="100" r="15.5" fill="none" stroke="#b8880a" strokeWidth="0.5" opacity="0.5" />
-          {/* Label details */}
-          <circle cx="110" cy="100" r="3" fill="#2a1f08" />
-          <circle cx="110" cy="100" r="1.5" fill="#444" />
-          <text x="110" y="94" textAnchor="middle" fontSize="4.5" fill="#2a1f08" fontWeight="bold" opacity="0.7" fontFamily="serif">REC</text>
-          <text x="110" y="100" textAnchor="middle" fontSize="3" fill="#2a1f08" opacity="0.5">ChordMate</text>
-          {/* Decorative ring on label */}
-          <circle cx="110" cy="100" r="11" fill="none" stroke="#c8a020" strokeWidth="0.3" opacity="0.4" />
-        </g>
-
-        {/* Platter rim highlight */}
-        <circle cx="110" cy="100" r="68" fill="none" stroke="white" strokeWidth="0.3" opacity="0.06" />
-
-        {/* Tonearm pivot base — top-right (back of turntable) */}
-        <circle cx="210" cy="40" r="9" fill="#1a1830" stroke="#2a2845" strokeWidth="1" />
-        <circle cx="210" cy="40" r="5.5" fill="#25223a" />
-        <circle cx="210" cy="40" r="2" fill="url(#tt-arm)" />
-
-        {/* Tonearm — pivots from top-right, arm extends down-left toward record */}
-        <g
-          style={{
-            transformOrigin: '210px 40px',
-            transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-          transform={isRecording ? 'rotate(0)' : 'rotate(-30)'}
-          filter="url(#tt-shadow)"
-        >
-          {/* Counterweight — behind pivot, opposite direction of arm */}
-          <ellipse cx="220" cy="30" rx="4.5" ry="3" fill="#2a2845" stroke="#3a3860" strokeWidth="0.5" />
-          {/* Main arm tube — extends down-left toward record */}
-          <line x1="210" y1="40" x2="172" y2="88" stroke="url(#tt-arm)" strokeWidth="2.5" strokeLinecap="round" />
-          {/* Headshell — angled toward vinyl surface */}
-          <line x1="172" y1="88" x2="165" y2="97" stroke="#c0c0d0" strokeWidth="2" strokeLinecap="round" />
-          {/* Cartridge */}
-          <rect x="162" y="95" width="7" height="4.5" rx="1" fill="#333" transform="rotate(68 165 97)" />
-          {/* Stylus tip */}
-          <circle cx="164" cy="99" r="1" fill="#e0e0f0" />
-        </g>
-
-        {/* Arm rest clip — right side */}
-        <rect x="228" y="92" width="4" height="12" rx="2" fill="#2a2845" stroke="#3a3860" strokeWidth="0.5" />
-
-        {/* Speed selector dots (decorative) — bottom right */}
-        <circle cx="218" cy="160" r="2" fill="#25223a" stroke="#3a3855" strokeWidth="0.5" />
-        <circle cx="228" cy="160" r="2" fill="#f59e0b" stroke="#3a3855" strokeWidth="0.5" />
-        <text x="218" y="156" textAnchor="middle" fontSize="3" fill="#555">33</text>
-        <text x="228" y="156" textAnchor="middle" fontSize="3" fill="#888">45</text>
-
-        {/* Power button (decorative) — bottom right */}
-        <circle cx="236" cy="170" r="4" fill="#1a1830" stroke="#2a2845" strokeWidth="0.8" />
-        <circle cx="236" cy="170" r="2" fill={isRecording ? '#22c55e' : '#333'} className="transition-colors duration-500" />
-
-        {/* Recording LED */}
-        <circle cx="218" cy="174" r="3" fill={isRecording ? '#ff2040' : '#331015'} className="transition-colors duration-300">
-          {isRecording && (
-            <animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite" />
-          )}
-        </circle>
-        {isRecording && (
-          <circle cx="218" cy="174" r="3" fill="#ff2040" filter="url(#tt-glow-red)" opacity="0.6">
-            <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1s" repeatCount="indefinite" />
-          </circle>
-        )}
-        <text x="208" y="178" textAnchor="middle" fontSize="3.5" fill={isRecording ? '#ff4060' : '#444'} className="transition-colors duration-300">REC</text>
-      </svg>
+        <span className={recording ? 'grid size-12 place-items-center rounded-full bg-destructive' : 'grid size-12 place-items-center rounded-full bg-primary'}>
+          <span className="size-1.5 rounded-full bg-background" />
+        </span>
+      </div>
+      <span className="font-mono text-xs tracking-[0.12em] text-muted-foreground uppercase">{label}</span>
     </div>
   );
 }
 
-// ─── SVG 80s Retro Radio (for memory/playback-only mode) ──────
-function RetroRadioSVG({ isPlaying }: { isPlaying: boolean }) {
-  return (
-    <div className="relative w-full max-w-[260px] mx-auto select-none">
-      {/* Warm ambient glow when playing */}
-      {isPlaying && (
-        <div className="absolute inset-0 -m-4 rounded-3xl bg-amber-500/5 blur-xl animate-pulse pointer-events-none" />
-      )}
-      <svg viewBox="0 0 260 200" className="w-full drop-shadow-2xl">
-        <defs>
-          <linearGradient id="rd-body" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3d2b1a" />
-            <stop offset="50%" stopColor="#2a1e10" />
-            <stop offset="100%" stopColor="#1a1008" />
-          </linearGradient>
-          <linearGradient id="rd-body-edge" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4d3820" />
-            <stop offset="100%" stopColor="#2a1e10" />
-          </linearGradient>
-          <linearGradient id="rd-speaker-mesh" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#1a1208" />
-            <stop offset="100%" stopColor="#0f0a04" />
-          </linearGradient>
-          <radialGradient id="rd-dial-face" cx="50%" cy="40%">
-            <stop offset="0%" stopColor="#f5e6c8" />
-            <stop offset="100%" stopColor="#c8a878" />
-          </radialGradient>
-          <linearGradient id="rd-chrome" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#d8d0c0" />
-            <stop offset="50%" stopColor="#a89878" />
-            <stop offset="100%" stopColor="#786850" />
-          </linearGradient>
-          <filter id="rd-glow-amber">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id="rd-inset">
-            <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000" floodOpacity="0.5" />
-          </filter>
-        </defs>
-
-        {/* Body / chassis — warm wood cabinet */}
-        <rect x="10" y="10" width="240" height="180" rx="12" fill="url(#rd-body-edge)" />
-        <rect x="12" y="12" width="236" height="176" rx="10" fill="url(#rd-body)" />
-
-        {/* Wood grain texture */}
-        {Array.from({ length: 8 }, (_, i) => (
-          <line key={i} x1="20" y1={25 + i * 22} x2="240" y2={23 + i * 22} stroke="#ffffff" strokeWidth="0.3" opacity="0.03" />
-        ))}
-
-        {/* Top decorative chrome strip */}
-        <rect x="30" y="18" width="200" height="3" rx="1.5" fill="url(#rd-chrome)" opacity="0.6" />
-
-        {/* ── Speaker grille — left side ── */}
-        <rect x="22" y="32" width="100" height="100" rx="8" fill="url(#rd-speaker-mesh)" filter="url(#rd-inset)" />
-        <rect x="24" y="34" width="96" height="96" rx="6" fill="none" stroke="#3a2818" strokeWidth="0.5" />
-
-        {/* Speaker grille horizontal lines */}
-        {Array.from({ length: 14 }, (_, i) => (
-          <line key={i} x1="28" y1={40 + i * 6.5} x2="116" y2={40 + i * 6.5} stroke="#2a1c0e" strokeWidth="0.8" opacity="0.6" />
-        ))}
-
-        {/* Speaker cone (visible through grille) */}
-        <circle cx="72" cy="82" r="38" fill="none" stroke="#1a1008" strokeWidth="0.5" opacity="0.4" />
-        <circle cx="72" cy="82" r="28" fill="none" stroke="#1a1008" strokeWidth="0.4" opacity="0.3" />
-        <circle cx="72" cy="82" r="12" fill="none" stroke="#2a1c0e" strokeWidth="0.5" opacity="0.4" />
-        <circle cx="72" cy="82" r="5" fill="#1a1008" opacity="0.5" />
-
-        {/* Speaker pulse animation when playing */}
-        {isPlaying && (
-          <>
-            <circle cx="72" cy="82" r="28" fill="none" stroke="#d4960a" strokeWidth="0.5" opacity="0.15">
-              <animate attributeName="r" values="28;32;28" dur="0.8s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.15;0.05;0.15" dur="0.8s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="72" cy="82" r="38" fill="none" stroke="#d4960a" strokeWidth="0.3" opacity="0.08">
-              <animate attributeName="r" values="38;42;38" dur="0.8s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.08;0.02;0.08" dur="0.8s" repeatCount="indefinite" />
-            </circle>
-          </>
-        )}
-
-        {/* ── Dial / tuner panel — right side ── */}
-        <rect x="132" y="32" width="108" height="60" rx="6" fill="url(#rd-dial-face)" filter="url(#rd-inset)" />
-        <rect x="134" y="34" width="104" height="56" rx="4" fill="none" stroke="#a89060" strokeWidth="0.5" opacity="0.5" />
-
-        {/* Frequency markings */}
-        <text x="142" y="48" fontSize="4" fill="#5a4a30" fontFamily="serif">AM</text>
-        <text x="142" y="58" fontSize="4" fill="#5a4a30" fontFamily="serif">FM</text>
-        {Array.from({ length: 9 }, (_, i) => (
-          <g key={i}>
-            <line x1={155 + i * 9} y1={44} x2={155 + i * 9} y2={50} stroke="#8a7a5a" strokeWidth="0.4" />
-            <text x={155 + i * 9} y={42} textAnchor="middle" fontSize="3" fill="#8a7a5a">
-              {53 + i * 2}
-            </text>
-          </g>
-        ))}
-        {Array.from({ length: 9 }, (_, i) => (
-          <g key={i}>
-            <line x1={155 + i * 9} y1={54} x2={155 + i * 9} y2={60} stroke="#8a7a5a" strokeWidth="0.4" />
-            <text x={155 + i * 9} y={63} textAnchor="middle" fontSize="2.5" fill="#8a7a5a">
-              {88 + i * 2}
-            </text>
-          </g>
-        ))}
-
-        {/* Tuner needle — animated when playing */}
-        <line
-          x1="185" y1="67" x2="185" y2="78"
-          stroke="#c44" strokeWidth="0.8" strokeLinecap="round"
-        >
-          {isPlaying && (
-            <animate attributeName="x1" values="170;200;175;195;185" dur="4s" repeatCount="indefinite" />
-          )}
-          {isPlaying && (
-            <animate attributeName="x2" values="170;200;175;195;185" dur="4s" repeatCount="indefinite" />
-          )}
-        </line>
-
-        {/* Dial glass reflection */}
-        <rect x="134" y="34" width="40" height="30" rx="2" fill="white" opacity="0.04" />
-
-        {/* ── Brand text ── */}
-        <text x="186" y="82" textAnchor="middle" fontSize="5" fill="#c8a060" fontFamily="serif" fontWeight="bold" opacity="0.7">ChordMate</text>
-        <text x="186" y="88" textAnchor="middle" fontSize="3" fill="#a08040" fontFamily="serif" opacity="0.4">STEREO</text>
-
-        {/* ── Knobs row — bottom ── */}
-        {/* Volume knob */}
-        <circle cx="152" cy="115" r="12" fill="#1a1008" stroke="#3a2818" strokeWidth="1" />
-        <circle cx="152" cy="115" r="10" fill="#2a1c10" />
-        <circle cx="152" cy="115" r="8" fill="none" stroke="#4a3828" strokeWidth="0.5" />
-        <line x1="152" y1="107" x2="152" y2="111" stroke="url(#rd-chrome)" strokeWidth="1.5" strokeLinecap="round">
-          {isPlaying && (
-            <animateTransform attributeName="transform" type="rotate" values="0 152 115;45 152 115" dur="2s" fill="freeze" />
-          )}
-        </line>
-        <text x="152" y="132" textAnchor="middle" fontSize="3.5" fill="#7a6a4a" fontFamily="serif">VOL</text>
-
-        {/* Tuning knob */}
-        <circle cx="218" cy="115" r="12" fill="#1a1008" stroke="#3a2818" strokeWidth="1" />
-        <circle cx="218" cy="115" r="10" fill="#2a1c10" />
-        <circle cx="218" cy="115" r="8" fill="none" stroke="#4a3828" strokeWidth="0.5" />
-        <line x1="218" y1="107" x2="218" y2="111" stroke="url(#rd-chrome)" strokeWidth="1.5" strokeLinecap="round" />
-        <text x="218" y="132" textAnchor="middle" fontSize="3.5" fill="#7a6a4a" fontFamily="serif">TUNE</text>
-
-        {/* ── Cassette deck slot — bottom center ── */}
-        <rect x="40" y="142" width="80" height="38" rx="4" fill="#0f0a04" stroke="#2a1c10" strokeWidth="0.8" />
-        <rect x="44" y="146" width="72" height="30" rx="2" fill="#1a1208" />
-
-        {/* Cassette window */}
-        <rect x="52" y="149" width="56" height="18" rx="2" fill="#0a0804" stroke="#2a1c10" strokeWidth="0.4" />
-
-        {/* Tape reels */}
-        <circle cx="68" cy="158" r="6" fill="none" stroke="#3a2818" strokeWidth="0.5" />
-        <circle cx="68" cy="158" r="3" fill="#2a1c10">
-          {isPlaying && (
-            <animateTransform attributeName="transform" type="rotate" values="0 68 158;360 68 158" dur="2s" repeatCount="indefinite" />
-          )}
-        </circle>
-        <circle cx="92" cy="158" r="6" fill="none" stroke="#3a2818" strokeWidth="0.5" />
-        <circle cx="92" cy="158" r="3" fill="#2a1c10">
-          {isPlaying && (
-            <animateTransform attributeName="transform" type="rotate" values="0 92 158;360 92 158" dur="1.5s" repeatCount="indefinite" />
-          )}
-        </circle>
-
-        {/* Tape between reels */}
-        <line x1="74" y1="158" x2="86" y2="158" stroke="#5a3a18" strokeWidth="0.5" opacity="0.6" />
-
-        {/* ── Power LED ── */}
-        <circle cx="135" cy="155" r="2.5" fill={isPlaying ? '#f59e0b' : '#2a1c10'} className="transition-colors duration-500">
-          {isPlaying && (
-            <animate attributeName="opacity" values="1;0.6;1" dur="2s" repeatCount="indefinite" />
-          )}
-        </circle>
-        {isPlaying && (
-          <circle cx="135" cy="155" r="2.5" fill="#f59e0b" filter="url(#rd-glow-amber)" opacity="0.4">
-            <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2s" repeatCount="indefinite" />
-          </circle>
-        )}
-        <text x="135" y="164" textAnchor="middle" fontSize="2.5" fill={isPlaying ? '#d4960a' : '#3a2818'} className="transition-colors duration-300">POWER</text>
-
-        {/* ── Playback buttons — bottom right ── */}
-        {[0, 1, 2].map((i) => (
-          <rect key={i} x={140 + i * 20} y="170" width="14" height="8" rx="2" fill="#1a1008" stroke="#3a2818" strokeWidth="0.5" />
-        ))}
-        <text x="147" y="176" textAnchor="middle" fontSize="3" fill="#7a6a4a">◀◀</text>
-        <text x="167" y="176.5" textAnchor="middle" fontSize="4" fill={isPlaying ? '#f59e0b' : '#7a6a4a'} className="transition-colors duration-300">▶</text>
-        <text x="187" y="176" textAnchor="middle" fontSize="3" fill="#7a6a4a">▶▶</text>
-
-        {/* Feet — bottom corners */}
-        <rect x="20" y="190" width="16" height="4" rx="2" fill="#2a1c10" />
-        <rect x="224" y="190" width="16" height="4" rx="2" fill="#2a1c10" />
-      </svg>
-    </div>
-  );
-}
-
-// ─── Seekable Progress Bar ─────────────────────────────────────
 function SeekableProgress({
   progress,
   duration,
@@ -643,7 +304,7 @@ function RecordingsList({
 
   return (
     <div className="w-full flex flex-col gap-1.5">
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/40 px-1">
+      <p className="px-1 font-mono text-xs tracking-[0.12em] text-muted-foreground uppercase">
         Felvételek ({recordings.length})
       </p>
       <div className="flex flex-col gap-1 max-h-56 overflow-y-auto">
@@ -652,10 +313,7 @@ function RecordingsList({
           const isEditing = editingId === rec.id;
 
           return (
-            <motion.div
-              key={rec.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div key={rec.id}
               className="group relative rounded-lg px-2 py-2 hover:bg-secondary/30 transition-colors"
             >
               <div className="flex items-center gap-2">
@@ -665,14 +323,14 @@ function RecordingsList({
                   disabled={loadingId === rec.id}
                   className={`flex size-9 shrink-0 items-center justify-center rounded-full transition-all ${
                     loadingId === rec.id
-                      ? 'bg-primary/20 text-primary animate-pulse shadow-md shadow-primary/10'
+                      ? 'bg-primary/20 text-primary-text'
                       : isPlaying
                         ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
                         : 'bg-primary/10 text-primary hover:bg-primary/20'
                   }`}
                 >
                   {loadingId === rec.id ? (
-                    <span className="size-2 rounded-full bg-primary animate-ping" />
+                    <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
                   ) : isPlaying && !isPaused ? (
                     <Pause className="size-3.5" />
                   ) : (
@@ -750,7 +408,7 @@ function RecordingsList({
               {!isPlaying && !isEditing && (
                 <p className="text-[10px] text-muted-foreground/50 ml-11 tabular-nums">{formatTime(rec.duration)}</p>
               )}
-            </motion.div>
+            </div>
           );
         })}
       </div>
@@ -913,87 +571,66 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
 
         <div className="flex flex-col px-5 pt-5 pb-4 gap-4 overflow-y-auto">
           {/* Header */}
-          <div className="text-center">
-            <h2 className="text-lg font-bold tracking-tight">
-              {readOnly ? 'Emlékek' : 'Hangfelvétel'}
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {readOnly ? 'Korábbi próbafelvételek' : 'Próba rögzítése'}
-            </p>
+          <div className="flex flex-col gap-1">
+            <Eyebrow>{readOnly ? 'Korábbi próbafelvételek' : 'Próba rögzítése'}</Eyebrow>
+            <h2 className="display-soft font-display text-[26px] leading-tight font-medium">{readOnly ? 'Felvételek' : 'Hangfelvétel'}</h2>
           </div>
 
           {/* Visual: Radio for readOnly, Turntable for recording */}
-          {readOnly ? (
-            <RetroRadioSVG isPlaying={recordings.length > 0} />
-          ) : (
-            <TurntableSVG isRecording={state === 'recording'} />
-          )}
+          <RecorderDisc
+            recording={!readOnly && state === 'recording'}
+            label={readOnly ? `${recordings.length} felvétel` : state === 'recording' ? 'Felvétel folyamatban' : 'Kész a felvételre'}
+          />
 
           {/* Timer (recording state) — only when not readOnly */}
           {!readOnly && (
-            <AnimatePresence mode="wait">
+            <>
               {state === 'recording' && (
-                <motion.div
-                  key="timer"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
+                <div key="timer"
                   className="text-center"
                 >
                   <div className="inline-flex items-center gap-2 rounded-full bg-destructive/10 px-4 py-1.5">
-                    <span className="size-2 rounded-full bg-red-500 animate-pulse" />
-                    <span className="text-lg font-bold tabular-nums text-red-400">{formatTime(elapsed)}</span>
+                    <span className="size-2 rounded-full bg-destructive" />
+                    <span className="text-lg font-bold tabular-nums text-destructive">{formatTime(elapsed)}</span>
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
+            </>
           )}
 
           {/* Controls — only when not readOnly */}
           {!readOnly && (
-            <AnimatePresence mode="wait">
+            <>
               {state === 'idle' && (
-                <motion.div
-                  key="idle"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
+                <div key="idle"
                 >
                   <Button
                     size="lg"
-                    className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white"
+                    className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-destructive text-background hover:bg-destructive/90"
                     onClick={startRecording}
                   >
                     <Mic className="size-4" />
                     Felvétel indítása
                   </Button>
-                </motion.div>
+                </div>
               )}
 
               {state === 'recording' && (
-                <motion.div
-                  key="recording"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
+                <div key="recording"
                 >
                   <Button
                     size="lg"
-                    className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20"
+                    className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-destructive text-background hover:bg-destructive/90"
                     onClick={stopRecording}
                   >
                     <Square className="size-4 fill-current" />
                     Leállítás
                   </Button>
-                </motion.div>
+                </div>
               )}
 
               {state === 'naming' && (
-                <motion.div
-                  key="naming"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
+                <div key="naming"
                   className="flex flex-col gap-3"
                 >
                   <div className="text-center">
@@ -1024,9 +661,9 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
                       Mentés
                     </Button>
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
+            </>
           )}
 
           {/* Recordings list */}

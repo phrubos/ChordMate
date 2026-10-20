@@ -317,7 +317,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
           {/* Copy */}
           {hasTab && (
             <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-7 px-2" onClick={handleCopy}>
-              {copied ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
+              {copied ? <Check className="size-3.5 text-done" /> : <Copy className="size-3.5" />}
               <span className="hidden sm:inline">{copied ? 'Másolva' : 'Másolás'}</span>
             </Button>
           )}
@@ -386,9 +386,9 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
             {canRecord && (
               <div className="flex items-center gap-1.5">
                 {isRecording && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-0.5">
-                    <span className="size-1.5 rounded-full bg-red-500 animate-pulse" />
-                    <span className="text-xs font-bold tabular-nums text-red-400">{formatRecTime(recElapsed)}</span>
+                  <div className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-0.5">
+                    <span className="size-1.5 rounded-full bg-destructive" />
+                    <span className="text-xs font-bold tabular-nums text-destructive">{formatRecTime(recElapsed)}</span>
                   </div>
                 )}
                 <Button
@@ -454,9 +454,9 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
 
             {/* Recording timer (mobile) */}
             {isRecording && (
-              <div className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5">
-                <span className="size-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[11px] font-bold tabular-nums text-red-400">{formatRecTime(recElapsed)}</span>
+              <div className="flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5">
+                <span className="size-1.5 rounded-full bg-destructive" />
+                <span className="text-xs font-bold tabular-nums text-destructive">{formatRecTime(recElapsed)}</span>
               </div>
             )}
 
@@ -520,7 +520,7 @@ export function TabViewerModal({ songTitle, artist, tabContent, tabUrl, trigger,
             </pre>
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-4 py-12">
-              <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/5 ring-1 ring-primary/10">
+              <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
                 <FileText className="size-7 text-primary/40" />
               </div>
               <div className="text-center">
