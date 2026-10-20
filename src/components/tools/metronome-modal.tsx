@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useMetronome } from '@/hooks/use-metronome';
 import { motion } from 'motion/react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -142,107 +143,16 @@ interface MetronomeModalProps {
 
 export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, onPlayingChange, onStop }: MetronomeModalProps) {
   const [bpm, setBpm] = useState(120);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [timeSigIdx, setTimeSigIdx] = useState(2); // 4/4 default
-  const [currentBeat, setCurrentBeat] = useState(0);
   const [tapTimes, setTapTimes] = useState<number[]>([]);
 
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const nextBeatTimeRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const beatRef = useRef(0);
-  const isPlayingRef = useRef(false);
-
   const timeSig = TIME_SIGNATURES[timeSigIdx];
-
-  const playClick = useCallback((accent: boolean) => {
-    if (!audioCtxRef.current) return;
-    const ctx = audioCtxRef.current;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.frequency.value = accent ? 1000 : 800;
-    osc.type = 'sine';
-
-    const now = ctx.currentTime;
-    gain.gain.setValueAtTime(accent ? 0.5 : 0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-
-    osc.start(now);
-    osc.stop(now + 0.08);
-  }, []);
-
-  const scheduleNextBeat = useCallback(() => {
-    if (!isPlayingRef.current || !audioCtxRef.current) return;
-
-    const ctx = audioCtxRef.current;
-    const beatInterval = 60 / bpm;
-
-    // Play current beat
-    const isAccent = beatRef.current === 0;
-    playClick(isAccent);
-    setCurrentBeat(beatRef.current);
-
-    // Advance beat
-    beatRef.current = (beatRef.current + 1) % timeSig.beats;
-    nextBeatTimeRef.current += beatInterval;
-
-    // Schedule next
-    const delay = (nextBeatTimeRef.current - ctx.currentTime) * 1000;
-    timerRef.current = setTimeout(scheduleNextBeat, Math.max(0, delay - 25));
-  }, [bpm, timeSig.beats, playClick]);
-
-  const start = useCallback(() => {
-    const ctx = audioCtxRef.current ?? new AudioContext();
-    audioCtxRef.current = ctx;
-
-    if (ctx.state === 'suspended') ctx.resume();
-
-    beatRef.current = 0;
-    nextBeatTimeRef.current = ctx.currentTime;
-    isPlayingRef.current = true;
-    setIsPlaying(true);
-    setCurrentBeat(0);
-    onPlayingChange?.(true);
-
-    scheduleNextBeat();
-  }, [scheduleNextBeat, onPlayingChange]);
-
-  const stop = useCallback(() => {
-    isPlayingRef.current = false;
-    setIsPlaying(false);
-    setCurrentBeat(0);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    onPlayingChange?.(false);
-    onStop?.();
-  }, [onPlayingChange, onStop]);
-
-  const togglePlay = useCallback(() => {
-    if (isPlaying) stop();
-    else start();
-  }, [isPlaying, start, stop]);
-
-  // Restart metronome when BPM or time sig changes while playing
-  useEffect(() => {
-    if (isPlaying) {
-      stop();
-      // Small delay to allow cleanup
-      const t = setTimeout(start, 50);
-      return () => clearTimeout(t);
-    }
-  }, [bpm, timeSigIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { isPlaying, currentBeat, toggle: togglePlay, dispose } = useMetronome({ bpm, beatsPerBar: timeSig.beats, onPlayingChange, onStop });
 
   // Cleanup on close — only when not keeping alive
   useEffect(() => {
-    if (!open && !keepAliveOnClose) {
-      stop();
-      audioCtxRef.current?.close();
-      audioCtxRef.current = null;
-    }
-  }, [open, stop, keepAliveOnClose]);
+    if (!open && !keepAliveOnClose) dispose();
+  }, [open, dispose, keepAliveOnClose]);
 
   // Tap tempo
   const handleTap = useCallback(() => {

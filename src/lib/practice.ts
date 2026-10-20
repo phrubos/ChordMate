@@ -24,3 +24,8 @@ export function formatElapsed(ms: number): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
 }
+
+/** Audio-clock time (seconds) of the beat after `prevTime`. */
+export function nextBeatTime(prevTime: number, bpm: number): number {
+  return prevTime + 60 / bpm;
+}

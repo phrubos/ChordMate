@@ -170,3 +170,24 @@
 .dark ::-webkit-scrollbar-track { background: transparent; }
 .dark ::-webkit-scrollbar-thumb { background: oklch(1 0 0 / 12%); border-radius: 3px; }
 .dark ::-webkit-scrollbar-thumb:hover { background: oklch(1 0 0 / 20%); }
+
+/* A4 — metronóm ütem-pöttyök: periódus = 4 × --beat, pöttyönként --beat késleltetés */
+@keyframes beat-dot {
+  0%, 20% { transform: scale(1.35); background: var(--dot-on); }
+  25%, 100% { transform: scale(1); background: var(--dot-off); }
+}
+@keyframes beat-dot-color {
+  0%, 20% { background: var(--dot-on); }
+  25%, 100% { background: var(--dot-off); }
+}
+.beat-dot {
+  --dot-off: var(--border-strong);
+  background: var(--dot-off);
+}
+.beat-dots[data-playing="true"] .beat-dot {
+  animation: beat-dot calc(var(--beat) * 4) steps(1, end) infinite;
+  animation-delay: calc(var(--beat) * var(--i));
+}
+@media (prefers-reduced-motion: reduce) {
+  .beat-dots[data-playing="true"] .beat-dot { animation-name: beat-dot-color; }
+}

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { beatIntervalMs, clampIndex, formatElapsed, scrollStepPx } from './practice';
+import { beatIntervalMs, clampIndex, formatElapsed, nextBeatTime, scrollStepPx } from './practice';
 
 describe('practice helpers', () => {
   test('clampIndex', () => {
@@ -25,5 +25,10 @@ describe('practice helpers', () => {
   test('formatElapsed', () => {
     expect(formatElapsed(1457000)).toBe('00:24:17');
     expect(formatElapsed(0)).toBe('00:00:00');
+  });
+
+  test('nextBeatTime (seconds)', () => {
+    expect(nextBeatTime(1, 120)).toBe(1.5);
+    expect(nextBeatTime(0, 60)).toBe(1);
   });
 });

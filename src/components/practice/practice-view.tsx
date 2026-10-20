@@ -3,15 +3,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
-import { SkipBack, SkipForward } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { YouTubePlayer } from '@/components/youtube/youtube-player';
+import { useIsDesktop } from '@/hooks/use-is-desktop';
+import { useMetronome } from '@/hooks/use-metronome';
 import { ease } from '@/lib/motion';
-import { clampIndex } from '@/lib/practice';
+import { clampIndex, DEFAULT_BPM } from '@/lib/practice';
 import { cn } from '@/lib/utils';
 import type { CalendarEntryWithSong } from '@/types';
 import { PracticeTopBar } from './practice-top-bar';
 import { PracticeInfo } from './practice-info';
 import { PracticeSheet } from './practice-sheet';
+import { PracticeControls } from './practice-controls';
+import { useAutoScroll } from './use-auto-scroll';
 import { useWakeLock } from './use-wake-lock';
 
 type Source = 'button' | 'keyboard' | 'initial';
@@ -42,7 +48,14 @@ export function PracticeView({ date, entries, initialIndex, syncUrl = true, clas
   const { index, direction, source } = nav;
   const song = songs[index];
 
+  const [scroll, setScroll] = useState({ on: false, speed: 1 });
+  const [videoOn, setVideoOn] = useState(false);
+  const isDesktop = useIsDesktop();
+  const metronome = useMetronome({ bpm: song?.bpm ?? DEFAULT_BPM });
+  const toggleMetronome = metronome.toggle;
+
   useWakeLock(true);
+  useAutoScroll(sheetRef, { enabled: scroll.on, speed: scroll.speed });
 
   const go = useCallback(
     (delta: 1 | -1, from: Source) => {
@@ -50,6 +63,7 @@ export function PracticeView({ date, entries, initialIndex, syncUrl = true, clas
         const next = clampIndex(prev.index + delta, songs.length);
         return next === prev.index ? prev : { index: next, direction: delta, source: from };
       });
+      setScroll((sc) => (sc.on ? { ...sc, on: false } : sc));
     },
     [songs.length]
   );
@@ -62,15 +76,18 @@ export function PracticeView({ date, entries, initialIndex, syncUrl = true, clas
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      // A focused button handles Space itself.
+      if (e.key === ' ' && e.target instanceof HTMLElement && e.target.closest('button, a, [role="button"]')) return;
       if (e.key === 'ArrowRight') go(1, 'keyboard');
       else if (e.key === 'ArrowLeft') go(-1, 'keyboard');
+      else if (e.key === ' ') toggleMetronome();
       else if (e.key === 'Escape') router.push('/dashboard');
       else return;
       e.preventDefault();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [go, router]);
+  }, [go, router, toggleMetronome]);
 
   // A3: slide + fade only for pointer-initiated changes; keyboard changes are instant.
   const animate = source === 'button';
@@ -90,16 +107,39 @@ export function PracticeView({ date, entries, initialIndex, syncUrl = true, clas
         </aside>
         <PracticeSheet ref={sheetRef} song={song} />
       </motion.div>
-      <footer className="flex h-[72px] shrink-0 items-center justify-between gap-3 border-t border-border px-3 pb-[env(safe-area-inset-bottom)] md:h-[76px] md:px-5">
-        <Button variant="outline" size="lg" disabled={index === 0} onClick={() => go(-1, 'button')} aria-label="Előző dal">
-          <SkipBack />
-          <span className="hidden sm:inline">Előző</span>
-        </Button>
-        <Button size="lg" disabled={index >= songs.length - 1} onClick={() => go(1, 'button')} aria-label="Következő dal">
-          <span className="hidden sm:inline">Következő</span>
-          <SkipForward />
-        </Button>
-      </footer>
+      {videoOn && song.youtubeUrl && isDesktop && (
+        <div className="fixed right-5 bottom-[92px] z-40 w-[380px] overflow-hidden rounded-[6px] bg-card shadow-[0_24px_48px_oklch(0_0_0/.5)] ring-1 ring-border-strong">
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <span className="truncate text-[13px] font-medium text-muted-foreground">{song.title} — videó</span>
+            <Button variant="ghost" size="icon-sm" aria-label="Videó bezárása" onClick={() => setVideoOn(false)}>
+              <X />
+            </Button>
+          </div>
+          <YouTubePlayer key={song.id} url={song.youtubeUrl} />
+        </div>
+      )}
+      <Sheet open={videoOn && !!song.youtubeUrl && !isDesktop} onOpenChange={setVideoOn}>
+        <SheetContent>
+          <SheetTitle>{song.title}</SheetTitle>
+          {song.youtubeUrl && <YouTubePlayer key={song.id} url={song.youtubeUrl} />}
+        </SheetContent>
+      </Sheet>
+      <PracticeControls
+        song={song}
+        date={date}
+        canPrev={index > 0}
+        canNext={index < songs.length - 1}
+        onPrev={() => go(-1, 'button')}
+        onNext={() => go(1, 'button')}
+        metronomeOn={metronome.isPlaying}
+        onToggleMetronome={toggleMetronome}
+        scrollOn={scroll.on}
+        scrollSpeed={scroll.speed}
+        onToggleScroll={() => setScroll((sc) => ({ ...sc, on: !sc.on }))}
+        onScrollSpeed={(speed) => setScroll({ on: true, speed })}
+        videoOn={videoOn && !!song.youtubeUrl}
+        onToggleVideo={() => setVideoOn((v) => !v)}
+      />
     </div>
   );
 }
