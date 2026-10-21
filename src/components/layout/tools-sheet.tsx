@@ -2,12 +2,12 @@
 
 import { Sheet, SheetClose, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { useTools } from './tools-launcher';
-import { MetronomeIcon, TunerIcon } from './tool-icons';
+import { MetronomeIcon, GuitarIcon } from './tool-icons';
 
 export function ToolsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const tools = useTools();
   const items = [
-    { id: 'tuner' as const, label: 'Hangoló', hint: 'Mikrofonos gitárhangoló', Icon: TunerIcon },
+    { id: 'tuner' as const, label: 'Hangoló', hint: 'Mikrofonos gitárhangoló', Icon: GuitarIcon },
     { id: 'metronome' as const, label: 'Metronóm', hint: 'Tempó és ütem', Icon: MetronomeIcon },
   ];
 

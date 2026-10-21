@@ -23,7 +23,7 @@ export function LoginForm() {
   return (
     <div className="flex w-full max-w-[400px] flex-col gap-10">
       <div className="flex items-center gap-2.5">
-        <LogoMark className="size-9" />
+        <LogoMark className="size-9" strum="mount" />
         <span className="display-soft font-display text-[26px] font-semibold tracking-[-0.02em]">ChordMate</span>
       </div>
       <div className="flex flex-col gap-3">

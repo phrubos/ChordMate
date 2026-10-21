@@ -1,9 +1,16 @@
-/** Tuning fork and metronome glyphs in Lucide style (not in lucide-react). */
-export function TunerIcon({ className = 'size-[18px]' }: { className?: string }) {
+import { GUITAR_BODY } from './logo';
+
+/** Guitar and metronome glyphs in Lucide style (the guitar matches the brand mark). */
+export function GuitarIcon({ className = 'size-[18px]' }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden className={className}>
-      <path d="M8 2v7a4 4 0 0 0 8 0V2" />
-      <path d="M12 13v9" />
+      <g transform="rotate(45 12 12)">
+        <path d={GUITAR_BODY} />
+        <circle cx="12" cy="14.3" r="1.3" />
+        <path d="M12 9.5V4" />
+        <path d="M10.7 1.2h2.6l-.3 2.8h-2z" />
+        <path d="M10.4 19.4h3.2" />
+      </g>
     </svg>
   );
 }

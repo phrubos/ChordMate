@@ -110,24 +110,5 @@ Alapelv (Emil Kowalski): az animáció csak akkor marad, ha van célja, és illi
 | A7 | Napi panel tartalomcsere napváltáskor | Hirtelen változás elkerülése | Naponta tucatszor | csak átúszás: opacity .6 → 1 + `blur(2px)` → 0, 150ms `--ease-out`, elmozdulás nélkül |
 | A8 | Hero borítósáv első megjelenése | Öröm (ritka) | Munkamenetenként egyszer (`sessionStorage`) | `clip-path: inset(0 0 100% 0)` → `inset(0)`, 450ms `--ease-out`, 60ms késleltetés borítónként; csökkentett mozgásnál nincs |
 | A9 | Dropdown, popover, szűrő popover | Térbeli folytonosság | Alkalmanként | `scale(.97)` + opacity, 180ms `--ease-out`, `transform-origin: var(--transform-origin)` (Base UI) |
-
-**Elvetve (és eltávolítandó):**
-- `PageTransition` minden route-on (alap navigáció, naponta tucatszor) → törlés.
-- Dalrács stagger animációja minden szűrőváltáskor → törlés.
-- Végtelen `glow-pulse` a naptárban, `shimmer-text` logó, `practice-glow` (dekoratív, folyamatos mozgás) → törlés.
-- Dalkártya hover-emelkedése (naponta tucatszor) → csak a keret színe vált; a Liner-féle borító-dőlés csak `(hover: hover) and (pointer: fine)` mellett, 250ms.
-- Billentyűparancsok és bármilyen billentyűvel indított művelet → nincs animáció.
-- Analitikai grafikonok „kirajzolódása” (funkcionális adat) → nincs animáció.
-
-## 7. Adatmodell
-
-`songs` tábla új oszlopai (additív, visszafelé kompatibilis):
-- `status text NOT NULL DEFAULT 'learning'`, értéke `'learning' | 'ok' | 'ready'`;
-- `bpm integer NULL` (30–300);
-- `song_key text NULL` (pl. `Bm`, `F#m`, `Eb`; regex `^[A-G](#|b)?m?$`);
-- `capo integer NULL` (0–12);
-- `tuning text NULL` (max. 40 karakter; NULL = Standard).
-
-## 8. Minőségi kapu (minden feladat végén)
-
-`npm test` · `npx tsc --noEmit` · `npm run lint` · `npm run build` hiba nélkül; vizuális ellenőrzés a `/dev/ui` oldalon (csak fejlesztői módban) desktop (1440) és mobil (390) szélességen, összevetve a mockuppal; magyar UI-szövegek; kontraszt ≥ 4.5:1 a törzsszövegre.
+| A10 | Login lemezjátszó-jelenet (`TurntableScene`) | Öröm (ritka) — a login az app „borítója” | Bejelentkezéskor | ciklusonként ~14 s: valós lemezborító felbukkan (spring 0.8s, bounce .25) → a lemez kicsúszik (1s `--ease-in-out`) → felemelve a tányérra kerül (1.1s, `scale` 1→1.06→1) → a tányér felpörög (33⅓ rpm, négyzetes gyorsulás), a hangkar ráfordul (1.2s) és leereszkedik → 5.5s lejátszás, a kar lassan befelé halad → vissza, lassulás, a lemez és a borító kiúszik. Kizárólag transform/opacity; rejtett fülön szünetel; **kivétel a „nincs folyamatos dekoratív mozgás” szabály alól**, mert csak a login oldalon fut, ahol nincs más feladat. Csökkentett mozgásnál álló lemezjátszó, 7 s-onként csak átúszással cserélődő albummal |
+| A11 | Logó-gitár „pengetés” (`LogoMark`) | Öröm / visszajelzés | Login betöltésekor egyszer; máshol a logó hoverjére (csak hover-eszközön) | gitár `rotate` 0 → −10° → 6° → −2.5° → 0, 700ms `--ease-out`; a húr lecsengő `translateX` rezgése 900ms; csökkentett mozgásnál nincs |

@@ -10,7 +10,7 @@ import { LogoMark } from './logo';
 import { NAV_ITEMS, type ShellUser } from './nav-items';
 import { UserMenu } from './user-menu';
 import { useTools } from './tools-launcher';
-import { MetronomeIcon, TunerIcon } from './tool-icons';
+import { MetronomeIcon, GuitarIcon } from './tool-icons';
 
 interface MastheadProps {
   user: ShellUser;
@@ -57,7 +57,7 @@ export function Masthead({ user, practiceHref = '/practice/next' }: MastheadProp
           Dal vagy előadó keresése…
         </Link>
         <Button variant="ghost" size="icon" aria-label="Hangoló" title="Hangoló" onClick={() => tools.open('tuner')}>
-          <TunerIcon />
+          <GuitarIcon />
         </Button>
         <Button variant="ghost" size="icon" aria-label="Metronóm" title="Metronóm" onClick={() => tools.open('metronome')}>
           <MetronomeIcon />
