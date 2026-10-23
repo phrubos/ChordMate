@@ -2,14 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Theater } from 'lucide-react';
+import { ChevronDown, Search, Theater } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { BandSwitcher } from '@/components/band/band-switcher';
 import { cn } from '@/lib/utils';
 import { LogoMark } from './logo';
 import { NAV_ITEMS, type ShellUser } from './nav-items';
 import { UserMenu } from './user-menu';
 import { useTools } from './tools-launcher';
+import { useGlobalSearch } from './global-search';
 import { MetronomeIcon, GuitarIcon } from './tool-icons';
 
 interface MastheadProps {
@@ -21,6 +23,7 @@ interface MastheadProps {
 export function Masthead({ user, practiceHref = '/practice/next' }: MastheadProps) {
   const pathname = usePathname();
   const tools = useTools();
+  const search = useGlobalSearch();
 
   return (
     <header className="sticky top-0 z-40 hidden h-[68px] items-center gap-9 border-b border-border-strong bg-background/92 px-10 backdrop-blur-md md:flex">
@@ -49,19 +52,36 @@ export function Masthead({ user, practiceHref = '/practice/next' }: MastheadProp
       </nav>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <Link
-          href="/songs?focus=search"
+        <button
+          type="button"
+          onClick={search.open}
+          aria-keyshortcuts="Control+K Meta+K"
           className="mr-2 hidden h-10 w-[260px] items-center gap-2.5 rounded-full border border-border-strong px-3.5 text-sm text-faint transition-colors hover:border-foreground/40 lg:flex"
         >
-          <Search className="size-4" />
-          Dal vagy előadó keresése…
-        </Link>
-        <Button variant="ghost" size="icon" aria-label="Hangoló" title="Hangoló" onClick={() => tools.open('tuner')}>
-          <GuitarIcon />
+          <Search className="size-4 shrink-0" />
+          <span className="truncate">Dal vagy előadó keresése…</span>
+          <kbd className="ml-auto shrink-0 font-mono text-[11px] whitespace-nowrap">Ctrl K</kbd>
+        </button>
+        <Button variant="ghost" size="icon" aria-label="Keresés" title="Keresés (Ctrl K)" className="lg:hidden" onClick={search.open}>
+          <Search />
         </Button>
-        <Button variant="ghost" size="icon" aria-label="Metronóm" title="Metronóm" onClick={() => tools.open('metronome')}>
-          <MetronomeIcon />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger id="tools-menu-desktop" render={<Button variant="ghost" size="sm" />}>
+            <GuitarIcon />
+            Eszközök
+            <ChevronDown className="size-3.5 text-muted-foreground" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuItem onClick={() => tools.open('tuner')}>
+              <GuitarIcon />
+              Hangoló
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => tools.open('metronome')}>
+              <MetronomeIcon />
+              Metronóm
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <span aria-hidden className="mx-1.5 h-6 w-px bg-border-strong" />
         <Link href={practiceHref} className={buttonVariants({ size: 'sm' })}>
           <Theater />

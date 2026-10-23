@@ -1,5 +1,3 @@
-import { format, parseISO } from 'date-fns';
-import { hu } from 'date-fns/locale';
 import { ChevronRight } from 'lucide-react';
 import { CoverArt } from '@/components/design/cover-art';
 import { ChipList } from '@/components/design/chip';
@@ -12,12 +10,12 @@ import type { Song } from '@/types';
 const chipsOf = (s: Song) => [s.songKey, s.bpm ? `${s.bpm} BPM` : null, s.capo ? `Capo ${s.capo}` : null, s.tuning && !/standard/i.test(s.tuning) ? s.tuning : null];
 
 /** Left column: cover, title, chips, chord boxes and the "Következő" card (desktop). */
-export function PracticeInfo({ song, next, date, onNext }: { song: Song; next?: Song; date: string; onNext: () => void }) {
+export function PracticeInfo({ song, next, label, onNext }: { song: Song; next?: Song; label: string; onNext: () => void }) {
   const chords = extractChords(song.tabContent).filter((c) => c in chordDiagrams);
   return (
     <div className="flex min-w-0 flex-col gap-3 md:h-full md:gap-4">
       <CoverArt title={song.title} artist={song.artist} imageUrl={song.imageUrl} size="fill" showType className="hidden size-[132px]! md:block" />
-      <Eyebrow className="hidden md:flex">{format(parseISO(date), 'MMM d.', { locale: hu })} próba</Eyebrow>
+      <Eyebrow className="hidden md:flex">{label}</Eyebrow>
       <div className="flex min-w-0 flex-col gap-1">
         <h1 className="display-soft truncate font-display text-[28px] leading-tight font-normal tracking-[-0.02em] italic md:text-[38px] md:whitespace-normal" title={song.title}>
           {song.title}

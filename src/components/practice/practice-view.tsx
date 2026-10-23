@@ -12,7 +12,7 @@ import { useMetronome } from '@/hooks/use-metronome';
 import { ease } from '@/lib/motion';
 import { clampIndex, DEFAULT_BPM } from '@/lib/practice';
 import { cn } from '@/lib/utils';
-import type { CalendarEntryWithSong } from '@/types';
+import type { Song } from '@/types';
 import { PracticeTopBar } from './practice-top-bar';
 import { PracticeInfo } from './practice-info';
 import { PracticeSheet } from './practice-sheet';
@@ -23,8 +23,13 @@ import { useWakeLock } from './use-wake-lock';
 type Source = 'button' | 'keyboard' | 'initial';
 
 interface PracticeViewProps {
+  /** Rehearsal day, or today for a solo session — recordings are filed under it. */
   date: string;
-  entries: CalendarEntryWithSong[];
+  songs: Song[];
+  /** Eyebrow above the title, e.g. "okt. 29. próba" or "Gyakorlás". */
+  label: string;
+  /** Where × and Esc lead. */
+  exitHref?: string;
   initialIndex: number;
   /** Keep `?i=` (1-based) in sync with the current song; off in the dev showcase. */
   syncUrl?: boolean;
@@ -35,10 +40,9 @@ function isTyping(target: EventTarget | null) {
   return target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 }
 
-export function PracticeView({ date, entries, initialIndex, syncUrl = true, className }: PracticeViewProps) {
+export function PracticeView({ date, songs, label, exitHref = '/dashboard', initialIndex, syncUrl = true, className }: PracticeViewProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const songs = entries.map((e) => e.song);
   const [nav, setNav] = useState<{ index: number; direction: 1 | -1; source: Source }>({
     index: clampIndex(initialIndex, songs.length),
     direction: 1,
@@ -81,20 +85,20 @@ export function PracticeView({ date, entries, initialIndex, syncUrl = true, clas
       if (e.key === 'ArrowRight') go(1, 'keyboard');
       else if (e.key === 'ArrowLeft') go(-1, 'keyboard');
       else if (e.key === ' ') toggleMetronome();
-      else if (e.key === 'Escape') router.push('/dashboard');
+      else if (e.key === 'Escape') router.push(exitHref);
       else return;
       e.preventDefault();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [go, router, toggleMetronome]);
+  }, [go, router, toggleMetronome, exitHref]);
 
   // A3: slide + fade only for pointer-initiated changes; keyboard changes are instant.
   const animate = source === 'button';
 
   return (
     <div className={cn('flex h-dvh flex-col overflow-hidden', className)}>
-      <PracticeTopBar index={index} total={songs.length} animate={animate} />
+      <PracticeTopBar index={index} total={songs.length} animate={animate} exitHref={exitHref} />
       <motion.div
         key={index}
         className="flex min-h-0 flex-1 flex-col md:grid md:grid-cols-[340px_minmax(0,1fr)]"
@@ -103,7 +107,7 @@ export function PracticeView({ date, entries, initialIndex, syncUrl = true, clas
         transition={{ duration: 0.22, ease: ease.out }}
       >
         <aside className="shrink-0 border-b border-border px-4 py-4 md:overflow-y-auto md:border-r md:border-b-0 md:px-7 md:py-7">
-          <PracticeInfo song={song} next={songs[index + 1]} date={date} onNext={() => go(1, 'button')} />
+          <PracticeInfo song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />
         </aside>
         <PracticeSheet ref={sheetRef} song={song} />
       </motion.div>

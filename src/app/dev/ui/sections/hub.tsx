@@ -3,9 +3,11 @@
 import { PlayerProvider } from '@/components/player/player-provider';
 import { SongHubView } from '@/components/song-hub/song-hub-view';
 import { extractChords } from '@/lib/chords';
+import { upcomingRehearsals } from '@/lib/calendar-utils';
 import { FIXTURE_TODAY, fixtureEntries, fixtureSongs } from '../fixtures';
 
 const song = fixtureSongs[0];
+const slot = upcomingRehearsals(fixtureEntries, FIXTURE_TODAY, song.id).find((r) => r.position !== null);
 const history = [...new Set(fixtureEntries.filter((e) => e.songId === song.id).map((e) => e.date))].sort().reverse();
 
 export function HubSection() {
@@ -14,7 +16,7 @@ export function HubSection() {
       <PlayerProvider>
         <SongHubView
           song={{ ...song, notes: 'A 2. versszak után a szólónál mindketten lassítunk — az ütemváltásnál figyelj a basszusra.' }}
-          practiceHref="/practice/next"
+          rehearsal={slot ? { date: slot.date, position: slot.position!, count: slot.count } : null}
           chords={extractChords(song.tabContent)}
           history={history}
           recordings={[

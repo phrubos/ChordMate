@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { dayState, daysUntil, findNextRehearsalDate, pickNextRehearsal, rehearsalCountdownLabel, todayIso, weekStripDates } from './calendar-utils';
+import { dayState, upcomingRehearsals, daysUntil, findNextRehearsalDate, pickNextRehearsal, rehearsalCountdownLabel, todayIso, weekStripDates } from './calendar-utils';
 
 describe('next rehearsal', () => {
   test('picks the earliest date on or after today', () => {
@@ -54,5 +54,26 @@ describe('day state and week strip', () => {
     expect(dates[13]).toBe('2026-10-25');
     expect(weekStripDates('2026-10-12', 7)).toHaveLength(7);
     expect(weekStripDates('2026-10-18')[0]).toBe('2026-10-12');
+  });
+});
+
+describe('upcoming rehearsals', () => {
+  const entries = [
+    { date: '2026-10-13', songId: 'a' },
+    { date: '2026-10-22', songId: 'b' },
+    { date: '2026-10-22', songId: 'a' },
+    { date: '2026-10-29', songId: 'c' },
+  ];
+
+  test('lists future dates in order with song counts and the song position', () => {
+    expect(upcomingRehearsals(entries, '2026-10-16', 'a')).toEqual([
+      { date: '2026-10-22', count: 2, position: 2 },
+      { date: '2026-10-29', count: 1, position: null },
+    ]);
+  });
+
+  test('includes today and ignores the past', () => {
+    expect(upcomingRehearsals(entries, '2026-10-29', 'a')).toEqual([{ date: '2026-10-29', count: 1, position: null }]);
+    expect(upcomingRehearsals(entries, '2026-10-30', 'a')).toEqual([]);
   });
 });

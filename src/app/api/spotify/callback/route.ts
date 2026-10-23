@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   // User denied access
   if (error) {
-    return NextResponse.redirect(`${process.env.AUTH_URL}/songs?spotify=denied`);
+    return NextResponse.redirect(`${process.env.AUTH_URL}/band?spotify=denied`);
   }
 
   // Validate CSRF state
@@ -28,11 +28,11 @@ export async function GET(req: NextRequest) {
   cookieStore.delete('spotify_oauth_state');
 
   if (!state || state !== storedState) {
-    return NextResponse.redirect(`${process.env.AUTH_URL}/songs?spotify=error&reason=state_mismatch`);
+    return NextResponse.redirect(`${process.env.AUTH_URL}/band?spotify=error&reason=state_mismatch`);
   }
 
   if (!code) {
-    return NextResponse.redirect(`${process.env.AUTH_URL}/songs?spotify=error&reason=no_code`);
+    return NextResponse.redirect(`${process.env.AUTH_URL}/band?spotify=error&reason=no_code`);
   }
 
   const clientId = process.env.SPOTIFY_CLIENT_ID!;
@@ -73,9 +73,9 @@ export async function GET(req: NextRequest) {
       scope: tokens.scope,
     });
 
-    return NextResponse.redirect(`${process.env.AUTH_URL}/songs?spotify=connected`);
+    return NextResponse.redirect(`${process.env.AUTH_URL}/band?spotify=connected`);
   } catch (err) {
     console.error('Spotify OAuth callback error:', err);
-    return NextResponse.redirect(`${process.env.AUTH_URL}/songs?spotify=error`);
+    return NextResponse.redirect(`${process.env.AUTH_URL}/band?spotify=error`);
   }
 }

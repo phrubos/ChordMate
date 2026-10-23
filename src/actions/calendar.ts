@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { eq, and, gte, lte, asc, desc, sql, isNull } from 'drizzle-orm';
 import { format, endOfMonth } from 'date-fns';
 import { getUserBandId } from './bands';
-import { pickNextRehearsal, todayIso } from '@/lib/calendar-utils';
+import { pickNextRehearsal, todayIso, upcomingRehearsals } from '@/lib/calendar-utils';
 
 export async function getCalendarEntries() {
   const session = await auth();
@@ -48,6 +48,11 @@ export async function getSongHistory(songId: string): Promise<{ date: string }[]
     .from(calendarEntries)
     .where(and(scope, eq(calendarEntries.songId, songId)))
     .orderBy(desc(calendarEntries.date));
+}
+
+/** Rehearsal days from today on, with the song's position in each setlist (for "Hozzáadás próbához"). */
+export async function getUpcomingRehearsals(songId: string) {
+  return upcomingRehearsals(await getCalendarEntries(), todayIso(), songId);
 }
 
 export async function assignSongToDate(songId: string, date: string) {

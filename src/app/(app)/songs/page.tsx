@@ -4,7 +4,6 @@ import { PageHeader } from '@/components/shared/page-header';
 import { SongList } from '@/components/songs/song-list';
 import { SongFilters } from '@/components/songs/song-filters';
 import { NewSongButton } from '@/components/songs/new-song-button';
-import { SpotifyPlaylistButton } from '@/components/songs/spotify-playlist-button';
 import { auth } from '@/lib/auth';
 import { getSongs } from '@/actions/songs';
 import { getUserBand } from '@/actions/bands';
@@ -41,9 +40,6 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
           </>
         }
       >
-        <Suspense>
-          <SpotifyPlaylistButton bandName={band?.name} />
-        </Suspense>
         <NewSongButton />
       </PageHeader>
       <Suspense>

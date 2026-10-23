@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { format, parseISO } from 'date-fns';
+import { hu } from 'date-fns/locale';
 import { notFound, redirect } from 'next/navigation';
 import { CalendarX } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button-variants';
@@ -44,5 +46,13 @@ export default async function PracticePage({ params, searchParams }: PracticePag
   const dayEntries = entries.filter((e) => e.date === date);
   if (dayEntries.length === 0) return <PracticeEmpty title="Ezen a napon nincs setlist" description="Adj dalokat ehhez a naphoz a kezdőlapi naptárban." />;
 
-  return <PracticeView key={date} date={date} entries={dayEntries} initialIndex={Number(i ?? 1) - 1} />;
+  return (
+    <PracticeView
+      key={date}
+      date={date}
+      songs={dayEntries.map((e) => e.song)}
+      label={`${format(parseISO(date), 'MMM d.', { locale: hu })} próba`}
+      initialIndex={Number(i ?? 1) - 1}
+    />
+  );
 }
