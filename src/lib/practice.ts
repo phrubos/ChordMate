@@ -20,6 +20,29 @@ export function scrollStepPx(speed: number): number {
   return 0.35 * clamp(speed, 0.5, 3);
 }
 
+/** Extra px a flick would travel at `velocity` px/s (Apple's deceleration projection, rate 0.99). */
+export function projectMomentum(velocity: number, rate = 0.99): number {
+  return ((velocity / 1000) * rate) / (1 - rate);
+}
+
+/** Past an edge the content follows less and less (iOS rubber-banding). */
+export function rubberband(overshoot: number, dimension: number, constant = 0.55): number {
+  return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
+}
+
+/**
+ * Song swipe in Próba mód: +1 next, −1 previous, 0 snap back.
+ * Decided on where the gesture is heading (offset + momentum), not where it was released;
+ * a clear flick always counts, a fast flick back the other way cancels.
+ */
+export function swipeDelta(offset: number, velocity: number, width: number): -1 | 0 | 1 {
+  if (Math.abs(velocity) > 300 && Math.sign(velocity) !== Math.sign(offset)) return 0;
+  if (Math.abs(velocity) >= 500) return velocity < 0 ? 1 : -1; // a clear flick, however short
+  const projected = offset + projectMomentum(velocity);
+  if (Math.abs(projected) < width * 0.3) return 0;
+  return projected < 0 ? 1 : -1;
+}
+
 /** HH:MM:SS */
 export function formatElapsed(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
