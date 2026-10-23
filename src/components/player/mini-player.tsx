@@ -14,21 +14,30 @@ function formatTime(seconds: number): string {
 }
 
 /**
- * A15: pull the player down to close it — on phones the only way, the × is desktop-only.
- * Follows the finger 1:1 (rubber-band upwards), a flick or a pull past 35% of the way to the screen edge
- * closes it with the finger's velocity. Touch only; a drag never also presses the button under the finger.
+ * A15: swipe the player away — down, left or right. It follows the finger 1:1 (rubber-band upwards) and fades;
+ * a flick or a drag past 35% of the way out closes it with the finger's velocity. Touch only; a drag never also
+ * presses the button under the finger. The × does the same for everyone else.
  */
 function DismissDrag({ onDismiss, children }: { onDismiss: () => void; children: ReactNode }) {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const gesture = useRef<{ lock: 'pending' | 'y' | 'off'; distance: number }>({ lock: 'off', distance: 1 });
+  const gesture = useRef<{ lock: 'pending' | 'x' | 'y' | 'off'; down: number; side: number }>({ lock: 'off', down: 1, side: 1 });
   const swallowClick = useRef(false);
+  const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const opacity = useTransform(y, (v) => (v > 0 ? 1 - Math.min(v / gesture.current.distance, 1) : 1));
+  const opacity = useTransform(() => {
+    const g = gesture.current;
+    return 1 - Math.min(Math.max(y.get() / g.down, Math.abs(x.get()) / g.side, 0), 1);
+  });
 
   function onPanStart(e: PointerEvent) {
-    const top = ref.current?.getBoundingClientRect().top ?? 0;
-    gesture.current = { lock: e.pointerType === 'mouse' ? 'off' : 'pending', distance: Math.max(window.innerHeight - top, 1) };
+    const r = ref.current?.getBoundingClientRect();
+    // How far each way the pill has to travel to be gone: to the screen bottom, or past the side edge.
+    gesture.current = {
+      lock: e.pointerType === 'mouse' ? 'off' : 'pending',
+      down: Math.max(window.innerHeight - (r?.top ?? 0), 1),
+      side: Math.max(window.innerWidth, 1),
+    };
   }
 
   function onPan(_e: PointerEvent, info: PanInfo) {
@@ -36,28 +45,35 @@ function DismissDrag({ onDismiss, children }: { onDismiss: () => void; children:
     const { x: dx, y: dy } = info.offset;
     if (g.lock === 'pending') {
       if (Math.hypot(dx, dy) < 10) return;
-      g.lock = Math.abs(dy) > Math.abs(dx) ? 'y' : 'off';
-      if (g.lock === 'y') swallowClick.current = true;
+      g.lock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      swallowClick.current = true;
     }
-    if (g.lock !== 'y' || reduce) return;
-    y.set(dy >= 0 ? dy : rubberband(dy, g.distance));
+    if (reduce) return;
+    if (g.lock === 'x') x.set(dx);
+    else if (g.lock === 'y') y.set(dy >= 0 ? dy : rubberband(dy, g.down));
   }
 
   function onPanEnd(_e: PointerEvent, info: PanInfo) {
     const g = gesture.current;
-    if (g.lock !== 'y') return;
+    const lock = g.lock;
+    if (lock !== 'x' && lock !== 'y') return;
     g.lock = 'off';
-    const velocity = info.velocity.y;
-    if (!shouldDismiss(info.offset.y, velocity, g.distance)) {
-      animate(y, 0, { type: 'spring', bounce: 0, duration: dur.sheet, velocity });
+    const value = lock === 'x' ? x : y;
+    const offset = info.offset[lock];
+    const velocity = info.velocity[lock];
+    // Sideways either way counts: measure along the direction the finger went.
+    const sign = lock === 'x' ? Math.sign(offset) || 1 : 1;
+    const distance = lock === 'x' ? g.side : g.down;
+    if (!shouldDismiss(offset * sign, velocity * sign, distance)) {
+      animate(value, 0, { type: 'spring', bounce: 0, duration: dur.sheet, velocity });
     } else if (reduce) onDismiss();
-    else animate(y, g.distance, { type: 'spring', bounce: 0, duration: 0.25, velocity }).finished.then(onDismiss);
+    else animate(value, distance * sign, { type: 'spring', bounce: 0, duration: 0.25, velocity }).finished.then(onDismiss);
   }
 
   return (
     <motion.div
       ref={ref}
-      style={{ y, opacity, touchAction: 'none' }}
+      style={{ x, y, opacity, touchAction: 'none' }}
       onPanStart={onPanStart}
       onPan={onPan}
       onPanEnd={onPanEnd}
@@ -124,6 +140,10 @@ export function MiniPlayer() {
                 </Button>
                 <Button variant="ghost" size="icon" aria-label="Következő" onClick={next}>
                   <SkipForward />
+                </Button>
+                {/* Phones: the × lives with the controls (the video opens from the cover). */}
+                <Button variant="ghost" size="icon" aria-label="Lejátszó bezárása" onClick={close} className="text-muted-foreground md:hidden">
+                  <X />
                 </Button>
               </div>
               <div className="hidden items-center md:flex">
