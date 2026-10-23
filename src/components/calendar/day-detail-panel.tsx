@@ -118,9 +118,11 @@ interface DayDetailPanelProps {
   entries: CalendarEntryWithSong[];
   allSongs: Song[];
   allEntries: CalendarEntryWithSong[];
+  /** 'setlist': embedded in the rehearsal page, which already shows the date. */
+  variant?: 'day' | 'setlist';
 }
 
-export function DayDetailPanel({ date, today, entries, allSongs, allEntries }: DayDetailPanelProps) {
+export function DayDetailPanel({ date, today, entries, allSongs, allEntries, variant = 'day' }: DayDetailPanelProps) {
   const [optimistic, applyAction] = useOptimistic(entries, applyOptimistic);
   const [, startTransition] = useTransition();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -193,23 +195,36 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries }: D
   return (
     <section id="day" aria-labelledby="day-title" aria-live="polite" className="flex min-w-0 flex-col border-t border-border-strong pt-4">
       <header className="mb-3 flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <Eyebrow className="capitalize">{format(parsed, 'EEEE', { locale: hu })}</Eyebrow>
-          <h2 id="day-title" className="display-soft font-display text-[26px] leading-tight font-medium capitalize after:mt-2.5 after:block after:h-0.5 after:w-7 after:bg-primary">
-            {format(parsed, 'MMMM d.', { locale: hu })}
+        {variant === 'setlist' ? (
+          <h2 id="day-title" className="display-soft font-display text-[26px] leading-tight font-medium after:mt-2.5 after:block after:h-0.5 after:w-7 after:bg-primary">
+            Setlist
           </h2>
-        </div>
-        {hasSongs && (
-          <span
-            className={cn(
-              'inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold',
-              isPast ? 'bg-done/15 text-done' : 'bg-primary/12 text-primary-text'
-            )}
-          >
-            {isPast ? <Check className="size-3.5" /> : <Clock className="size-3.5" />}
-            {isPast ? 'Lezajlott' : 'Tervezett'}
-          </span>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <Eyebrow className="capitalize">{format(parsed, 'EEEE', { locale: hu })}</Eyebrow>
+            <h2 id="day-title" className="display-soft font-display text-[26px] leading-tight font-medium capitalize after:mt-2.5 after:block after:h-0.5 after:w-7 after:bg-primary">
+              {format(parsed, 'MMMM d.', { locale: hu })}
+            </h2>
+          </div>
         )}
+        <div className="flex flex-col items-end gap-2">
+          {hasSongs && variant === 'day' && (
+            <span
+              className={cn(
+                'inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold',
+                isPast ? 'bg-done/15 text-done' : 'bg-primary/12 text-primary-text'
+              )}
+            >
+              {isPast ? <Check className="size-3.5" /> : <Clock className="size-3.5" />}
+              {isPast ? 'Lezajlott' : 'Tervezett'}
+            </span>
+          )}
+          {variant === 'day' && (
+            <Link href={`/rehearsals/${date}`} className="text-[13.5px] font-semibold whitespace-nowrap text-primary-text hover:underline">
+              Próba oldala →
+            </Link>
+          )}
+        </div>
       </header>
 
       <motion.div

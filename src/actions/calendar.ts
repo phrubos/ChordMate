@@ -1,10 +1,10 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { calendarEntries } from '@/lib/db/schema';
+import { calendarEntries, rehearsals } from '@/lib/db/schema';
 import { revalidatePath } from 'next/cache';
 import { eq, and, asc, desc, sql } from 'drizzle-orm';
-import { calendarScope, getAccessContext, assertSongsAccess } from '@/lib/access-server';
+import { calendarScope, getAccessContext, assertSongsAccess, rehearsalScope } from '@/lib/access-server';
 import { pickNextRehearsal, todayIso, upcomingRehearsals } from '@/lib/calendar-utils';
 
 export async function getCalendarEntries() {
@@ -105,12 +105,14 @@ export async function removeSongFromDate(entryId: string) {
 }
 
 export async function clearSongsFromDate(date: string) {
-  const scope = calendarScope(await getAccessContext());
+  const ctx = await getAccessContext();
 
-  // Scoped: without it this wiped that day's setlist for every band.
-  await db.delete(calendarEntries).where(and(eq(calendarEntries.date, date), scope));
+  // Scoped: without it this wiped that day's setlist for every band. Deleting the rehearsal also drops its details (attendance cascades).
+  await db.delete(calendarEntries).where(and(eq(calendarEntries.date, date), calendarScope(ctx)));
+  await db.delete(rehearsals).where(and(eq(rehearsals.date, date), rehearsalScope(ctx)));
 
   revalidatePath('/dashboard');
+  revalidatePath('/rehearsals');
 }
 
 export async function reorderCalendarEntries(entryIds: string[]) {

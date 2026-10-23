@@ -118,7 +118,7 @@ export function PracticeControls(p: PracticeControlsProps) {
         {p.isLast ? <Check /> : <SkipForward />}
       </Button>
 
-      {recOpen && <RecordingModal open={recOpen} onOpenChange={setRecOpen} date={p.date} />}
+      {recOpen && <RecordingModal open={recOpen} onOpenChange={setRecOpen} date={p.date} songId={p.song.id} />}
     </footer>
   );
 }

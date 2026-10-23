@@ -12,6 +12,7 @@ import { SongsSection } from './sections/songs';
 import { HubSection } from './sections/hub';
 import { PracticeSection } from './sections/practice';
 import { WrapUpSection } from './sections/wrap-up';
+import { RehearsalPageSection, RehearsalsSection } from './sections/rehearsals';
 import { FormSection } from './sections/form';
 import { AnalyticsSection } from './sections/analytics';
 
@@ -40,6 +41,9 @@ export default async function DevUiPage({ searchParams }: DevUiPageProps) {
       {show('hub') && <HubSection />}
       {show('practice') && <PracticeSection />}
       {show('wrapup') && <WrapUpSection />}
+      {show('rehearsals') && <RehearsalsSection />}
+      {show('rehearsal') && <RehearsalPageSection />}
+      {only === 'rehearsal-edit' && <RehearsalPageSection editOpen />}
       {show('form') && <FormSection />}
       {show('analytics') && <AnalyticsSection />}
       {show('tokens') && <TokensSection />}

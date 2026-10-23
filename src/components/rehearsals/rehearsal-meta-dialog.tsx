@@ -1,0 +1,138 @@
+'use client';
+
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { SegmentedControl } from '@/components/design/segmented-control';
+import { ResponsiveDialog } from '@/components/calendar/responsive-dialog';
+import { saveRehearsalMeta } from '@/actions/rehearsals';
+import { clearSongsFromDate } from '@/actions/calendar';
+import { rehearsalMetaSchema } from '@/lib/validators';
+import type { Rehearsal, RehearsalKind } from '@/types';
+
+interface RehearsalMetaDialogProps {
+  date: string;
+  meta: Rehearsal | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Dev showcase: no server calls. */
+  preview?: boolean;
+}
+
+type Field = 'startTime' | 'endTime' | 'place' | 'goal' | 'notes';
+
+export function RehearsalMetaDialog({ date, meta, open, onOpenChange, preview }: RehearsalMetaDialogProps) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [kind, setKind] = useState<RehearsalKind>(meta?.kind ?? 'rehearsal');
+  const [values, setValues] = useState<Record<Field, string>>({
+    startTime: meta?.startTime ?? '',
+    endTime: meta?.endTime ?? '',
+    place: meta?.place ?? '',
+    goal: meta?.goal ?? '',
+    notes: meta?.notes ?? '',
+  });
+  const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const set = (field: Field) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setValues((v) => ({ ...v, [field]: e.target.value }));
+
+  function save() {
+    const input = { kind, ...values };
+    const parsed = rehearsalMetaSchema.safeParse(input);
+    if (!parsed.success) {
+      setErrors(Object.fromEntries(parsed.error.issues.map((i) => [i.path[0], i.message])));
+      return;
+    }
+    setErrors({});
+    if (preview) return onOpenChange(false);
+    startTransition(async () => {
+      try {
+        await saveRehearsalMeta(date, input);
+        toast.success('Próba mentve');
+        onOpenChange(false);
+        router.refresh();
+      } catch {
+        toast.error('Nem sikerült menteni');
+      }
+    });
+  }
+
+  function remove() {
+    if (!confirmDelete) return setConfirmDelete(true);
+    if (preview) return onOpenChange(false);
+    startTransition(async () => {
+      try {
+        await clearSongsFromDate(date);
+        toast.success('Próba törölve');
+        router.push('/rehearsals');
+      } catch {
+        toast.error('Nem sikerült törölni');
+      }
+    });
+  }
+
+  const error = (field: Field) => errors[field] && <p className="text-[13px] text-destructive">{errors[field]}</p>;
+
+  return (
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange} title="Próba részletei">
+      <div className="flex flex-col gap-4 overflow-y-auto">
+        <SegmentedControl<RehearsalKind>
+          ariaLabel="Típus"
+          value={kind}
+          onChange={setKind}
+          options={[
+            { value: 'rehearsal', label: 'Próba' },
+            { value: 'gig', label: 'Fellépés' },
+          ]}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rh-start">Kezdés</Label>
+            <Input id="rh-start" type="time" value={values.startTime} onChange={set('startTime')} aria-invalid={!!errors.startTime} />
+            {error('startTime')}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="rh-end">Vége</Label>
+            <Input id="rh-end" type="time" value={values.endTime} onChange={set('endTime')} aria-invalid={!!errors.endTime} />
+            {error('endTime')}
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="rh-place">Helyszín</Label>
+          <Input id="rh-place" value={values.place} onChange={set('place')} placeholder="pl. Próbaterem, Szeged" aria-invalid={!!errors.place} />
+          {error('place')}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="rh-goal">Cél</Label>
+          <Input id="rh-goal" value={values.goal} onChange={set('goal')} placeholder="pl. Az új dalok átvétele" aria-invalid={!!errors.goal} />
+          {error('goal')}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="rh-notes">Jegyzet</Label>
+          <Textarea id="rh-notes" rows={3} value={values.notes} onChange={set('notes')} aria-invalid={!!errors.notes} />
+          {error('notes')}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+        <Button variant="ghost" size="sm" className="text-destructive" disabled={pending} onClick={remove}>
+          <Trash2 />
+          {confirmDelete ? 'Biztosan törlöd?' : 'Próba törlése'}
+        </Button>
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Mégse
+          </Button>
+          <Button disabled={pending} onClick={save}>
+            Mentés
+          </Button>
+        </div>
+      </div>
+    </ResponsiveDialog>
+  );
+}

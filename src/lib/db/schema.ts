@@ -172,12 +172,57 @@ export const recordings = pgTable('recordings', {
   audioData: text('audio_data').notNull(),
   mimeType: text('mime_type').notNull(),
   duration: integer('duration').notNull(),
+  songId: uuid('song_id').references(() => songs.id, { onDelete: 'set null' }),
   bandId: uuid('band_id').references(() => bands.id, { onDelete: 'cascade' }),
   addedById: text('added_by_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
+
+export type RehearsalKind = 'rehearsal' | 'gig';
+export type AttendanceAnswer = 'yes' | 'maybe' | 'no';
+
+/** Optional details of a rehearsal day; the setlist itself stays in calendar_entries (band + date). */
+export const rehearsals = pgTable(
+  'rehearsals',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    bandId: uuid('band_id').references(() => bands.id, { onDelete: 'cascade' }),
+    date: date('date', { mode: 'string' }).notNull(),
+    startTime: text('start_time'),
+    endTime: text('end_time'),
+    place: text('place'),
+    goal: text('goal'),
+    notes: text('notes'),
+    kind: text('kind').$type<RehearsalKind>().notNull().default('rehearsal'),
+    createdById: text('created_by_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (r) => ({
+    bandDate: uniqueIndex('rehearsals_band_date_idx').on(r.bandId, r.date),
+  })
+);
+
+export const rehearsalAttendance = pgTable(
+  'rehearsal_attendance',
+  {
+    rehearsalId: uuid('rehearsal_id')
+      .notNull()
+      .references(() => rehearsals.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    answer: text('answer').$type<AttendanceAnswer>().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (a) => ({
+    pk: primaryKey({ columns: [a.rehearsalId, a.userId] }),
+  })
+);
 
 // ============================================================
 // Relációk
@@ -258,5 +303,28 @@ export const recordingsRelations = relations(recordings, ({ one }) => ({
   band: one(bands, {
     fields: [recordings.bandId],
     references: [bands.id],
+  }),
+  song: one(songs, {
+    fields: [recordings.songId],
+    references: [songs.id],
+  }),
+}));
+
+export const rehearsalsRelations = relations(rehearsals, ({ one, many }) => ({
+  band: one(bands, {
+    fields: [rehearsals.bandId],
+    references: [bands.id],
+  }),
+  attendance: many(rehearsalAttendance),
+}));
+
+export const rehearsalAttendanceRelations = relations(rehearsalAttendance, ({ one }) => ({
+  rehearsal: one(rehearsals, {
+    fields: [rehearsalAttendance.rehearsalId],
+    references: [rehearsals.id],
+  }),
+  user: one(users, {
+    fields: [rehearsalAttendance.userId],
+    references: [users.id],
   }),
 }));

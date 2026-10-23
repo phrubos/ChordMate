@@ -26,3 +26,8 @@ export function canAccessCalendarEntry(entry: Owned, ctx: AccessContext): boolea
   if (ctx.bandId) return entry.bandId === ctx.bandId;
   return entry.bandId === null && entry.addedById === ctx.userId;
 }
+
+/** Rehearsal details follow the calendar-entry rule (creator instead of adder). */
+export function canAccessRehearsal(row: { bandId: string | null; createdById: string }, ctx: AccessContext): boolean {
+  return canAccessCalendarEntry({ bandId: row.bandId, addedById: row.createdById }, ctx);
+}

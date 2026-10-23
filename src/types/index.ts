@@ -1,4 +1,5 @@
-import type { songs, calendarEntries, users, recordings, bands, bandMembers } from '@/lib/db/schema';
+import type { songs, calendarEntries, users, recordings, bands, bandMembers, rehearsals } from '@/lib/db/schema';
+export type { RehearsalKind, AttendanceAnswer } from '@/lib/db/schema';
 import type { InferSelectModel } from 'drizzle-orm';
 
 export type User = InferSelectModel<typeof users>;
@@ -7,6 +8,7 @@ export type CalendarEntry = InferSelectModel<typeof calendarEntries>;
 export type Recording = InferSelectModel<typeof recordings>;
 export type Band = InferSelectModel<typeof bands>;
 export type BandMember = InferSelectModel<typeof bandMembers>;
+export type Rehearsal = InferSelectModel<typeof rehearsals>;
 
 export type RecordingMeta = Omit<Recording, 'audioData'>;
 
