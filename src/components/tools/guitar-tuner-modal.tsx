@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Eyebrow } from '@/components/design/eyebrow';
 import { cn } from '@/lib/utils';
+import { springStep, type SpringState } from '@/lib/tuner';
 import { Mic, MicOff } from 'lucide-react';
 
 const GUITAR_STRINGS = [
@@ -172,6 +173,8 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const bufferRef = useRef<Float32Array<ArrayBuffer> | null>(null);
+  // A17: the shown cents follow the detected ones on a critically damped spring; a new note snaps.
+  const needleRef = useRef<{ midi: number; at: number; spring: SpringState } | null>(null);
 
   const stopListening = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -207,7 +210,13 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
       setDetectedNote(info.note);
       setDetectedOctave(info.octave);
       setDetectedFreq(Math.round(freq * 10) / 10);
-      setCents(Math.max(-50, Math.min(50, info.cents)));
+      const target = Math.max(-50, Math.min(50, info.cents));
+      const now = performance.now();
+      const needle = needleRef.current;
+      const spring =
+        needle && needle.midi === info.midi ? springStep(needle.spring, target, now - needle.at) : { value: target, velocity: 0 };
+      needleRef.current = { midi: info.midi, at: now, spring };
+      setCents(spring.value);
 
       const matched = closestGuitarString(info.note, info.octave);
       setMatchedString(matched?.string ?? null);
@@ -240,6 +249,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
       setDetectedFreq(null);
       setCents(0);
       setMatchedString(null);
+      needleRef.current = null;
 
       rafRef.current = requestAnimationFrame(detect);
     } catch {
@@ -254,7 +264,8 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
     return () => stopListening();
   }, [open, stopListening]);
 
-  const absCents = Math.abs(cents);
+  const shownCents = Math.round(cents);
+  const absCents = Math.abs(shownCents);
   const inTune = detectedNote !== null && absCents <= 5;
   const noteColor = !detectedNote
     ? 'text-muted-foreground/40'
@@ -268,7 +279,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
     ? 'Pengesd meg egy húrt'
     : inTune
     ? 'Stimmel!'
-    : cents < 0
+    : shownCents < 0
     ? 'Túl mély ↓'
     : 'Túl magas ↑';
 
@@ -312,7 +323,7 @@ export function GuitarTunerModal({ open, onOpenChange }: GuitarTunerModalProps) 
           <div className="text-center">
             {detectedNote && (
               <p className={`text-sm font-medium ${noteColor}`}>
-                {cents > 0 ? '+' : ''}{cents} cent
+                {shownCents > 0 ? '+' : ''}{shownCents} cent
               </p>
             )}
             <p className={`text-xs mt-1 ${inTune ? 'text-done font-semibold' : 'text-muted-foreground'}`}>
