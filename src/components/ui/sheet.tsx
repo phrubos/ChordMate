@@ -82,9 +82,36 @@ function SheetContent({ className, children, ...props }: DialogPrimitive.Popup.P
     const first = recent[0];
     const dt = first ? t - first.t : 0;
     const velocity = dt > 0 ? ((y - first.y) / dt) * 1000 : 0;
-    // The exit keyframe has no `from`, so closing continues from where the finger left the sheet.
-    if (shouldDismiss(y - d.startY, velocity, d.height)) closeRef.current?.click();
-    else setOffset(0, 'var(--dur-sheet) var(--ease-drawer)');
+    if (!shouldDismiss(y - d.startY, velocity, d.height)) setOffset(0, 'var(--dur-sheet) var(--ease-drawer)');
+    else if (!d.follow) closeRef.current?.click();
+    else slideOut(Math.max(0, y - d.startY), velocity);
+  }
+
+  /**
+   * Finish a drag-dismiss from where the finger let go, then close without the CSS exit. The exit keyframe has
+   * no `from`, and some mobile browsers start it from an earlier position — the sheet jumped back up first.
+   */
+  function slideOut(offset: number, velocity: number) {
+    const popup = popupRef.current;
+    if (!popup) return;
+    const remaining = Math.max(popup.offsetHeight - offset, 1);
+    // --ease-out starts at ~4.3× its average speed: pick the duration that hands over the finger's velocity.
+    const ms = Math.round(Math.min(260, Math.max(120, velocity > 0 ? ((4.3 * remaining) / velocity) * 1000 : 200)));
+    popup.dataset.draggedOut = '';
+    if (backdropRef.current) backdropRef.current.dataset.draggedOut = '';
+    setOffset(popup.offsetHeight, `${ms}ms var(--ease-out)`);
+    if (backdropRef.current) backdropRef.current.style.opacity = '0';
+    let done = false;
+    const close = () => {
+      if (done) return;
+      done = true;
+      popup.removeEventListener('transitionend', onEnd);
+      closeRef.current?.click();
+    };
+    // Children's transitions bubble here too; only the sheet's own transform counts.
+    const onEnd = (e: TransitionEvent) => e.target === popup && e.propertyName === 'transform' && close();
+    popup.addEventListener('transitionend', onEnd);
+    window.setTimeout(close, ms + 80);
   }
 
   function cancel() {
@@ -164,14 +191,14 @@ function SheetContent({ className, children, ...props }: DialogPrimitive.Popup.P
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop
         ref={backdropRef}
-        className="fixed inset-0 z-[70] bg-scrim/60 duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
+        className="fixed inset-0 z-[70] bg-scrim/60 duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 data-dragged-out:animate-none!"
       />
       <DialogPrimitive.Popup
         ref={attachTouch}
         data-slot="sheet-content"
         className={cn(
           'fixed inset-x-0 bottom-0 z-[70] flex max-h-[88dvh] flex-col gap-4 overscroll-contain **:overscroll-contain rounded-t-2xl border-t border-border-strong bg-card px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] text-card-foreground outline-none',
-          'duration-300 ease-(--ease-drawer) data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-200 data-closed:ease-(--ease-out) motion-reduce:data-open:slide-in-from-bottom-0 motion-reduce:data-closed:slide-out-to-bottom-0',
+          'duration-300 ease-(--ease-drawer) data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-200 data-closed:ease-(--ease-out) motion-reduce:data-open:slide-in-from-bottom-0 motion-reduce:data-closed:slide-out-to-bottom-0 data-dragged-out:animate-none!',
           className
         )}
         {...props}
