@@ -1,3 +1,5 @@
+import { formatDate } from './utils';
+
 interface TrackBase {
   id: string;
   title: string;
@@ -63,6 +65,11 @@ export function toTrack(song: SongLike): VideoTrack | null {
 export function recordingTrack(rec: RecordingLike, subtitle: string): RecordingTrack {
   // Prefixed: a recording and a song must never share a queue id.
   return { kind: 'recording', id: `rec:${rec.id}`, recordingId: rec.id, title: rec.name, artist: subtitle, imageUrl: null, duration: rec.duration };
+}
+
+/** Second line for a recording in the player and lists: "Saját felvétel · okt. 13." */
+export function recordingSubtitle(date: string): string {
+  return 'Saját felvétel · ' + formatDate(date, 'MMM d.');
 }
 
 /** m:ss, or h:mm:ss from an hour. */

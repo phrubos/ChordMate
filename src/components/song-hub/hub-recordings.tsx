@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import { Loader2, Pause, Play } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { getRecordingAudio } from '@/actions/recordings';
+import { usePlayer } from '@/components/player/player-provider';
+import { ElapsedTime, SeekBar, TotalTime } from '@/components/player/seek-bar';
+import { formatClock, recordingSubtitle, recordingTrack } from '@/lib/player-state';
+import { cn } from '@/lib/utils';
 
 export interface HubRecording {
   id: string;
@@ -13,63 +14,58 @@ export interface HubRecording {
   duration: number | null;
 }
 
-function formatDuration(sec: number | null) {
-  if (!sec) return '—';
-  const s = Math.round(sec);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
-
-/** Compact recording list with one shared audio element. */
+/** The song's recordings; they play in the mini player (A22), the playing row gets the seek bar (A21). */
 export function HubRecordings({ recordings }: { recordings: HubRecording[] }) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urlRef = useRef<string | null>(null);
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-
-  function stop() {
-    audioRef.current?.pause();
-    audioRef.current = null;
-    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-    urlRef.current = null;
-    setPlayingId(null);
-  }
-
-  useEffect(() => stop, []);
-
-  async function toggle(rec: HubRecording) {
-    if (playingId === rec.id) return stop();
-    stop();
-    setLoadingId(rec.id);
-    try {
-      const { audioData, mimeType } = await getRecordingAudio(rec.id);
-      const bytes = Uint8Array.from(atob(audioData), (c) => c.charCodeAt(0));
-      const url = URL.createObjectURL(new Blob([bytes], { type: mimeType }));
-      const audio = new Audio(url);
-      audio.addEventListener('ended', stop);
-      urlRef.current = url;
-      audioRef.current = audio;
-      await audio.play();
-      setPlayingId(rec.id);
-    } catch {
-      toast.error('Hiba a lejátszásnál');
-    } finally {
-      setLoadingId(null);
-    }
-  }
+  const player = usePlayer();
 
   if (recordings.length === 0) return <p className="text-sm text-muted-foreground">Ehhez a dalhoz még nincs felvétel.</p>;
 
+  const queue = recordings.map((r) => recordingTrack({ ...r, duration: r.duration ?? 0 }, recordingSubtitle(r.date)));
+
+  function toggle(index: number) {
+    if (player.current?.id === queue[index].id) player.toggle();
+    else player.playTrack(queue[index], queue);
+  }
+
   return (
     <ul className="flex flex-col">
-      {recordings.map((r) => (
-        <li key={r.id} className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 border-t border-border py-2 first:border-t-0">
-          <Button variant="outline" size="icon" aria-label={`${playingId === r.id ? 'Szünet' : 'Lejátszás'}: ${r.name}`} onClick={() => toggle(r)}>
-            {loadingId === r.id ? <Loader2 className="animate-spin motion-reduce:animate-none" /> : playingId === r.id ? <Pause className="fill-current" /> : <Play className="fill-current" />}
-          </Button>
-          <span className="truncate text-[14px] font-semibold" title={r.name}>{r.name}</span>
-          <span className="font-mono text-[13px] text-muted-foreground tabular-nums">{formatDuration(r.duration)}</span>
-        </li>
-      ))}
+      {recordings.map((r, index) => {
+        const isCurrent = player.current?.id === queue[index].id;
+        const isPlaying = isCurrent && player.state.isPlaying;
+        const isLoading = isPlaying && player.loading;
+        return (
+          <li key={r.id} className="border-t border-border py-2 first:border-t-0">
+            <div className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3">
+              <Button
+                variant={isCurrent ? 'default' : 'outline'}
+                size="icon"
+                aria-label={`${isPlaying ? 'Szünet' : 'Lejátszás'}: ${r.name}`}
+                aria-busy={isLoading || undefined}
+                onClick={() => toggle(index)}
+              >
+                {isLoading ? (
+                  <Loader2 className="animate-spin motion-reduce:animate-none" />
+                ) : isPlaying ? (
+                  <Pause className="fill-current" />
+                ) : (
+                  <Play className="fill-current" />
+                )}
+              </Button>
+              <span className={cn('truncate text-[14px] font-semibold', isCurrent && 'text-primary-text')} title={r.name}>
+                {r.name}
+              </span>
+              <span className="font-mono text-[13px] text-muted-foreground tabular-nums">{r.duration ? formatClock(r.duration) : '—'}</span>
+            </div>
+            {isCurrent && (
+              <div className="mt-1 ml-[52px] flex items-center gap-2.5 font-mono text-[11px] text-muted-foreground animate-in fade-in-0 duration-(--dur-fade)">
+                <ElapsedTime className="w-9 shrink-0" />
+                <SeekBar label={`Lejátszási pozíció: ${r.name}`} className="h-6 flex-1" />
+                <TotalTime className="w-9 shrink-0 text-right" />
+              </div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }

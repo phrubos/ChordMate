@@ -1,6 +1,8 @@
 'use client';
 
 import { PlayerProvider } from '@/components/player/player-provider';
+import { MiniPlayer } from '@/components/player/mini-player';
+import { devRecordingLoader } from '../dev-audio';
 import { SongHubView } from '@/components/song-hub/song-hub-view';
 import { extractChords } from '@/lib/chords';
 import { upcomingRehearsals } from '@/lib/calendar-utils';
@@ -13,7 +15,7 @@ const history = [...new Set(fixtureEntries.filter((e) => e.songId === song.id).m
 export function HubSection() {
   return (
     <section id="hub">
-      <PlayerProvider>
+      <PlayerProvider loadRecording={devRecordingLoader}>
         <SongHubView
           song={{ ...song, notes: 'A 2. versszak után a szólónál mindketten lassítunk — az ütemváltásnál figyelj a basszusra.' }}
           rehearsal={slot ? { date: slot.date, position: slot.position!, count: slot.count } : null}
@@ -25,6 +27,7 @@ export function HubSection() {
           ]}
           today={FIXTURE_TODAY}
         />
+        <MiniPlayer />
       </PlayerProvider>
     </section>
   );

@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Mic, Square, Play, Pause, Trash2, Pencil, Check, X, Save, Loader2 } from 'lucide-react';
 import { PlayerProvider, usePlayer, usePlayerOptional } from '@/components/player/player-provider';
 import { ElapsedTime, SeekBar, TotalTime } from '@/components/player/seek-bar';
-import { formatClock, recordingTrack } from '@/lib/player-state';
+import { formatClock, recordingSubtitle, recordingTrack } from '@/lib/player-state';
 import {
   saveRecording as dbSave,
   getRecordingsByDate,
@@ -28,7 +28,7 @@ import {
 import type { RecordingMeta } from '@/types';
 import { toast } from 'sonner';
 import { ExpandableText } from '@/components/shared/expandable-text';
-import { cn, formatDate } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -80,9 +80,6 @@ function RecorderDisc({ recording, label, elapsed }: { recording: boolean; label
 }
 
 // ─── Recordings List ───────────────────────────────────────────
-/** "Saját felvétel · okt. 13." — the second line in the player. */
-const recordingSubtitle = (date: string) => `Saját felvétel · ${formatDate(date, 'MMM d.')}`;
-
 /**
  * A22: recordings play in the shared player — the mini player on app pages (it keeps playing after the
  * modal closes), or the modal's own provider in Próba mód. The playing row shows the seek bar (A21).
