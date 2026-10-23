@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { ArrowDown, ChevronUp, Mic, Minus, Plus, SkipBack, SkipForward, Video } from 'lucide-react';
+import { ArrowDown, Check, ChevronUp, Mic, Minus, Plus, SkipBack, SkipForward, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DEFAULT_BPM } from '@/lib/practice';
@@ -18,7 +18,8 @@ interface PracticeControlsProps {
   song: Song;
   date: string;
   canPrev: boolean;
-  canNext: boolean;
+  /** On the last song 'Következő' becomes 'Befejezés' (opens the wrap-up). */
+  isLast: boolean;
   onPrev: () => void;
   onNext: () => void;
   metronomeOn: boolean;
@@ -112,9 +113,9 @@ export function PracticeControls(p: PracticeControlsProps) {
         </Tool>
       </div>
 
-      <Button size="lg" className="max-md:size-11 max-md:px-0" disabled={!p.canNext} onClick={p.onNext} aria-label="Következő dal">
-        <span className="hidden md:inline">Következő</span>
-        <SkipForward />
+      <Button size="lg" className="max-md:size-11 max-md:px-0" onClick={p.onNext} aria-label={p.isLast ? 'Befejezés' : 'Következő dal'}>
+        <span className="hidden md:inline">{p.isLast ? 'Befejezés' : 'Következő'}</span>
+        {p.isLast ? <Check /> : <SkipForward />}
       </Button>
 
       {recOpen && <RecordingModal open={recOpen} onOpenChange={setRecOpen} date={p.date} />}

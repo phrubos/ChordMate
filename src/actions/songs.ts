@@ -1,13 +1,14 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { songs, bandMembers } from '@/lib/db/schema';
+import { songs } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { eq, or, and, ilike, desc, asc, isNotNull, isNull, inArray } from 'drizzle-orm';
+import { eq, or, and, ilike, desc, asc, isNotNull, inArray } from 'drizzle-orm';
 import { songSchema, type SongFormValues } from '@/lib/validators';
 import { fetchAlbumArt } from '@/lib/fetch-album-art';
 import { getUserBandId } from './bands';
+import { assertSongsAccess, getAccessContext, songScope } from '@/lib/access-server';
 import { SONG_STATUSES, type SongStatus } from '@/lib/song-meta';
 import { buildSongInsights } from '@/lib/neglected';
 import { todayIso } from '@/lib/calendar-utils';
@@ -24,33 +25,13 @@ interface SongFilters {
 }
 
 export async function getSongs(filters?: string | SongFilters) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('Unauthorized');
-
-  const bandId = await getUserBandId();
+  const ctx = await getAccessContext();
 
   // Support legacy string search param
   const f: SongFilters = typeof filters === 'string' ? { search: filters } : (filters ?? {});
 
-  const conditions = [];
-  // Scope to band
-  if (bandId) {
-    // Get all member IDs so we can also show songs they added without a band context
-    const members = await db.query.bandMembers.findMany({
-      where: eq(bandMembers.bandId, bandId),
-      columns: { userId: true },
-    });
-    const memberIds = members.map((m) => m.userId);
-    conditions.push(
-      or(
-        eq(songs.bandId, bandId),
-        and(isNull(songs.bandId), inArray(songs.addedById, memberIds))
-      )!
-    );
-  } else {
-    conditions.push(isNull(songs.bandId));
-    conditions.push(eq(songs.addedById, session.user.id));
-  }
+  // Scope: the active band's songs plus band-less songs its members added (lib/access.ts)
+  const conditions = [songScope(ctx)];
 
   if (f.search) {
     conditions.push(
@@ -84,6 +65,14 @@ export async function getSongs(filters?: string | SongFilters) {
   });
 }
 
+/** Lean title/artist lookup for the global search palette — no tab content, capped result count. */
+export async function searchSongs(query: string, limit = 8) {
+  const q = query.trim();
+  if (!q) return [];
+  const rows = await getSongs({ search: q });
+  return rows.slice(0, limit).map(({ id, title, artist, imageUrl, status }) => ({ id, title, artist, imageUrl, status }));
+}
+
 /** Reads the musical metadata fields from a song form; empty strings become undefined. */
 function musicFields(formData: FormData) {
   const get = (key: string) => {
@@ -104,9 +93,8 @@ function musicValues(data: SongFormValues) {
 }
 
 export async function setSongStatus(id: string, status: SongStatus) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('Unauthorized');
   if (!SONG_STATUSES.includes(status)) throw new Error('Invalid status');
+  await assertSongsAccess([id], await getAccessContext());
 
   await db.update(songs).set({ status, updatedAt: new Date() }).where(eq(songs.id, id));
 
@@ -115,18 +103,37 @@ export async function setSongStatus(id: string, status: SongStatus) {
   revalidatePath(`/songs/${id}`);
 }
 
+/** Practice wrap-up: saves several status changes at once, only for songs in the user's band scope. */
+export async function setSongStatuses(changes: { id: string; status: SongStatus }[]) {
+  if (changes.some((c) => !SONG_STATUSES.includes(c.status))) throw new Error('Invalid status');
+  const ctx = await getAccessContext();
+  const ids = changes.map((c) => c.id);
+  const visible = ids.length
+    ? new Set((await db.select({ id: songs.id }).from(songs).where(and(inArray(songs.id, ids), songScope(ctx)))).map((r) => r.id))
+    : new Set<string>();
+  const allowed = changes.filter((c) => visible.has(c.id));
+  if (allowed.length === 0) return;
+
+  const now = new Date();
+  await Promise.all(allowed.map((c) => db.update(songs).set({ status: c.status, updatedAt: now }).where(eq(songs.id, c.id))));
+
+  revalidatePath('/songs');
+  revalidatePath('/dashboard');
+  for (const c of allowed) revalidatePath(`/songs/${c.id}`);
+}
+
 /** Dashboard cards: 3 songs worth bringing back + repertoire status counts. */
 export async function getDashboardSongInsights() {
   const [allSongs, entries] = await Promise.all([getSongs(), getCalendarEntries()]);
   return buildSongInsights(allSongs, entries, todayIso());
 }
 
+/** A song the user can access, or undefined (pages turn that into a 404). */
 export async function getSongById(id: string) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('Unauthorized');
+  const ctx = await getAccessContext();
 
   return db.query.songs.findFirst({
-    where: eq(songs.id, id),
+    where: and(eq(songs.id, id), songScope(ctx)),
     with: { addedBy: true },
   });
 }
@@ -190,8 +197,7 @@ export async function createSong(formData: FormData) {
 }
 
 export async function updateSong(id: string, formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('Unauthorized');
+  await assertSongsAccess([id], await getAccessContext());
 
   const rawTabContent = (formData.get('tabContent') as string | null)?.trim();
   const rawTabUrl = (formData.get('tabUrl') as string | null)?.trim();
@@ -237,10 +243,10 @@ export async function updateSong(id: string, formData: FormData) {
 }
 
 export async function deleteSong(id: string) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('Unauthorized');
+  const ctx = await getAccessContext();
+  await assertSongsAccess([id], ctx);
 
-  await db.delete(songs).where(eq(songs.id, id));
+  await db.delete(songs).where(and(eq(songs.id, id), songScope(ctx)));
 
   revalidatePath('/songs');
   revalidatePath('/dashboard');
@@ -254,10 +260,9 @@ export async function deleteSong(id: string) {
 }
 
 export async function toggleFavorite(id: string) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('Unauthorized');
+  const ctx = await getAccessContext();
 
-  const song = await db.query.songs.findFirst({ where: eq(songs.id, id) });
+  const song = await db.query.songs.findFirst({ where: and(eq(songs.id, id), songScope(ctx)) });
   if (!song) throw new Error('Song not found');
 
   await db
@@ -270,25 +275,7 @@ export async function toggleFavorite(id: string) {
 }
 
 export async function getSongStats() {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('Unauthorized');
-
-  const bandId = await getUserBandId();
-  let condition;
-  if (bandId) {
-    const members = await db.query.bandMembers.findMany({
-      where: eq(bandMembers.bandId, bandId),
-      columns: { userId: true },
-    });
-    const memberIds = members.map((m) => m.userId);
-    condition = or(
-      eq(songs.bandId, bandId),
-      and(isNull(songs.bandId), inArray(songs.addedById, memberIds))
-    );
-  } else {
-    condition = and(isNull(songs.bandId), eq(songs.addedById, session.user.id));
-  }
-  const allSongs = await db.select().from(songs).where(condition);
+  const allSongs = await db.select().from(songs).where(songScope(await getAccessContext()));
   const totalSongs = allSongs.length;
   const withTabs = allSongs.filter((s) => s.tabContent).length;
   const favorites = allSongs.filter((s) => s.isFavorite).length;

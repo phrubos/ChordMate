@@ -19,6 +19,11 @@ Gitárgyakorlás-szervező (Next.js 16 App Router, React 19, Tailwind v4, shadcn
 - Napló: `docs/superpowers/progress/2026-10-16-midnight-liner-redesign.md`
 - Mockup: `.superdesign/design_iterations/hybrid.html` (sötét), `liner.html` (világos)
 
+## Szótár (UI-feliratok)
+- **Próba** = esemény (egy nap a naptárban, a banda közösen). **Setlist** = a próba dalsora, sorrenddel.
+- **Próba mód** = a színpadi nézet (`/practice/[date]`). **Gyakorlás** = egyéni, próbán kívüli Próba mód (`/practice/song/[id]`).
+- A „gyakorlás” szót ne használd a banda próbáira (statisztika, napló): ott „próba”.
+
 ## Szabályok
 - Komponensben nincs nyers szín (hex / Tailwind palettaszín), csak tokenek.
 - Animáció csak a spec 6. fejezete szerint (A1–A9), csak transform/opacity, reduced-motion tisztelete.

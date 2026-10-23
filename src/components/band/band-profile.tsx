@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Users, Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield, Camera, Image as ImageIcon, Eye, Plus, Ticket, Loader2 } from 'lucide-react';
 import {
@@ -33,9 +33,11 @@ interface BandProfileProps {
   band: BandWithMembers;
   currentUserId: string;
   bandCount?: number;
+  /** Connected services (Spotify), rendered as their own section. */
+  integrations?: ReactNode;
 }
 
-export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileProps) {
+export function BandProfile({ band, currentUserId, bandCount = 1, integrations }: BandProfileProps) {
   const router = useRouter();
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(band.name);
@@ -394,6 +396,13 @@ export function BandProfile({ band, currentUserId, bandCount = 1 }: BandProfileP
               })}
           </div>
         </div>
+
+        {integrations && (
+          <div className="flex flex-col">
+            <SectionHeader title="Integrációk" className="mb-4" />
+            {integrations}
+          </div>
+        )}
 
         {/* Add new band / Join */}
         <div

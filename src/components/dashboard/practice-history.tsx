@@ -9,14 +9,14 @@ interface PracticeDay {
   songs: string[];
 }
 
-/** "Próba történet": upcoming rehearsals first, then the last 10. Today counts as upcoming. */
+/** "Próbanapló": upcoming rehearsals first, then the last 10. Today counts as upcoming. */
 export function PracticeHistory({ history, today }: { history: PracticeDay[]; today: string }) {
   const upcoming = history.filter((h) => h.date >= today).sort((a, b) => a.date.localeCompare(b.date));
   const past = history.filter((h) => h.date < today).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
 
   return (
     <section className="flex flex-col gap-4">
-      <SectionHeader title="Próba történet" />
+      <SectionHeader title="Próbanapló" />
       {history.length === 0 ? (
         <p className="text-sm text-muted-foreground">Még nincs próbanap.</p>
       ) : (

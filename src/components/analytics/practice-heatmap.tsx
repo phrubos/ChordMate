@@ -59,11 +59,11 @@ export function PracticeHeatmap({ data }: PracticeHeatmapProps) {
   return (
     <section className="flex min-w-0 flex-col gap-4">
       <SectionHeader
-        title="Gyakorlás hőtérkép"
+        title="Próbák hőtérképe"
         actions={<span className="font-mono text-[13px] text-muted-foreground">{activeDays} nap · {total} dal</span>}
       />
       <div ref={scrollRef} className="overflow-x-auto pb-2">
-        <svg width={weeks * (CELL + GAP) + LEFT} height={7 * (CELL + GAP)} className="block" role="grid" aria-label="Gyakorlás az elmúlt egy évben">
+        <svg width={weeks * (CELL + GAP) + LEFT} height={7 * (CELL + GAP)} className="block" role="grid" aria-label="Próbák az elmúlt egy évben">
           {DAY_LABELS.map(
             (d, i) =>
               d && (

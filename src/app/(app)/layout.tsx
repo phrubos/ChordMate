@@ -5,6 +5,7 @@ import { Masthead } from '@/components/layout/masthead';
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { ToolsLauncher } from '@/components/layout/tools-launcher';
+import { GlobalSearch } from '@/components/layout/global-search';
 import { PlayerProvider } from '@/components/player/player-provider';
 import { MiniPlayer } from '@/components/player/mini-player';
 
@@ -15,13 +16,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <ToolsLauncher>
-      <PlayerProvider>
-        <Masthead user={user} />
-        <MobileTopBar user={user} />
-        <main className="mx-auto w-full max-w-[1320px] px-4 pt-6 pb-36 lg:px-10 lg:pt-11">{children}</main>
-        <MiniPlayer />
-        <BottomNav />
-      </PlayerProvider>
+      <GlobalSearch>
+        <PlayerProvider>
+          <Masthead user={user} />
+          <MobileTopBar user={user} />
+          <main className="mx-auto w-full max-w-[1320px] px-4 pt-6 pb-36 lg:px-10 lg:pt-11">{children}</main>
+          <MiniPlayer />
+          <BottomNav />
+        </PlayerProvider>
+      </GlobalSearch>
     </ToolsLauncher>
   );
 }

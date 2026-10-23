@@ -40,3 +40,22 @@ export function weekStripDates(anchor: string, days = 14): string[] {
   const start = startOfWeek(parseISO(anchor), { weekStartsOn: 1 });
   return Array.from({ length: days }, (_, i) => format(addDays(start, i), 'yyyy-MM-dd'));
 }
+
+export interface UpcomingRehearsal {
+  date: string;
+  count: number;
+  /** 1-based position of the song in that setlist, null when it is not on it. */
+  position: number | null;
+}
+
+/** Rehearsal days from today on (entries must be in setlist order), with where `songId` sits in each. */
+export function upcomingRehearsals<T extends { date: string; songId: string }>(entries: T[], today: string, songId: string): UpcomingRehearsal[] {
+  const byDate = new Map<string, T[]>();
+  for (const e of entries) if (e.date >= today) byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
+  return [...byDate.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, list]) => {
+      const i = list.findIndex((e) => e.songId === songId);
+      return { date, count: list.length, position: i === -1 ? null : i + 1 };
+    });
+}

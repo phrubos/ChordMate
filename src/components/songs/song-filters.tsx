@@ -29,9 +29,13 @@ export function SongFilters({ counts }: { counts: Record<StatusTab, number> }) {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
-  useEffect(() => {
-    if (searchParams.get('focus') === 'search') inputRef.current?.focus();
-  }, [searchParams]);
+  // The global search palette can change ?search= while this page is mounted — mirror it into the input.
+  const urlSearch = filters.search ?? '';
+  const [syncedSearch, setSyncedSearch] = useState(urlSearch);
+  if (urlSearch !== syncedSearch) {
+    setSyncedSearch(urlSearch);
+    if (urlSearch !== query.trim()) setQuery(urlSearch);
+  }
 
   useEffect(() => {
     if (query === (filters.search ?? '')) return;

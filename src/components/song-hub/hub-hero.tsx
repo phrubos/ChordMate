@@ -2,9 +2,9 @@
 
 import { useOptimistic, useTransition } from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Heart, Play, Theater } from 'lucide-react';
+import { ArrowRight, Heart, Play, Theater } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { CoverArt } from '@/components/design/cover-art';
@@ -22,7 +22,14 @@ import { StatusPicker } from './status-picker';
 /** Hungarian names are family-name first: the given name is the last word. */
 const givenName = (name: string | null | undefined) => name?.trim().split(/\s+/).at(-1) ?? null;
 
-export function HubHero({ song, practiceHref }: { song: SongWithUser; practiceHref: string }) {
+/** The next rehearsal this song is on, and where it sits in that setlist. */
+export interface HubRehearsal {
+  date: string;
+  position: number;
+  count: number;
+}
+
+export function HubHero({ song, rehearsal }: { song: SongWithUser; rehearsal: HubRehearsal | null }) {
   const player = usePlayer();
   const [fav, setFav] = useOptimistic(song.isFavorite);
   const [, startTransition] = useTransition();
@@ -77,7 +84,7 @@ export function HubHero({ song, practiceHref }: { song: SongWithUser; practiceHr
           <StatusPicker songId={song.id} status={song.status} />
         </div>
         <div className="flex items-center gap-2">
-          <Link href={practiceHref} className={cn(buttonVariants({ size: 'lg' }), 'max-md:h-10 max-md:px-4')}>
+          <Link href={`/practice/song/${song.id}`} className={cn(buttonVariants({ size: 'lg' }), 'max-md:h-10 max-md:px-4')}>
             <Theater />
             Gyakorlás
           </Link>
@@ -92,6 +99,15 @@ export function HubHero({ song, practiceHref }: { song: SongWithUser; practiceHr
           </Button>
           <SongActionsMenu song={song} />
         </div>
+        {rehearsal && (
+          <Link
+            href={`/practice/${rehearsal.date}?i=${rehearsal.position}`}
+            className="inline-flex w-fit items-center gap-1.5 text-[13.5px] text-muted-foreground hover:text-foreground"
+          >
+            <span className="first-letter:uppercase">{format(parseISO(rehearsal.date), 'MMM d.', { locale: hu })} próba</span> · setlist {rehearsal.position}/{rehearsal.count}
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+        )}
       </div>
     </section>
   );

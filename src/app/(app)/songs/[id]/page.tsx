@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { getSongById } from '@/actions/songs';
-import { getSongHistory } from '@/actions/calendar';
+import { getSongHistory, getUpcomingRehearsals } from '@/actions/calendar';
 import { getRecordingsByDate } from '@/actions/recordings';
 import { extractChords } from '@/lib/chords';
 import { todayIso } from '@/lib/calendar-utils';
@@ -17,7 +17,7 @@ export default async function SongHubPage({ params }: SongHubPageProps) {
   if (!session?.user) redirect('/login');
 
   const { id } = await params;
-  const [song, history] = await Promise.all([getSongById(id), getSongHistory(id)]);
+  const [song, history, upcoming] = await Promise.all([getSongById(id), getSongHistory(id), getUpcomingRehearsals(id)]);
   if (!song) notFound();
 
   const today = todayIso();
@@ -30,12 +30,12 @@ export default async function SongHubPage({ params }: SongHubPageProps) {
     .filter((r) => r.name.toLowerCase().includes(title))
     .map((r) => ({ id: r.id, name: r.name, date: r.date, duration: r.duration }));
 
-  const nextPlanned = dates.filter((d) => d >= today).at(-1);
+  const slot = upcoming.find((r) => r.position !== null);
 
   return (
     <SongHubView
       song={song as SongWithUser}
-      practiceHref={`/practice/${nextPlanned ?? 'next'}`}
+      rehearsal={slot ? { date: slot.date, position: slot.position!, count: slot.count } : null}
       chords={extractChords(song.tabContent)}
       history={dates}
       recordings={recordings}

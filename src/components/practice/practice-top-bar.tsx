@@ -24,10 +24,10 @@ function Elapsed() {
 }
 
 /** × exit, segmented progress (A3: current segment grows from the left), i/n, elapsed time. */
-export function PracticeTopBar({ index, total, animate }: { index: number; total: number; animate: boolean }) {
+export function PracticeTopBar({ index, total, animate, exitHref }: { index: number; total: number; animate: boolean; exitHref: string }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border px-3 md:h-[68px] md:gap-5 md:px-5">
-      <Link href="/dashboard" aria-label="Kilépés a próba módból" className="grid size-10 place-items-center rounded-full text-muted-foreground hover:text-foreground">
+      <Link href={exitHref} aria-label="Kilépés a próba módból" className="grid size-10 place-items-center rounded-full text-muted-foreground hover:text-foreground">
         <X className="size-5" />
       </Link>
       <div className="flex flex-1 gap-1.5" role="progressbar" aria-label="Haladás a setlistben" aria-valuemin={1} aria-valuemax={total} aria-valuenow={index + 1}>
