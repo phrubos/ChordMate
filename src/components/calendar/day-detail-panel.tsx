@@ -349,6 +349,8 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries, var
               className="bg-destructive text-background hover:bg-destructive/90"
               onClick={() =>
                 startTransition(async () => {
+                  // AlertDialogAction is a plain button: it does not close the dialog by itself.
+                  setClearOpen(false);
                   try {
                     await clearSongsFromDate(date);
                     toast.success('Próba törölve');
