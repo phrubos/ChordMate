@@ -5,6 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant hover-device (@media (hover: hover) and (pointer: fine));
 
+/* Unmarked transitions get the spec easing instead of Tailwind's default curve (spec §6).
+   Not `inline`: the transition utilities read these variables at runtime. */
+@theme {
+  --default-transition-timing-function: var(--ease-out);
+  --default-transition-duration: var(--dur-fade);
+}
+
 @theme inline {
   --color-page: var(--page);
   --color-background: var(--background);

@@ -97,7 +97,7 @@ Méretskála (px): hero 64 / mobil 40 · h1 60 / mobil 40 · kártyacím 26 · d
 
 Alapelv (Emil Kowalski): az animáció csak akkor marad, ha van célja, és illik a gyakoriságához. Minden animáció `transform`/`opacity` (+ legfeljebb 2px blur). Csökkentett mozgásnál (`prefers-reduced-motion`) a mozgás eltűnik, a halvány átúszás marad. A Motion-ön `MotionConfig reducedMotion="user"`.
 
-**Tokenek:** `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)` · `--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1)` · `--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1)` · időtartamok: press 160ms, fade 150ms, popover 180ms, dialog 200ms, sheet 300ms; a kilépés ~65%-a a belépésnek.
+**Tokenek:** `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)` · `--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1)` · `--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1)` · időtartamok: press 160ms, fade 150ms, popover 180ms, dialog 200ms, sheet 300ms; a kilépés ~65%-a a belépésnek. Jelöletlen `transition-*` osztály is `--ease-out`-ot és 150ms-ot kap (`--default-transition-*` a `@theme`-ben). Töltő gomb: a felirat kiúszik (opacity + `scale(.96)` + 2px blur, 150ms), helyén forgó jel; nincs ugráló pötty.
 
 | # | Hol | Cél | Gyakoriság | Mozgás |
 |---|---|---|---|---|
@@ -106,7 +106,7 @@ Alapelv (Emil Kowalski): az animáció csak akkor marad, ha van célja, és illi
 | A3 | Próba mód dalváltás (gombbal vagy swipe-pal) | Térbeli folytonosság | Alkalmanként | tartalom `translateX(±24px)` + opacity → 0, 220ms `--ease-out`, iránytól függően; **billentyűvel indítva azonnali**; haladásszegmens `scaleX` 0 → 1 (balról), 300ms `--ease-in-out` |
 | A4 | Metronóm ütem-pöttyök | Állapotjelzés (funkcionális) | Gyakorlás közben | CSS keyframe, periódus = 4 × 60/BPM s, aktív pötty `scale(1.35)` + szín, az első ütem amber; csökkentett mozgásnál csak színváltás |
 | A5 | `SegmentedControl` aktív jelző | Állapotjelzés | Naponta tucatszor | Motion `layoutId`, `{ type: "spring", duration: 0.3, bounce: 0 }`; csökkentett mozgásnál azonnali |
-| A6 | Dal eltávolítása a setlistből, visszavonás | Hirtelen változás elkerülése | Alkalmanként | `AnimatePresence` + `layout`: kilépés opacity 0 + magasság összecsukása, 200ms `--ease-out`; visszatérés 200ms |
+| A6 | Dal eltávolítása a setlistből, visszavonás | Hirtelen változás elkerülése | Alkalmanként | `AnimatePresence` + `layout`: kilépés opacity 0 + magasság összecsukása, 130ms `--ease-out` (a belépés ~65%-a); visszatérés 200ms |
 | A7 | Napi panel tartalomcsere napváltáskor | Hirtelen változás elkerülése | Naponta tucatszor | csak átúszás: opacity .6 → 1 + `blur(2px)` → 0, 150ms `--ease-out`, elmozdulás nélkül |
 | A8 | Hero borítósáv első megjelenése | Öröm (ritka) | Munkamenetenként egyszer (`sessionStorage`) | `clip-path: inset(0 0 100% 0)` → `inset(0)`, 450ms `--ease-out`, 60ms késleltetés borítónként; csökkentett mozgásnál nincs |
 | A9 | Dropdown, popover, szűrő popover | Térbeli folytonosság | Alkalmanként | `scale(.97)` + opacity, 180ms `--ease-out`, `transform-origin: var(--transform-origin)` (Base UI) |

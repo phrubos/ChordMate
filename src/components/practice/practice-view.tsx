@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -11,6 +12,7 @@ import { useStoredNumber } from '@/hooks/use-stored-number';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { TabSizeControl } from '@/components/song-hub/tab-size-control';
 import { useMetronome } from '@/hooks/use-metronome';
+import { dur, ease, exitDur } from '@/lib/motion';
 import { clampIndex, DEFAULT_BPM } from '@/lib/practice';
 import { cn } from '@/lib/utils';
 import type { Song } from '@/types';
@@ -155,17 +157,27 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
           header={!sideInfo && <PracticeInfo variant="inline" song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />}
         />
       </SongSwipe>
-      {videoOn && song.youtubeUrl && isDesktop && (
-        <div className="fixed right-5 bottom-[92px] z-40 w-[380px] overflow-hidden rounded-[6px] bg-card shadow-[0_24px_48px_oklch(0_0_0/.5)] ring-1 ring-border-strong">
-          <div className="flex items-center justify-between px-3 py-1.5">
-            <span className="truncate text-[13px] font-medium text-muted-foreground">{song.title} — videó</span>
-            <Button variant="ghost" size="icon-sm" aria-label="Videó bezárása" onClick={() => setVideoOn(false)}>
-              <X />
-            </Button>
-          </div>
-          <YouTubePlayer key={song.id} url={song.youtubeUrl} />
-        </div>
-      )}
+      {/* A2 desktop: grows out of the bottom-right corner, towards the Videó button. */}
+      <AnimatePresence>
+        {videoOn && song.youtubeUrl && isDesktop && (
+          <motion.div
+            key="video-panel"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1, transition: { duration: dur.dialog, ease: ease.out } }}
+            exit={{ opacity: 0, scale: 0.96, transition: { duration: exitDur(dur.dialog), ease: ease.out } }}
+            style={{ transformOrigin: '100% 100%' }}
+            className="fixed right-5 bottom-[92px] z-40 w-[380px] overflow-hidden rounded-[6px] bg-card shadow-[0_24px_48px_oklch(0_0_0/.5)] ring-1 ring-border-strong"
+          >
+            <div className="flex items-center justify-between px-3 py-1.5">
+              <span className="truncate text-[13px] font-medium text-muted-foreground">{song.title} — videó</span>
+              <Button variant="ghost" size="icon-sm" aria-label="Videó bezárása" onClick={() => setVideoOn(false)}>
+                <X />
+              </Button>
+            </div>
+            <YouTubePlayer key={song.id} url={song.youtubeUrl} />
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Sheet open={videoOn && !!song.youtubeUrl && !isDesktop} onOpenChange={setVideoOn}>
         <SheetContent>
           <SheetTitle>{song.title}</SheetTitle>
