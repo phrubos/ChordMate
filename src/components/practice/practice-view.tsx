@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { YouTubePlayer } from '@/components/youtube/youtube-player';
 import { useIsDesktop } from '@/hooks/use-is-desktop';
 import { useStoredNumber } from '@/hooks/use-stored-number';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { TabSizeControl } from '@/components/song-hub/tab-size-control';
 import { useMetronome } from '@/hooks/use-metronome';
 import { ease } from '@/lib/motion';
@@ -61,6 +62,9 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
   const [videoOn, setVideoOn] = useState(false);
   const [finished, setFinished] = useState(false);
   const isDesktop = useIsDesktop();
+  // Side column only on large, tall screens. Phones (also in landscape) and tablets get one scrolling
+  // column where the title and chord boxes scroll away with the tab.
+  const sideInfo = useMediaQuery('(min-width: 1024px) and (min-height: 640px)', true);
   const [storedSize, setTabSize] = useStoredNumber(isDesktop ? 'chordmate:practice-tab-size' : 'chordmate:practice-tab-size-mobile');
   const tabSize = storedSize ?? (isDesktop ? 18 : 15);
   const metronome = useMetronome({ bpm: song?.bpm ?? DEFAULT_BPM });
@@ -134,19 +138,21 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
       </PracticeTopBar>
       <motion.div
         key={index}
-        className="flex min-h-0 flex-1 flex-col md:grid md:grid-cols-[340px_minmax(0,1fr)]"
+        className={cn('flex min-h-0 flex-1 flex-col', sideInfo && 'grid grid-cols-[340px_minmax(0,1fr)]')}
         initial={animate ? { opacity: 0, x: direction * 24 } : false}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.22, ease: ease.out }}
       >
-        <aside className="hidden md:block md:overflow-y-auto md:border-r md:border-border md:px-7 md:py-7">
-          <PracticeInfo song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />
-        </aside>
+        {sideInfo && (
+          <aside className="overflow-y-auto border-r border-border px-7 py-7">
+            <PracticeInfo variant="side" song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />
+          </aside>
+        )}
         <PracticeSheet
           ref={sheetRef}
           song={song}
           fontSize={tabSize}
-          header={!isDesktop && <PracticeInfo song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />}
+          header={!sideInfo && <PracticeInfo variant="inline" song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />}
         />
       </motion.div>
       {videoOn && song.youtubeUrl && isDesktop && (

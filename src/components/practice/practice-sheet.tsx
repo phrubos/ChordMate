@@ -13,9 +13,10 @@ interface PracticeSheetProps {
 export const PracticeSheet = forwardRef<HTMLElement, PracticeSheetProps>(function PracticeSheet({ song, fontSize, header }, ref) {
   return (
     <section ref={ref} tabIndex={0} aria-label="Kotta" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5 outline-none md:px-12 md:py-10">
-      {header && <div className="-mx-4 -mt-5 mb-5 border-b border-border px-4 py-4 md:hidden">{header}</div>}
+      {header && <div className="-mx-4 -mt-5 mb-5 shrink-0 border-b border-border px-4 py-4 md:-mx-12 md:-mt-10 md:mb-8 md:px-12 md:py-6">{header}</div>}
       {song.tabContent ? (
-        <TabSheet tabContent={song.tabContent} fontSize={fontSize} />
+        // shrink-0: in this flex column the <pre> would otherwise shrink and scroll by itself, pinning the header.
+        <TabSheet tabContent={song.tabContent} fontSize={fontSize} className="shrink-0" />
       ) : (
         <div className="grid flex-1 place-items-center text-center text-sm text-muted-foreground">
           <p>
