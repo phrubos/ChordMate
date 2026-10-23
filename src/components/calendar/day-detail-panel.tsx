@@ -244,7 +244,7 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries, var
                       role="listitem"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0, transition: { duration: exitDur(0.3), ease: ease.out } }}
+                      exit={{ opacity: 0, height: 0, transition: { duration: exitDur(0.2), ease: ease.out } }}
                       transition={{ duration: 0.2, ease: ease.out }}
                       className="overflow-hidden"
                     >

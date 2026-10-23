@@ -1,6 +1,7 @@
 "use client"
 
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
+import { Loader2 } from "lucide-react"
 import { type VariantProps } from "class-variance-authority"
 
 import { buttonVariants } from "./button-variants"
@@ -20,27 +21,23 @@ function Button({
   ...props
 }: ButtonProps) {
   if (isLoading) {
+    // The label crossfades out (blur + scale .96) and a spinner takes its place; the width stays put.
     return (
       <ButtonPrimitive
         data-slot="button"
-        className={cn(
-          buttonVariants({ variant, size, className }),
-          "relative overflow-hidden !pointer-events-auto opacity-90"
-        )}
-        aria-disabled={true}
-        onClick={(e) => {
-          e.preventDefault()
-        }}
         {...props}
+        className={cn(buttonVariants({ variant, size, className }), "relative !pointer-events-auto")}
+        aria-disabled={true}
+        aria-busy={true}
+        // After {...props}: a loading button must not run the caller's onClick a second time.
+        onClick={(e) => e.preventDefault()}
       >
-        <span className="inline-flex items-center justify-center gap-1.5 transition-[color,background-color,border-color,opacity,transform] duration-300 w-full h-full opacity-0 scale-95">
+        <span className="inline-flex size-full items-center justify-center gap-[inherit] animate-out fade-out-0 zoom-out-[0.96] blur-out-[2px] fill-mode-forwards duration-(--dur-fade) ease-(--ease-out)">
           {props.children}
         </span>
-        <div className="absolute inset-0 flex items-center justify-center gap-1.5">
-          <div className="size-2 rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
-          <div className="size-2 rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />
-          <div className="size-2 rounded-full bg-current animate-bounce" />
-        </div>
+        <span className="absolute inset-0 grid place-items-center animate-in fade-in-0 zoom-in-90 blur-in-[2px] duration-(--dur-fade) ease-(--ease-out)">
+          <Loader2 aria-hidden className="size-4 animate-spin motion-reduce:animate-none" />
+        </span>
       </ButtonPrimitive>
     )
   }

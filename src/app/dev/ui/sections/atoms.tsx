@@ -32,6 +32,7 @@ export function AtomsSection() {
         <Button variant="ghost" size="icon" aria-label="Kedvenc"><Heart /></Button>
         <Button variant="destructive">Törlés</Button>
         <Button variant="link">Szerkesztés</Button>
+        <LoadingDemo />
       </div>
 
       <div className="flex flex-wrap items-center gap-6">
@@ -74,5 +75,26 @@ export function AtomsSection() {
         {['Bm', 'F#', 'A', 'E', 'G', 'D', 'Em'].map((c) => <ChordDiagram key={c} name={c} />)}
       </div>
     </section>
+  );
+}
+
+/** Loading state demo: the label gives way to a spinner for 1.5s. */
+function LoadingDemo() {
+  const [loading, setLoading] = useState(false);
+  const [clicks, setClicks] = useState(0);
+  return (
+    <Button
+      variant="outline"
+      isLoading={loading}
+      data-clicks={clicks}
+      onClick={() => {
+        setClicks((c) => c + 1);
+        setLoading(true);
+        setTimeout(() => setLoading(false), 1500);
+      }}
+    >
+      <Plus />
+      Mentés
+    </Button>
   );
 }

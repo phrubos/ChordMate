@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -12,7 +12,7 @@ import { useStoredNumber } from '@/hooks/use-stored-number';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { TabSizeControl } from '@/components/song-hub/tab-size-control';
 import { useMetronome } from '@/hooks/use-metronome';
-import { ease } from '@/lib/motion';
+import { dur, ease, exitDur } from '@/lib/motion';
 import { clampIndex, DEFAULT_BPM } from '@/lib/practice';
 import { cn } from '@/lib/utils';
 import type { Song } from '@/types';
@@ -21,10 +21,11 @@ import { PracticeInfo } from './practice-info';
 import { PracticeSheet } from './practice-sheet';
 import { PracticeControls } from './practice-controls';
 import { PracticeWrapUp } from './practice-wrap-up';
+import { SongSwipe } from './song-swipe';
 import { useAutoScroll } from './use-auto-scroll';
 import { useWakeLock } from './use-wake-lock';
 
-type Source = 'button' | 'keyboard' | 'initial';
+type Source = 'button' | 'swipe' | 'keyboard' | 'initial';
 
 interface PracticeViewProps {
   /** Rehearsal day, or today for a solo session — recordings are filed under it. */
@@ -120,7 +121,7 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
   }, [go, next, router, toggleMetronome, exitHref, finished, preview]);
 
   // A3: slide + fade only for pointer-initiated changes; keyboard changes are instant.
-  const animate = source === 'button';
+  const animate = source === 'button' || source === 'swipe';
 
   if (finished) {
     return (
@@ -136,12 +137,13 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
       <PracticeTopBar index={index} total={songs.length} animate={animate} exitHref={exitHref}>
         {song.tabContent && <TabSizeControl size={tabSize} onChange={setTabSize} />}
       </PracticeTopBar>
-      <motion.div
+      <SongSwipe
         key={index}
-        className={cn('flex min-h-0 flex-1 flex-col', sideInfo && 'grid grid-cols-[340px_minmax(0,1fr)]')}
-        initial={animate ? { opacity: 0, x: direction * 24 } : false}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.22, ease: ease.out }}
+        canPrev={index > 0}
+        canNext={!isLast}
+        onSwipe={(delta) => go(delta, 'swipe')}
+        enterFrom={animate ? direction * 24 : false}
+        className={cn(sideInfo && 'grid grid-cols-[340px_minmax(0,1fr)]')}
       >
         {sideInfo && (
           <aside className="overflow-y-auto border-r border-border px-7 py-7">
@@ -154,18 +156,28 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
           fontSize={tabSize}
           header={!sideInfo && <PracticeInfo variant="inline" song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />}
         />
-      </motion.div>
-      {videoOn && song.youtubeUrl && isDesktop && (
-        <div className="fixed right-5 bottom-[92px] z-40 w-[380px] overflow-hidden rounded-[6px] bg-card shadow-[0_24px_48px_oklch(0_0_0/.5)] ring-1 ring-border-strong">
-          <div className="flex items-center justify-between px-3 py-1.5">
-            <span className="truncate text-[13px] font-medium text-muted-foreground">{song.title} — videó</span>
-            <Button variant="ghost" size="icon-sm" aria-label="Videó bezárása" onClick={() => setVideoOn(false)}>
-              <X />
-            </Button>
-          </div>
-          <YouTubePlayer key={song.id} url={song.youtubeUrl} />
-        </div>
-      )}
+      </SongSwipe>
+      {/* A2 desktop: grows out of the bottom-right corner, towards the Videó button. */}
+      <AnimatePresence>
+        {videoOn && song.youtubeUrl && isDesktop && (
+          <motion.div
+            key="video-panel"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1, transition: { duration: dur.dialog, ease: ease.out } }}
+            exit={{ opacity: 0, scale: 0.96, transition: { duration: exitDur(dur.dialog), ease: ease.out } }}
+            style={{ transformOrigin: '100% 100%' }}
+            className="fixed right-5 bottom-[92px] z-40 w-[380px] overflow-hidden rounded-[6px] bg-card shadow-[0_24px_48px_oklch(0_0_0/.5)] ring-1 ring-border-strong"
+          >
+            <div className="flex items-center justify-between px-3 py-1.5">
+              <span className="truncate text-[13px] font-medium text-muted-foreground">{song.title} — videó</span>
+              <Button variant="ghost" size="icon-sm" aria-label="Videó bezárása" onClick={() => setVideoOn(false)}>
+                <X />
+              </Button>
+            </div>
+            <YouTubePlayer key={song.id} url={song.youtubeUrl} />
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Sheet open={videoOn && !!song.youtubeUrl && !isDesktop} onOpenChange={setVideoOn}>
         <SheetContent>
           <SheetTitle>{song.title}</SheetTitle>

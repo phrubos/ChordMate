@@ -69,6 +69,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const mode = useSyncExternalStore(subscribeMode, readMode, (): PlayerMode => 'video');
   const [slot, setSlot] = useState<{ el: HTMLElement; songId: string } | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  // Collapsing plays the exit first (A2); the box only restyles to docked/hidden once it has finished.
+  const [closing, setClosing] = useState(false);
   const docked = !state.isExpanded && mode === 'video' && !!slot && slot.songId === current?.id;
 
   const setMode = useCallback((m: PlayerMode) => {
@@ -128,12 +130,33 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return () => window.clearInterval(id);
   }, [state.isPlaying]);
 
+  const expand = useCallback(
+    (v: boolean) => {
+      if (v) {
+        setClosing(false);
+        dispatch({ type: 'expand', value: true });
+      } else if (state.isExpanded) setClosing(true);
+    },
+    [state.isExpanded]
+  );
+  const finishClosing = useCallback(() => {
+    setClosing(false);
+    dispatch({ type: 'expand', value: false });
+  }, []);
+
+  // Fallback in case animationend never fires (animations disabled, tab hidden).
+  useEffect(() => {
+    if (!closing) return;
+    const t = window.setTimeout(finishClosing, 400);
+    return () => window.clearTimeout(t);
+  }, [closing, finishClosing]);
+
   useEffect(() => {
     if (!state.isExpanded) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && dispatch({ type: 'expand', value: false });
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && expand(false);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [state.isExpanded]);
+  }, [state.isExpanded, expand]);
 
   const play = useCallback((song: SongLike, queue?: SongLike[]) => {
     const tracks = buildQueue(queue ?? [song]);
@@ -151,12 +174,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       next: () => dispatch({ type: 'next' }),
       prev: () => dispatch({ type: 'prev' }),
       close: () => dispatch({ type: 'close' }),
-      expand: (v: boolean) => dispatch({ type: 'expand', value: v }),
+      expand,
       mode,
       setMode,
       dock,
     }),
-    [state, current, progress, play, mode, setMode, dock]
+    [state, current, progress, play, expand, mode, setMode, dock]
   );
 
   /** Keep our state in sync when the user plays/pauses inside the YouTube iframe itself. */
@@ -174,20 +197,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           aria-hidden={!state.isExpanded && !docked}
           className={cn(
             state.isExpanded
-              ? 'fixed inset-0 z-[80] flex items-end justify-center bg-scrim/70 animate-in fade-in-0 duration-200 md:items-center'
+              ? cn(
+                  'fixed inset-0 z-[80] flex items-end justify-center bg-scrim/70 md:items-center',
+                  closing ? 'animate-out fade-out-0 fill-mode-forwards duration-130' : 'animate-in fade-in-0 duration-200'
+                )
               : docked
                 ? 'fixed z-10 overflow-hidden rounded-[6px] bg-scrim'
                 : 'pointer-events-none fixed top-0 left-0 size-px overflow-hidden opacity-0'
           )}
-          onClick={(e) => e.target === e.currentTarget && dispatch({ type: 'expand', value: false })}
+          onClick={(e) => e.target === e.currentTarget && expand(false)}
         >
           <div
             role={state.isExpanded ? 'dialog' : undefined}
             aria-modal={state.isExpanded || undefined}
             aria-label={state.isExpanded ? `Videó: ${current?.title}` : undefined}
+            onAnimationEnd={(e) => closing && e.target === e.currentTarget && finishClosing()}
             className={cn(
               state.isExpanded
-                ? 'w-full rounded-t-2xl border-t border-border-strong bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300 ease-(--ease-drawer) md:max-w-3xl md:rounded-xl md:border md:slide-in-from-bottom-0 md:zoom-in-[0.96] md:duration-200 md:ease-(--ease-out) motion-reduce:slide-in-from-bottom-0 motion-reduce:zoom-in-100'
+                ? cn(
+                    'w-full rounded-t-2xl border-t border-border-strong bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:max-w-3xl md:rounded-xl md:border',
+                    closing
+                      ? 'animate-out fade-out-0 slide-out-to-bottom fill-mode-forwards duration-200 ease-(--ease-out) md:slide-out-to-bottom-0 md:zoom-out-[0.96] md:duration-130'
+                      : 'animate-in slide-in-from-bottom duration-300 ease-(--ease-drawer) md:slide-in-from-bottom-0 md:zoom-in-[0.96] md:duration-200 md:ease-(--ease-out) motion-reduce:slide-in-from-bottom-0 motion-reduce:zoom-in-100'
+                  )
                 : docked
                   ? 'size-full'
                   : 'size-px'
@@ -199,7 +231,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                   <p className="truncate text-sm font-semibold">{current?.title}</p>
                   <p className="truncate text-[13px] text-muted-foreground">{current?.artist}</p>
                 </div>
-                <Button variant="ghost" size="icon" aria-label="Videó bezárása" autoFocus onClick={() => dispatch({ type: 'expand', value: false })}>
+                <Button variant="ghost" size="icon" aria-label="Videó bezárása" autoFocus onClick={() => expand(false)}>
                   <X />
                 </Button>
               </div>
