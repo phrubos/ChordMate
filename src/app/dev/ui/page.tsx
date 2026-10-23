@@ -11,6 +11,7 @@ import { InsightsSection } from './sections/insights';
 import { SongsSection } from './sections/songs';
 import { HubSection } from './sections/hub';
 import { PracticeSection } from './sections/practice';
+import { WrapUpSection } from './sections/wrap-up';
 import { FormSection } from './sections/form';
 import { AnalyticsSection } from './sections/analytics';
 
@@ -38,6 +39,7 @@ export default async function DevUiPage({ searchParams }: DevUiPageProps) {
       {show('songs') && <SongsSection />}
       {show('hub') && <HubSection />}
       {show('practice') && <PracticeSection />}
+      {show('wrapup') && <WrapUpSection />}
       {show('form') && <FormSection />}
       {show('analytics') && <AnalyticsSection />}
       {show('tokens') && <TokensSection />}

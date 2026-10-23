@@ -123,6 +123,21 @@ export async function setSongStatus(id: string, status: SongStatus) {
   revalidatePath(`/songs/${id}`);
 }
 
+/** Practice wrap-up: saves several status changes at once, only for songs in the user's band scope. */
+export async function setSongStatuses(changes: { id: string; status: SongStatus }[]) {
+  if (changes.some((c) => !SONG_STATUSES.includes(c.status))) throw new Error('Invalid status');
+  const visible = new Set((await getSongs()).map((s) => s.id));
+  const allowed = changes.filter((c) => visible.has(c.id));
+  if (allowed.length === 0) return;
+
+  const now = new Date();
+  await Promise.all(allowed.map((c) => db.update(songs).set({ status: c.status, updatedAt: now }).where(eq(songs.id, c.id))));
+
+  revalidatePath('/songs');
+  revalidatePath('/dashboard');
+  for (const c of allowed) revalidatePath(`/songs/${c.id}`);
+}
+
 /** Dashboard cards: 3 songs worth bringing back + repertoire status counts. */
 export async function getDashboardSongInsights() {
   const [allSongs, entries] = await Promise.all([getSongs(), getCalendarEntries()]);

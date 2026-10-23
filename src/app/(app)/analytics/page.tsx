@@ -21,13 +21,13 @@ export default async function AnalyticsPage() {
   const kpis: { label: string; value: string | number; hint: string }[] = [
     { label: 'Lezajlott próbák', value: data.kpis.pastPracticeDays, hint: 'nap, amikor volt setlist' },
     { label: 'Tervezett próbák', value: data.kpis.futurePracticeDays, hint: 'mától előre' },
-    { label: 'Gyakorolt dalok', value: data.kpis.totalSongsEverPracticed, hint: 'különböző dal próbán' },
+    { label: 'Próbált dalok', value: data.kpis.totalSongsEverPracticed, hint: 'különböző dal próbán' },
     { label: 'Legutóbbi próba', value: data.kpis.lastPracticeDateFormatted ?? '—', hint: data.kpis.lastPracticeDaysAgo != null ? `${data.kpis.lastPracticeDaysAgo} napja` : 'még nem volt' },
   ];
 
   return (
     <div className="flex flex-col gap-12">
-      <PageHeader title="Statisztika" description="A banda gyakorlása egy év alatt" />
+      <PageHeader title="Statisztika" description="A banda próbái egy év alatt" />
 
       <dl className="grid grid-cols-2 border-t border-border-strong md:grid-cols-4">
         {kpis.map((k, i) => (

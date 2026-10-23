@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { beatIntervalMs, clampIndex, formatElapsed, nextBeatTime, scrollStepPx } from './practice';
+import { beatIntervalMs, statusChanges, summarizeChanges, clampIndex, formatElapsed, nextBeatTime, scrollStepPx } from './practice';
 
 describe('practice helpers', () => {
   test('clampIndex', () => {
@@ -30,5 +30,18 @@ describe('practice helpers', () => {
   test('nextBeatTime (seconds)', () => {
     expect(nextBeatTime(1, 120)).toBe(1.5);
     expect(nextBeatTime(0, 60)).toBe(1);
+  });
+});
+
+describe('wrap-up status changes', () => {
+  const before = { a: 'learning', b: 'ok', c: 'ready' } as const;
+
+  test('keeps only songs whose status changed', () => {
+    expect(statusChanges(before, { a: 'ok', b: 'ok' })).toEqual([{ id: 'a', status: 'ok' }]);
+    expect(statusChanges(before, {})).toEqual([]);
+  });
+
+  test('counts songs that moved forward and back', () => {
+    expect(summarizeChanges(before, [{ id: 'a', status: 'ready' }, { id: 'c', status: 'ok' }])).toEqual({ up: 1, down: 1 });
   });
 });

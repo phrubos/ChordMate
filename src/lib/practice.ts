@@ -1,3 +1,5 @@
+import { SONG_STATUSES, type SongStatus } from './song-meta';
+
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 /** Valid song index for a setlist of `length` (0 for an empty list). */
@@ -28,4 +30,28 @@ export function formatElapsed(ms: number): string {
 /** Audio-clock time (seconds) of the beat after `prevTime`. */
 export function nextBeatTime(prevTime: number, bpm: number): number {
   return prevTime + 60 / bpm;
+}
+
+export interface StatusChange {
+  id: string;
+  status: SongStatus;
+}
+
+/** Wrap-up picks that differ from the status the songs had before the session. */
+export function statusChanges(before: Record<string, SongStatus>, picks: Record<string, SongStatus>): StatusChange[] {
+  return Object.entries(picks)
+    .filter(([id, status]) => before[id] !== undefined && before[id] !== status)
+    .map(([id, status]) => ({ id, status }));
+}
+
+/** How many songs moved forward (learning → ok → ready) and back. */
+export function summarizeChanges(before: Record<string, SongStatus>, changes: StatusChange[]): { up: number; down: number } {
+  const rank = (s: SongStatus) => SONG_STATUSES.indexOf(s);
+  let up = 0;
+  let down = 0;
+  for (const c of changes) {
+    if (rank(c.status) > rank(before[c.id])) up++;
+    else down++;
+  }
+  return { up, down };
 }
