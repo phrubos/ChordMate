@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { beatIntervalMs, statusChanges, summarizeChanges, clampIndex, formatElapsed, nextBeatTime, projectMomentum, rubberband, scrollStepPx, swipeDelta } from './practice';
+import { beatIntervalMs, statusChanges, summarizeChanges, clampIndex, formatElapsed, nextBeatTime, scrollStepPx, swipeDelta } from './practice';
 
 describe('practice helpers', () => {
   test('clampIndex', () => {
@@ -47,19 +47,6 @@ describe('wrap-up status changes', () => {
 });
 
 describe('song swipe', () => {
-  test('projectMomentum: px/s → extra px travelled (decay 0.99)', () => {
-    expect(projectMomentum(1000)).toBeCloseTo(99);
-    expect(projectMomentum(-500)).toBeCloseTo(-49.5);
-    expect(projectMomentum(0)).toBe(0);
-  });
-
-  test('rubberband: follows less the further it goes, keeps the sign', () => {
-    expect(rubberband(0, 400)).toBe(0);
-    expect(rubberband(100, 400)).toBeLessThan(55);
-    expect(rubberband(400, 400)).toBeLessThan(rubberband(800, 400));
-    expect(rubberband(-100, 400)).toBe(-rubberband(100, 400));
-  });
-
   test('swipeDelta: finger left → next, right → previous', () => {
     expect(swipeDelta(-150, 0, 400)).toBe(1);
     expect(swipeDelta(150, 0, 400)).toBe(-1);

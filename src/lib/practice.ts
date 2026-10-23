@@ -1,3 +1,4 @@
+import { projectMomentum } from './motion';
 import { SONG_STATUSES, type SongStatus } from './song-meta';
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
@@ -18,16 +19,6 @@ export function beatIntervalMs(bpm: number | null | undefined): number {
 /** Auto-scroll pixels per frame; speed clamped to 0.5–3×. */
 export function scrollStepPx(speed: number): number {
   return 0.35 * clamp(speed, 0.5, 3);
-}
-
-/** Extra px a flick would travel at `velocity` px/s (Apple's deceleration projection, rate 0.99). */
-export function projectMomentum(velocity: number, rate = 0.99): number {
-  return ((velocity / 1000) * rate) / (1 - rate);
-}
-
-/** Past an edge the content follows less and less (iOS rubber-banding). */
-export function rubberband(overshoot: number, dimension: number, constant = 0.55): number {
-  return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
 }
 
 /**

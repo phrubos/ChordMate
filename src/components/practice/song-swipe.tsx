@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, type ReactNode } from 'react';
 import { animate, motion, useMotionValue, useReducedMotion, useTransform, type AnimationPlaybackControls, type PanInfo } from 'motion/react';
-import { dur, ease } from '@/lib/motion';
-import { rubberband, swipeDelta } from '@/lib/practice';
+import { dur, ease, rubberband } from '@/lib/motion';
+import { swipeDelta } from '@/lib/practice';
 import { cn } from '@/lib/utils';
 
 /** A wide tab that can still scroll toward the finger keeps the gesture (inner scroll first, like iOS). */
