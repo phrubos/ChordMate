@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { ease, exitDur, projectMomentum, rubberband, sheetShouldClose, swipeDelta } from './motion';
+import { ease, exitDur, projectMomentum, rubberband, shouldDismiss, swipeDelta } from './motion';
 
 describe('motion tokens', () => {
   test('exit duration is ~65% of the enter duration', () => {
@@ -26,12 +26,12 @@ describe('gesture physics', () => {
     expect(rubberband(-100, 400)).toBe(-rubberband(100, 400));
   });
 
-  test('sheetShouldClose: flick down closes, flick up keeps, else 35% of the height', () => {
-    expect(sheetShouldClose(20, 600, 500)).toBe(true);
-    expect(sheetShouldClose(300, -400, 500)).toBe(false);
-    expect(sheetShouldClose(190, 0, 500)).toBe(true);
-    expect(sheetShouldClose(120, 0, 500)).toBe(false);
-    expect(sheetShouldClose(150, 400, 500)).toBe(true);
+  test('shouldDismiss: flick down closes, flick up keeps, else 35% of the distance', () => {
+    expect(shouldDismiss(20, 600, 500)).toBe(true);
+    expect(shouldDismiss(300, -400, 500)).toBe(false);
+    expect(shouldDismiss(190, 0, 500)).toBe(true);
+    expect(shouldDismiss(120, 0, 500)).toBe(false);
+    expect(shouldDismiss(150, 400, 500)).toBe(true);
   });
 });
 

@@ -49,9 +49,9 @@ export function swipeDelta(offset: number, velocity: number, width: number): -1 
   return projected < 0 ? 1 : -1;
 }
 
-/** Bottom sheet drag-to-dismiss: a clear downward flick, or heading past 35% of its height. */
-export function sheetShouldClose(offset: number, velocity: number, height: number): boolean {
+/** Drag-to-dismiss (sheet, mini player): a clear downward flick, or heading past 35% of `distance`. */
+export function shouldDismiss(offset: number, velocity: number, distance: number): boolean {
   if (velocity >= 500) return true;
   if (velocity <= -300) return false;
-  return offset + projectMomentum(velocity) >= height * 0.35;
+  return offset + projectMomentum(velocity) >= distance * 0.35;
 }
