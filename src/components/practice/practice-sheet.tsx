@@ -1,15 +1,23 @@
-import { forwardRef } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 import { TabSheet } from '@/components/song-hub/tab-sheet';
 import type { Song } from '@/types';
 
+interface PracticeSheetProps {
+  song: Song;
+  fontSize: number;
+  /** Mobile: song info that scrolls away with the tab instead of pinning the top of the screen. */
+  header?: ReactNode;
+}
+
 /** Large, scrollable tab — the auto-scroll target. */
-export const PracticeSheet = forwardRef<HTMLElement, { song: Song }>(function PracticeSheet({ song }, ref) {
+export const PracticeSheet = forwardRef<HTMLElement, PracticeSheetProps>(function PracticeSheet({ song, fontSize, header }, ref) {
   return (
-    <section ref={ref} tabIndex={0} aria-label="Kotta" className="min-h-0 flex-1 overflow-y-auto px-4 py-5 outline-none md:px-12 md:py-10">
+    <section ref={ref} tabIndex={0} aria-label="Kotta" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5 outline-none md:px-12 md:py-10">
+      {header && <div className="-mx-4 -mt-5 mb-5 border-b border-border px-4 py-4 md:hidden">{header}</div>}
       {song.tabContent ? (
-        <TabSheet tabContent={song.tabContent} className="text-[15px] md:text-[18px]" />
+        <TabSheet tabContent={song.tabContent} fontSize={fontSize} />
       ) : (
-        <div className="grid h-full place-items-center text-center text-sm text-muted-foreground">
+        <div className="grid flex-1 place-items-center text-center text-sm text-muted-foreground">
           <p>
             Ehhez a dalhoz nincs tab.
             {song.tabUrl && (

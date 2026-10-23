@@ -24,7 +24,7 @@ export default async function RehearsalPage({ params }: { params: Promise<{ date
   return (
     <div className="flex flex-col gap-10">
       <RehearsalHeader date={date} meta={rehearsal.meta} songCount={rehearsal.entries.length} today={today} />
-      <div className="grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
         <DayDetailPanel date={date} today={today} entries={rehearsal.entries} allSongs={songs} allEntries={allEntries} variant="setlist" />
         {rehearsal.hasBand && <RehearsalAttendance date={date} userId={session.user.id} attendance={rehearsal.attendance} isPast={date < today} />}
       </div>

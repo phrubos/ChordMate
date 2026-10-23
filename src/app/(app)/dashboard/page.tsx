@@ -45,7 +45,7 @@ export default async function DashboardPage() {
       <NextRehearsalHero rehearsal={next} members={members} today={today} bandName={band?.name} meta={nextMeta} />
 
       <DashboardView initialYear={now.getFullYear()} initialMonth={now.getMonth() + 1} entries={entries} allSongs={songs} />
-      <div className="mt-4 grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
         <NeglectedSongsCard items={insights.neglected} nextRehearsalDate={next?.date ?? null} />
         <RepertoireCard counts={insights.statusCounts} />
       </div>

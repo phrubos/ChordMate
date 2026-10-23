@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import YouTube, { type YouTubeEvent, type YouTubePlayer as YTPlayer } from 'react-youtube';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,31 @@ interface PlayerContextValue {
   prev: () => void;
   close: () => void;
   expand: (value: boolean) => void;
+  /** 'video': the video shows in the page's video slot; 'audio': it only plays in the mini player. */
+  mode: PlayerMode;
+  setMode: (mode: PlayerMode) => void;
+  /** A page registers where a song's video should appear inline (pass null to unregister). */
+  dock: (el: HTMLElement | null, songId: string) => void;
+}
+
+export type PlayerMode = 'video' | 'audio';
+const MODE_KEY = 'chordmate:player-mode';
+const modeListeners = new Set<() => void>();
+/** Fallback when storage is unavailable (private mode, blocked site data). */
+let memoryMode: PlayerMode = 'video';
+
+function readMode(): PlayerMode {
+  try {
+    const saved = localStorage.getItem(MODE_KEY);
+    return saved === 'audio' || saved === 'video' ? saved : memoryMode;
+  } catch {
+    return memoryMode;
+  }
+}
+
+function subscribeMode(listener: () => void) {
+  modeListeners.add(listener);
+  return () => modeListeners.delete(listener);
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
@@ -41,6 +66,51 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playerRef = useRef<YTPlayer | null>(null);
   const current = state.queue[state.index] ?? null;
   const videoId = current ? extractYoutubeId(current.youtubeUrl) : null;
+  const mode = useSyncExternalStore(subscribeMode, readMode, (): PlayerMode => 'video');
+  const [slot, setSlot] = useState<{ el: HTMLElement; songId: string } | null>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const docked = !state.isExpanded && mode === 'video' && !!slot && slot.songId === current?.id;
+
+  const setMode = useCallback((m: PlayerMode) => {
+    memoryMode = m;
+    try {
+      localStorage.setItem(MODE_KEY, m);
+    } catch {}
+    modeListeners.forEach((l) => l());
+  }, []);
+
+  const dock = useCallback((el: HTMLElement | null, songId: string) => {
+    setSlot((prev) => (el ? { el, songId } : prev?.songId === songId ? null : prev));
+  }, []);
+
+  // Docked: keep the (never re-parented) iframe box glued over the slot. A rAF loop also catches
+  // layout shifts that neither scroll nor resize events report (tab switches, content above growing).
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    if (!docked || !box || !slot) return;
+    let raf = 0;
+    let last = '';
+    const tick = () => {
+      const r = slot.el.getBoundingClientRect();
+      const key = `${r.top}|${r.left}|${r.width}|${r.height}`;
+      if (key !== last) {
+        last = key;
+        Object.assign(box.style, {
+          top: `${r.top}px`,
+          left: `${r.left}px`,
+          width: `${r.width}px`,
+          height: `${r.height}px`,
+          visibility: r.width > 0 ? 'visible' : 'hidden',
+        });
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => {
+      cancelAnimationFrame(raf);
+      box.removeAttribute('style');
+    };
+  }, [docked, slot]);
 
   useEffect(() => {
     const p = playerRef.current;
@@ -82,8 +152,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       prev: () => dispatch({ type: 'prev' }),
       close: () => dispatch({ type: 'close' }),
       expand: (v: boolean) => dispatch({ type: 'expand', value: v }),
+      mode,
+      setMode,
+      dock,
     }),
-    [state, current, progress, play]
+    [state, current, progress, play, mode, setMode, dock]
   );
 
   /** Keep our state in sync when the user plays/pauses inside the YouTube iframe itself. */
@@ -96,11 +169,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       {children}
       {videoId && (
         <div
-          aria-hidden={!state.isExpanded}
+          ref={boxRef}
+          data-player-box
+          aria-hidden={!state.isExpanded && !docked}
           className={cn(
             state.isExpanded
               ? 'fixed inset-0 z-[80] flex items-end justify-center bg-scrim/70 animate-in fade-in-0 duration-200 md:items-center'
-              : 'pointer-events-none fixed top-0 left-0 size-px overflow-hidden opacity-0'
+              : docked
+                ? 'fixed z-10 overflow-hidden rounded-[6px] bg-scrim'
+                : 'pointer-events-none fixed top-0 left-0 size-px overflow-hidden opacity-0'
           )}
           onClick={(e) => e.target === e.currentTarget && dispatch({ type: 'expand', value: false })}
         >
@@ -111,7 +188,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             className={cn(
               state.isExpanded
                 ? 'w-full rounded-t-2xl border-t border-border-strong bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300 ease-(--ease-drawer) md:max-w-3xl md:rounded-xl md:border md:slide-in-from-bottom-0 md:zoom-in-[0.96] md:duration-200 md:ease-(--ease-out) motion-reduce:slide-in-from-bottom-0 motion-reduce:zoom-in-100'
-                : 'size-px'
+                : docked
+                  ? 'size-full'
+                  : 'size-px'
             )}
           >
             {state.isExpanded && (
@@ -125,7 +204,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 </Button>
               </div>
             )}
-            <div className={cn('relative overflow-hidden rounded-lg bg-scrim', state.isExpanded ? 'aspect-video w-full' : 'size-px')}>
+            <div className={cn('relative overflow-hidden bg-scrim', state.isExpanded ? 'aspect-video w-full rounded-lg' : docked ? 'size-full' : 'size-px')}>
               <YouTube
                 videoId={videoId}
                 opts={{ width: '100%', height: '100%', playerVars: { autoplay: 1, modestbranding: 1, playsinline: 1 } }}

@@ -44,7 +44,7 @@ export function TrendChart({ data }: { data: TrendDataPoint[] }) {
   const pct = (x: number) => `${(x / W) * 100}%`;
 
   return (
-    <section className="flex min-w-0 flex-col gap-4">
+    <section className="flex min-w-0 flex-col gap-4 overflow-x-clip">
       <SectionHeader
         title="Havi trend"
         actions={

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { Clock, X } from 'lucide-react';
@@ -24,7 +24,7 @@ function Elapsed() {
 }
 
 /** × exit, segmented progress (A3: current segment grows from the left), i/n, elapsed time. */
-export function PracticeTopBar({ index, total, animate, exitHref }: { index: number; total: number; animate: boolean; exitHref: string }) {
+export function PracticeTopBar({ index, total, animate, exitHref, children }: { index: number; total: number; animate: boolean; exitHref: string; children?: ReactNode }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border px-3 md:h-[68px] md:gap-5 md:px-5">
       <Link href={exitHref} aria-label="Kilépés a próba módból" className="grid size-10 place-items-center rounded-full text-muted-foreground hover:text-foreground">
@@ -46,6 +46,7 @@ export function PracticeTopBar({ index, total, animate, exitHref }: { index: num
           </span>
         ))}
       </div>
+      {children}
       <span className={cn('font-mono text-[15px] font-semibold tabular-nums')}>
         {index + 1}
         <span className="text-faint">/{total}</span>

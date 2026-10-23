@@ -15,7 +15,11 @@ Bm                    F#
 On a dark desert highway
 A                     E
 G                     D
-Em                    F#`;
+Em                    F#
+
+[Solo]
+e|--14-15-17--15-14--------------------17b19r17-15-14--------------15-17-19-17-15----|
+B|-----------------17-15-14--15-17-------------------17-15-15--17-----------------17-|`;
 
 type Seed = [id: string, title: string, artist: string, difficulty: number, fav: boolean, tab: boolean, status: SongStatus, key: string, bpm: number, capo: number, tuning: string | null];
 
@@ -38,7 +42,7 @@ export const fixtureSongs: SongWithUser[] = SEEDS.map(([id, title, artist, diffi
   id,
   title,
   artist,
-  youtubeUrl: id === 'black' ? null : `https://www.youtube.com/watch?v=${id}`,
+  youtubeUrl: id === 'black' ? null : `https://www.youtube.com/watch?v=${id.padEnd(11, '0').slice(0, 11)}`,
   difficulty,
   notes: id === 'hotel' ? 'A 2. versszak után a szólónál lassítunk.' : null,
   tabContent: tab ? HOTEL_TAB : null,

@@ -28,7 +28,7 @@ export function RehearsalPageSection({ editOpen = false }: { editOpen?: boolean 
     <section id="rehearsal" className="flex flex-col gap-10">
       <PlayerProvider>
         <RehearsalHeader date={date} meta={fixtureRehearsals[0]} songCount={entries.length} today={FIXTURE_TODAY} preview initialEditOpen={editOpen} />
-        <div className="grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
           <DayDetailPanel date={date} today={FIXTURE_TODAY} entries={entries} allSongs={fixtureSongs} allEntries={fixtureEntries} variant="setlist" />
           <RehearsalAttendance date={date} userId="u-peter" attendance={fixtureAttendance} isPast={false} preview />
         </div>

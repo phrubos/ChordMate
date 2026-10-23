@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { YouTubePlayer } from '@/components/youtube/youtube-player';
 import { useIsDesktop } from '@/hooks/use-is-desktop';
+import { useStoredNumber } from '@/hooks/use-stored-number';
+import { TabSizeControl } from '@/components/song-hub/tab-size-control';
 import { useMetronome } from '@/hooks/use-metronome';
 import { ease } from '@/lib/motion';
 import { clampIndex, DEFAULT_BPM } from '@/lib/practice';
@@ -59,6 +61,8 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
   const [videoOn, setVideoOn] = useState(false);
   const [finished, setFinished] = useState(false);
   const isDesktop = useIsDesktop();
+  const [storedSize, setTabSize] = useStoredNumber(isDesktop ? 'chordmate:practice-tab-size' : 'chordmate:practice-tab-size-mobile');
+  const tabSize = storedSize ?? (isDesktop ? 18 : 15);
   const metronome = useMetronome({ bpm: song?.bpm ?? DEFAULT_BPM });
   const toggleMetronome = metronome.toggle;
   const isLast = index === songs.length - 1;
@@ -125,7 +129,9 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
 
   return (
     <div className={cn('flex h-dvh flex-col overflow-hidden', className)}>
-      <PracticeTopBar index={index} total={songs.length} animate={animate} exitHref={exitHref} />
+      <PracticeTopBar index={index} total={songs.length} animate={animate} exitHref={exitHref}>
+        {song.tabContent && <TabSizeControl size={tabSize} onChange={setTabSize} />}
+      </PracticeTopBar>
       <motion.div
         key={index}
         className="flex min-h-0 flex-1 flex-col md:grid md:grid-cols-[340px_minmax(0,1fr)]"
@@ -133,10 +139,15 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.22, ease: ease.out }}
       >
-        <aside className="shrink-0 border-b border-border px-4 py-4 md:overflow-y-auto md:border-r md:border-b-0 md:px-7 md:py-7">
+        <aside className="hidden md:block md:overflow-y-auto md:border-r md:border-border md:px-7 md:py-7">
           <PracticeInfo song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />
         </aside>
-        <PracticeSheet ref={sheetRef} song={song} />
+        <PracticeSheet
+          ref={sheetRef}
+          song={song}
+          fontSize={tabSize}
+          header={!isDesktop && <PracticeInfo song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />}
+        />
       </motion.div>
       {videoOn && song.youtubeUrl && isDesktop && (
         <div className="fixed right-5 bottom-[92px] z-40 w-[380px] overflow-hidden rounded-[6px] bg-card shadow-[0_24px_48px_oklch(0_0_0/.5)] ring-1 ring-border-strong">

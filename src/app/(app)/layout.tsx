@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <PlayerProvider>
           <Masthead user={user} />
           <MobileTopBar user={user} />
-          <main className="mx-auto w-full max-w-[1320px] px-4 pt-6 pb-36 lg:px-10 lg:pt-11">{children}</main>
+          <main className="mx-auto w-full max-w-[1320px] max-md:overflow-x-clip px-4 pt-6 pb-36 lg:px-10 lg:pt-11">{children}</main>
           <MiniPlayer />
           <BottomNav />
         </PlayerProvider>
