@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
-import { rubberband, sheetShouldClose } from '@/lib/motion';
+import { rubberband, shouldDismiss } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 /**
@@ -73,7 +73,7 @@ function SheetContent({ className, children, ...props }: DialogPrimitive.Popup.P
     const dt = first ? e.timeStamp - first.t : 0;
     const velocity = dt > 0 ? ((e.clientY - first.y) / dt) * 1000 : 0;
     // The exit keyframe has no `from`, so closing continues from where the finger left the sheet.
-    if (sheetShouldClose(e.clientY - d.startY, velocity, d.height)) closeRef.current?.click();
+    if (shouldDismiss(e.clientY - d.startY, velocity, d.height)) closeRef.current?.click();
     else setOffset(0, 'var(--dur-sheet) var(--ease-drawer)');
   }
 

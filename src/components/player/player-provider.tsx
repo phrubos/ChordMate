@@ -116,6 +116,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const p = playerRef.current;
+    // Closing unmounts the iframe; a stale ref would call into a destroyed player on the next play.
+    if (!videoId) playerRef.current = null;
     if (!p || !videoId) return;
     if (state.isPlaying) p.playVideo();
     else p.pauseVideo();

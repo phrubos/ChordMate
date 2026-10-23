@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useState } from 'react';
 import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek } from 'date-fns';
 import { dayState } from '@/lib/calendar-utils';
 import { hueFromString } from '@/lib/song-meta';
+import { SwipePane } from '@/components/design/swipe-pane';
 import { CalendarDayCell } from './calendar-day-cell';
 
 const WEEKDAY_LABELS = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'];
@@ -25,9 +26,12 @@ interface CalendarGridProps {
   onSwipeNext?: () => void;
 }
 
-/** Hairline month grid. Swipe left/right changes month on touch devices. */
+/** Hairline month grid. Swipe left/right changes month on touch devices; a new month slides in from its side (A14). */
 export function CalendarGrid({ year, month, today, selectedDate, songsByDate, onSelectDate, onSwipePrev, onSwipeNext }: CalendarGridProps) {
-  const touch = useRef<{ x: number; y: number } | null>(null);
+  // Which way the month moved, whether by swipe or the header arrows — the new grid enters from that side.
+  const key = year * 12 + month;
+  const [shown, setShown] = useState<{ key: number; dir: -1 | 0 | 1 }>({ key, dir: 0 });
+  if (shown.key !== key) setShown({ key, dir: key > shown.key ? 1 : -1 });
 
   const days = useMemo(() => {
     const md = new Date(year, month - 1);
@@ -38,18 +42,7 @@ export function CalendarGrid({ year, month, today, selectedDate, songsByDate, on
   }, [year, month]);
 
   return (
-    <div
-      onTouchStart={(e) => (touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY })}
-      onTouchEnd={(e) => {
-        if (!touch.current) return;
-        const dx = e.changedTouches[0].clientX - touch.current.x;
-        const dy = e.changedTouches[0].clientY - touch.current.y;
-        touch.current = null;
-        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-        if (dx > 0) onSwipePrev?.();
-        else onSwipeNext?.();
-      }}
-    >
+    <div>
       <div className="grid grid-cols-7">
         {WEEKDAY_LABELS.map((label) => (
           <span key={label} className="px-2 pb-1.5 font-mono text-xs font-medium tracking-[0.05em] text-faint uppercase">
@@ -57,25 +50,33 @@ export function CalendarGrid({ year, month, today, selectedDate, songsByDate, on
           </span>
         ))}
       </div>
-      <div role="grid" className="grid grid-cols-7 border-t border-l border-border">
-        {days.map(({ date, day, inMonth }) => {
-          const songs = songsByDate[date] ?? [];
-          return (
-            <CalendarDayCell
-              key={date}
-              date={date}
-              day={day}
-              isCurrentMonth={inMonth}
-              isToday={date === today}
-              isSelected={date === selectedDate}
-              state={dayState(date, today, songs.length)}
-              markHues={songs.slice(0, MAX_MARKS).map((s) => hueFromString(`${s.artist} — ${s.title}`))}
-              extraCount={Math.max(0, songs.length - MAX_MARKS)}
-              onSelect={onSelectDate}
-            />
-          );
-        })}
-      </div>
+      <SwipePane
+        key={key}
+        canPrev={!!onSwipePrev}
+        canNext={!!onSwipeNext}
+        onSwipe={(delta) => (delta > 0 ? onSwipeNext?.() : onSwipePrev?.())}
+        enterFrom={shown.dir ? shown.dir * 24 : false}
+      >
+        <div role="grid" className="grid grid-cols-7 border-t border-l border-border">
+          {days.map(({ date, day, inMonth }) => {
+            const songs = songsByDate[date] ?? [];
+            return (
+              <CalendarDayCell
+                key={date}
+                date={date}
+                day={day}
+                isCurrentMonth={inMonth}
+                isToday={date === today}
+                isSelected={date === selectedDate}
+                state={dayState(date, today, songs.length)}
+                markHues={songs.slice(0, MAX_MARKS).map((s) => hueFromString(`${s.artist} — ${s.title}`))}
+                extraCount={Math.max(0, songs.length - MAX_MARKS)}
+                onSelect={onSelectDate}
+              />
+            );
+          })}
+        </div>
+      </SwipePane>
     </div>
   );
 }
