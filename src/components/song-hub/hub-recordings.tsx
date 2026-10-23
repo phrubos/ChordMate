@@ -3,7 +3,6 @@
 import { Loader2, Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePlayer } from '@/components/player/player-provider';
-import { ElapsedTime, SeekBar, TotalTime } from '@/components/player/seek-bar';
 import { formatClock, recordingSubtitle, recordingTrack } from '@/lib/player-state';
 import { cn } from '@/lib/utils';
 
@@ -14,7 +13,7 @@ export interface HubRecording {
   duration: number | null;
 }
 
-/** The song's recordings; they play in the mini player (A22), the playing row gets the seek bar (A21). */
+/** The song's recordings; they play in the mini player (A22), which also carries the seek bar. */
 export function HubRecordings({ recordings }: { recordings: HubRecording[] }) {
   const player = usePlayer();
 
@@ -56,13 +55,6 @@ export function HubRecordings({ recordings }: { recordings: HubRecording[] }) {
               </span>
               <span className="font-mono text-[13px] text-muted-foreground tabular-nums">{r.duration ? formatClock(r.duration) : '—'}</span>
             </div>
-            {isCurrent && (
-              <div className="mt-1 ml-[52px] flex items-center gap-2.5 font-mono text-[11px] text-muted-foreground animate-in fade-in-0 duration-(--dur-fade)">
-                <ElapsedTime className="w-9 shrink-0" />
-                <SeekBar label={`Lejátszási pozíció: ${r.name}`} className="h-6 flex-1" />
-                <TotalTime className="w-9 shrink-0 text-right" />
-              </div>
-            )}
           </li>
         );
       })}

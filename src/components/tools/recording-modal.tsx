@@ -82,14 +82,17 @@ function RecorderDisc({ recording, label, elapsed }: { recording: boolean; label
 // ─── Recordings List ───────────────────────────────────────────
 /**
  * A22: recordings play in the shared player — the mini player on app pages (it keeps playing after the
- * modal closes), or the modal's own provider in Próba mód. The playing row shows the seek bar (A21).
+ * modal closes), or the modal's own provider in Próba mód. Only there, with no mini player on screen, does
+ * the playing row get its own seek bar (A21) — elsewhere the mini player already has one.
  */
 export function RecordingsList({
   recordings,
   onUpdate,
+  showSeek = false,
 }: {
   recordings: RecordingMeta[];
   onUpdate: () => void;
+  showSeek?: boolean;
 }) {
   const player = usePlayer();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -222,7 +225,7 @@ export function RecordingsList({
                 )}
               </div>
 
-              {isCurrent && !isEditing && (
+              {showSeek && isCurrent && !isEditing && (
                 <div className="mt-1 ml-11 flex items-center gap-2.5 font-mono text-[11px] text-muted-foreground animate-in fade-in-0 duration-(--dur-fade)">
                   <ElapsedTime className="w-9 shrink-0" />
                   <SeekBar label={`Lejátszási pozíció: ${rec.name}`} className="h-6 flex-1" />
@@ -482,7 +485,7 @@ export function RecordingModal({ open, onOpenChange, date, songId, readOnly = fa
                 <RecordingsList recordings={recordings} onUpdate={loadRecordings} />
               ) : (
                 <PlayerProvider>
-                  <RecordingsList recordings={recordings} onUpdate={loadRecordings} />
+                  <RecordingsList recordings={recordings} onUpdate={loadRecordings} showSeek />
                 </PlayerProvider>
               )}
             </div>
