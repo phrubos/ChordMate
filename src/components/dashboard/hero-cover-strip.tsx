@@ -1,11 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { useEffect, useRef } from 'react';
 import { CoverArt } from '@/components/design/cover-art';
-import { ease } from '@/lib/motion';
-
-const SEEN_KEY = 'cm-hero-revealed';
+import { HERO_SEEN_KEY } from '@/lib/motion';
 
 interface CoverSong {
   id: string;
@@ -17,33 +14,36 @@ interface CoverSong {
 /**
  * Up to 4 typographic covers across the top of the hero.
  * Spec A8: clip-path reveal, 450ms, 60ms stagger — once per session, never with reduced motion.
+ * Pure CSS (`.hero-cover` in globals.css), so the covers paint before hydration; the root layout marks
+ * `<html data-hero-seen>` before first paint on later loads, and the end of the reveal marks it for this session.
  */
 export function HeroCoverStrip({ songs }: { songs: CoverSong[] }) {
-  const reduce = useReducedMotion();
-  const [instant, setInstant] = useState<boolean | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const seen = sessionStorage.getItem(SEEN_KEY) === '1';
-    sessionStorage.setItem(SEEN_KEY, '1');
-    // Reading sessionStorage is only possible after mount; this flips once.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setInstant(seen || !!reduce);
-  }, [reduce]);
+    function markSeen() {
+      document.documentElement.dataset.heroSeen = '';
+      try {
+        sessionStorage.setItem(HERO_SEEN_KEY, '1');
+      } catch {}
+    }
+    // The reveal may already be over by hydration; otherwise wait for it (marking earlier would cut it short).
+    const running = ref.current?.lastElementChild?.getAnimations() ?? [];
+    Promise.all(running.map((a) => a.finished)).then(markSeen, () => {});
+  }, []);
 
   const covers = songs.slice(0, 4);
   return (
-    <div aria-hidden className="grid h-[120px] grid-cols-4 md:h-[210px]" style={{ gridTemplateColumns: `repeat(${Math.max(covers.length, 1)}, minmax(0, 1fr))` }}>
+    <div ref={ref} aria-hidden className="grid h-[120px] grid-cols-4 md:h-[210px]" style={{ gridTemplateColumns: `repeat(${Math.max(covers.length, 1)}, minmax(0, 1fr))` }}>
       {covers.map((song, i) => (
-        <motion.div
+        <div
           key={song.id}
-          className="relative h-full"
-          initial={{ clipPath: 'inset(0 0 100% 0)' }}
-          animate={instant === null ? undefined : { clipPath: 'inset(0 0 0% 0)' }}
-          transition={instant ? { duration: 0 } : { duration: 0.45, ease: ease.out, delay: i * 0.06 }}
+          className="hero-cover relative h-full"
+          style={{ '--i': i } as React.CSSProperties}
         >
           <CoverArt title={song.title} artist={song.artist} imageUrl={song.imageUrl} size="fill" showType className="rounded-none" />
           <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-55% to-card/85" />
-        </motion.div>
+        </div>
       ))}
     </div>
   );

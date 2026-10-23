@@ -26,6 +26,7 @@ import {
 import type { RecordingMeta } from '@/types';
 import { toast } from 'sonner';
 import { ExpandableText } from '@/components/shared/expandable-text';
+import { cn } from '@/lib/utils';
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -46,19 +47,38 @@ function formatTime(seconds: number): string {
 }
 
 // ─── SVG Turntable ─────────────────────────────────────────────
-/** Static record disc (no decorative motion, spec §6); recording shows a REC chip. */
-function RecorderDisc({ recording, label }: { recording: boolean; label: string }) {
+/**
+ * Static record disc (no decorative motion, spec §6). While recording, the label row turns into the timer,
+ * so the modal keeps its height between idle and recording (A18).
+ */
+function RecorderDisc({ recording, label, elapsed }: { recording: boolean; label: string; elapsed?: number }) {
   return (
-    <div className="flex flex-col items-center gap-3 py-2" aria-hidden>
-      <div className="relative grid size-36 place-items-center rounded-full bg-foreground/[0.06] shadow-[inset_0_0_0_1px_var(--border-strong)]">
+    <div className="flex flex-col items-center gap-3 py-2">
+      <div aria-hidden className="relative grid size-36 place-items-center rounded-full bg-foreground/[0.06] shadow-[inset_0_0_0_1px_var(--border-strong)]">
         {[0.82, 0.66, 0.5].map((f) => (
           <span key={f} className="absolute rounded-full shadow-[inset_0_0_0_1px_var(--border)]" style={{ width: `${f * 100}%`, height: `${f * 100}%` }} />
         ))}
-        <span className={recording ? 'grid size-12 place-items-center rounded-full bg-destructive' : 'grid size-12 place-items-center rounded-full bg-primary'}>
+        <span className={cn('grid size-12 place-items-center rounded-full transition-colors', recording ? 'bg-destructive' : 'bg-primary')}>
           <span className="size-1.5 rounded-full bg-background" />
         </span>
       </div>
-      <span className="font-mono text-xs tracking-[0.12em] text-muted-foreground uppercase">{label}</span>
+      <div className="grid h-9 place-items-center">
+        {recording && elapsed !== undefined ? (
+          <span
+            key="timer"
+            role="timer"
+            aria-label={`${label}: ${formatTime(elapsed)}`}
+            className="inline-flex items-center gap-2 rounded-full bg-destructive/10 px-4 py-1.5 animate-in fade-in-0 duration-(--dur-fade)"
+          >
+            <span className="size-2 rounded-full bg-destructive" />
+            <span className="text-lg leading-6 font-bold tabular-nums text-destructive">{formatTime(elapsed)}</span>
+          </span>
+        ) : (
+          <span key="label" className="font-mono text-xs tracking-[0.12em] text-muted-foreground uppercase animate-in fade-in-0 duration-(--dur-fade)">
+            {label}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -440,6 +460,9 @@ function RecordingsList({
 }
 
 // ─── Main Modal ────────────────────────────────────────────────
+/** A18: the new state's controls fade in (the old ones leave instantly — no overlap, no height animation). */
+const STATE_ENTER = 'animate-in fade-in-0 duration-(--dur-fade) ease-(--ease-out)';
+
 type RecState = 'idle' | 'recording' | 'naming';
 
 interface RecordingModalProps {
@@ -585,30 +608,14 @@ export function RecordingModal({ open, onOpenChange, date, songId, readOnly = fa
           <RecorderDisc
             recording={!readOnly && state === 'recording'}
             label={readOnly ? `${recordings.length} felvétel` : state === 'recording' ? 'Felvétel folyamatban' : 'Kész a felvételre'}
+            elapsed={elapsed}
           />
-
-          {/* Timer (recording state) — only when not readOnly */}
-          {!readOnly && (
-            <>
-              {state === 'recording' && (
-                <div key="timer"
-                  className="text-center"
-                >
-                  <div className="inline-flex items-center gap-2 rounded-full bg-destructive/10 px-4 py-1.5">
-                    <span className="size-2 rounded-full bg-destructive" />
-                    <span className="text-lg font-bold tabular-nums text-destructive">{formatTime(elapsed)}</span>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
 
           {/* Controls — only when not readOnly */}
           {!readOnly && (
             <>
               {state === 'idle' && (
-                <div key="idle"
-                >
+                <div key="idle" className={STATE_ENTER}>
                   <Button
                     size="lg"
                     className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-destructive text-background hover:bg-destructive/90"
@@ -621,8 +628,7 @@ export function RecordingModal({ open, onOpenChange, date, songId, readOnly = fa
               )}
 
               {state === 'recording' && (
-                <div key="recording"
-                >
+                <div key="recording" className={STATE_ENTER}>
                   <Button
                     size="lg"
                     className="w-full h-12 rounded-xl gap-2 text-sm font-semibold bg-destructive text-background hover:bg-destructive/90"
@@ -635,9 +641,7 @@ export function RecordingModal({ open, onOpenChange, date, songId, readOnly = fa
               )}
 
               {state === 'naming' && (
-                <div key="naming"
-                  className="flex flex-col gap-3"
-                >
+                <div key="naming" className={cn('flex flex-col gap-3', STATE_ENTER, 'slide-in-from-bottom-1')}>
                   <div className="text-center">
                     <p className="text-sm font-medium">Felvétel kész!</p>
                     <p className="text-xs text-muted-foreground">Időtartam: {formatTime(elapsed)}</p>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Play, Heart } from 'lucide-react';
+import { Plus, Play, Heart, ListMusic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Eyebrow } from '@/components/design/eyebrow';
 import { SectionHeader } from '@/components/design/section-header';
@@ -12,6 +12,7 @@ import { SegmentedControl } from '@/components/design/segmented-control';
 import { CoverArt } from '@/components/design/cover-art';
 import { ChordDiagram } from '@/components/design/chord-diagram';
 import { AvatarStack } from '@/components/design/avatar-stack';
+import { EmptyState } from '@/components/shared/empty-state';
 import { SONG_STATUSES, type SongStatus } from '@/lib/song-meta';
 import { STATUS_BG } from '@/components/design/status-badge';
 import { fixtureMembers, fixtureSongs } from '../fixtures';
@@ -73,6 +74,10 @@ export function AtomsSection() {
 
       <div className="flex flex-wrap gap-3">
         {['Bm', 'F#', 'A', 'E', 'G', 'D', 'Em'].map((c) => <ChordDiagram key={c} name={c} />)}
+      </div>
+
+      <div id="empty-state" className="rounded-lg border border-border">
+        <EmptyState icon={ListMusic} illustration="songs" title="Még nincsenek dalok" description="Adj hozzá az első dalt, hogy elkezdhessétek a gyakorlást!" />
       </div>
     </section>
   );

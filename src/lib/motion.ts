@@ -27,6 +27,9 @@ export const springs = {
 };
 
 /** Extra px a flick would travel at `velocity` px/s (Apple's deceleration projection, rate 0.99). */
+/** sessionStorage key: the A8 hero reveal already played this session. */
+export const HERO_SEEN_KEY = 'cm-hero-revealed';
+
 export function projectMomentum(velocity: number, rate = 0.99): number {
   return ((velocity / 1000) * rate) / (1 - rate);
 }

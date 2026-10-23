@@ -8,6 +8,7 @@ import { OnboardingCheck } from "@/components/band/onboarding-check";
 import { needsOnboarding } from "@/actions/bands";
 import NextTopLoader from "nextjs-toploader";
 import { MotionProvider } from "@/components/providers/motion-provider";
+import { HERO_SEEN_KEY } from "@/lib/motion";
 import "./globals.css";
 
 const fontDisplay = Fraunces({
@@ -64,6 +65,12 @@ export default async function RootLayout({
     <html lang="hu" className="dark" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        {/* A8: skip the hero reveal on later loads in this session — must run before first paint. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(sessionStorage.getItem(${JSON.stringify(HERO_SEEN_KEY)}))document.documentElement.dataset.heroSeen=""}catch(e){}`,
+          }}
+        />
       </head>
       <body
         className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable} grain antialiased`}
