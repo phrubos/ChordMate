@@ -223,6 +223,27 @@
   }
 }
 
+/* A8 — hero borítósáv: alulról felfelé kitakarás, munkamenetenként egyszer. CSS-ből fut, így hidratálás előtt is látszik. */
+@keyframes hero-reveal {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0% 0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-hero-seen]) .hero-cover { animation: hero-reveal 450ms var(--ease-out) calc(var(--i) * 60ms) both; }
+}
+
+/* Skeleton: gyors betöltésnél (< 150ms) meg sem jelenik, utána átúszik és lüktet. */
+@keyframes skeleton-pulse {
+  50% { opacity: 0.5; }
+}
+@keyframes skeleton-in {
+  from { opacity: 0; }
+}
+.skeleton { animation: skeleton-in var(--dur-fade) var(--ease-out) 150ms backwards, skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 300ms infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: skeleton-in var(--dur-fade) var(--ease-out) 150ms backwards; }
+}
+
 /* Csökkentett mozgás (spec §6): nincs elmozdulás, a halvány átúszás marad. */
 @media (prefers-reduced-motion: reduce) {
   .animate-spin, .animate-bounce, .animate-pulse, .animate-ping { animation: none; }

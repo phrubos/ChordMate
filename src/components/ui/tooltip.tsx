@@ -4,8 +4,10 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "@/lib/utils"
 
+// A9-ish restraint: the first tooltip waits 400ms so passing the pointer over buttons doesn't flash them;
+// once one is open, neighbours open instantly (Base UI groups them within `timeout`).
 function TooltipProvider({
-  delay = 0,
+  delay = 400,
   ...props
 }: TooltipPrimitive.Provider.Props) {
   return (
