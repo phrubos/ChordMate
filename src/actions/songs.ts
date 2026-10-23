@@ -84,6 +84,14 @@ export async function getSongs(filters?: string | SongFilters) {
   });
 }
 
+/** Lean title/artist lookup for the global search palette — no tab content, capped result count. */
+export async function searchSongs(query: string, limit = 8) {
+  const q = query.trim();
+  if (!q) return [];
+  const rows = await getSongs({ search: q });
+  return rows.slice(0, limit).map(({ id, title, artist, imageUrl, status }) => ({ id, title, artist, imageUrl, status }));
+}
+
 /** Reads the musical metadata fields from a song form; empty strings become undefined. */
 function musicFields(formData: FormData) {
   const get = (key: string) => {
