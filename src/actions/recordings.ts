@@ -4,7 +4,8 @@ import { db } from '@/lib/db';
 import { recordings } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { eq, and, desc, isNull } from 'drizzle-orm';
+import { eq, and, desc, isNull, ilike, or } from 'drizzle-orm';
+import { assertSongsAccess, getAccessContext } from '@/lib/access-server';
 import { getUserBandId } from './bands';
 
 // ─── List recordings by date (metadata only, no audio blob) ───
@@ -24,6 +25,7 @@ export async function getRecordingsByDate(date: string) {
       name: recordings.name,
       mimeType: recordings.mimeType,
       duration: recordings.duration,
+      songId: recordings.songId,
       bandId: recordings.bandId,
       addedById: recordings.addedById,
       createdAt: recordings.createdAt,
@@ -33,6 +35,25 @@ export async function getRecordingsByDate(date: string) {
     .orderBy(desc(recordings.createdAt));
 
   return rows;
+}
+
+// ─── Recordings of one song (by id; older rows without one by title in the name) ───
+export async function getRecordingsBySong(songId: string, title: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const bandId = await getUserBandId();
+  const scope = bandId
+    ? eq(recordings.bandId, bandId)
+    : and(isNull(recordings.bandId), eq(recordings.addedById, session.user.id));
+  const pattern = `%${title.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
+  return db
+    .select({ id: recordings.id, name: recordings.name, date: recordings.date, duration: recordings.duration })
+    .from(recordings)
+    .where(and(scope, or(eq(recordings.songId, songId), and(isNull(recordings.songId), ilike(recordings.name, pattern)))))
+    .orderBy(desc(recordings.createdAt))
+    .limit(10);
 }
 
 // ─── Check if a date has any recordings (lightweight) ─────────
@@ -84,11 +105,13 @@ export async function saveRecording(data: {
   audioBase64: string;
   mimeType: string;
   duration: number;
+  songId?: string;
 }) {
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
   const bandId = await getUserBandId();
+  if (data.songId) await assertSongsAccess([data.songId], await getAccessContext());
 
   const [inserted] = await db
     .insert(recordings)
@@ -98,6 +121,7 @@ export async function saveRecording(data: {
       audioData: data.audioBase64,
       mimeType: data.mimeType,
       duration: data.duration,
+      songId: data.songId ?? null,
       bandId,
       addedById: session.user.id,
     })

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { CalendarPlus, ListMusic, Play, Theater, Users } from 'lucide-react';
+import { CalendarPlus, Clock, ListMusic, MapPin, Play, Theater, Users } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Eyebrow } from '@/components/design/eyebrow';
 import { ChipList } from '@/components/design/chip';
@@ -13,7 +13,8 @@ import { AvatarStack, type StackUser } from '@/components/design/avatar-stack';
 import { usePlayer } from '@/components/player/player-provider';
 import { daysUntil, rehearsalCountdownLabel } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
-import type { CalendarEntryWithSong } from '@/types';
+import type { CalendarEntryWithSong, Rehearsal } from '@/types';
+import { formatTimeRange, kindLabel } from '@/lib/rehearsals';
 import { HeroCoverStrip } from './hero-cover-strip';
 
 interface NextRehearsalHeroProps {
@@ -21,12 +22,14 @@ interface NextRehearsalHeroProps {
   members: StackUser[];
   today: string;
   bandName?: string | null;
+  /** Details of that day (time, place, kind), when set. */
+  meta?: Pick<Rehearsal, 'startTime' | 'endTime' | 'place' | 'kind'> | null;
 }
 
 const shell =
   'relative overflow-hidden rounded-md border border-primary/20 bg-[radial-gradient(90%_80%_at_0%_100%,color-mix(in_oklch,var(--primary)_16%,transparent),transparent_60%),linear-gradient(180deg,var(--card),var(--background))] shadow-[0_30px_60px_oklch(0_0_0/.35)]';
 
-export function NextRehearsalHero({ rehearsal, members, today, bandName }: NextRehearsalHeroProps) {
+export function NextRehearsalHero({ rehearsal, members, today, bandName, meta }: NextRehearsalHeroProps) {
   const player = usePlayer();
 
   if (!rehearsal) {
@@ -50,6 +53,7 @@ export function NextRehearsalHero({ rehearsal, members, today, bandName }: NextR
   const playable = songs.some((s) => s.youtubeUrl);
   const weekday = format(parseISO(date), 'EEEE', { locale: hu });
   const shortDate = format(parseISO(date), 'MMM d.', { locale: hu });
+  const time = formatTimeRange(meta?.startTime ?? null, meta?.endTime ?? null);
 
   return (
     <section
@@ -63,12 +67,26 @@ export function NextRehearsalHero({ rehearsal, members, today, bandName }: NextR
 
       <div className="flex min-w-0 flex-col gap-[18px]">
         <Eyebrow accent icon={<span className="size-2 rounded-full bg-current shadow-[0_0_0_4px_color-mix(in_oklch,currentColor_20%,transparent)]" />}>
-          Következő próba · {rehearsalCountdownLabel(daysUntil(today, date))}
+          Következő {meta?.kind === 'gig' ? kindLabel('gig').toLowerCase() : 'próba'} · {rehearsalCountdownLabel(daysUntil(today, date))}
         </Eyebrow>
         <h2 id="hero-title" className="display-soft font-display text-[40px] leading-[1.02] font-medium tracking-[-0.03em] md:text-[64px]">
-          <span className="capitalize">{weekday}</span>, <em className="font-normal whitespace-nowrap text-primary">{shortDate}</em>
+          <Link href={`/rehearsals/${date}`} className="hover:underline hover:decoration-2 hover:underline-offset-8">
+            <span className="capitalize">{weekday}</span>, <em className="font-normal whitespace-nowrap text-primary">{shortDate}</em>
+          </Link>
         </h2>
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[14.5px] text-muted-foreground">
+          {time && (
+            <span className="inline-flex items-center gap-2">
+              <Clock className="size-4" aria-hidden />
+              {time}
+            </span>
+          )}
+          {meta?.place && (
+            <span className="inline-flex items-center gap-2">
+              <MapPin className="size-4" aria-hidden />
+              {meta.place}
+            </span>
+          )}
           <span className="inline-flex items-center gap-2">
             <ListMusic className="size-4" aria-hidden />
             <b className="font-semibold text-foreground">{songs.length}</b> dal
@@ -87,10 +105,17 @@ export function NextRehearsalHero({ rehearsal, members, today, bandName }: NextR
           </div>
         )}
         <div className="mt-auto flex flex-wrap gap-2.5 pt-1.5">
-          <Link href={`/practice/${date}`} className={cn(buttonVariants({ size: 'lg' }), 'flex-1 md:flex-none')}>
-            <Theater />
-            Próba mód indítása
-          </Link>
+          {songs.length > 0 ? (
+            <Link href={`/practice/${date}`} className={cn(buttonVariants({ size: 'lg' }), 'flex-1 md:flex-none')}>
+              <Theater />
+              Próba mód indítása
+            </Link>
+          ) : (
+            <Link href={`/rehearsals/${date}`} className={cn(buttonVariants({ size: 'lg' }), 'flex-1 md:flex-none')}>
+              <ListMusic />
+              Setlist összeállítása
+            </Link>
+          )}
           <Button variant="outline" size="lg" disabled={!playable} className="hidden md:inline-flex" onClick={() => player.play(songs.find((s) => s.youtubeUrl) ?? songs[0], songs)}>
             <Play />
             Setlist lejátszása
@@ -101,8 +126,9 @@ export function NextRehearsalHero({ rehearsal, members, today, bandName }: NextR
       <div className="min-w-0 rounded-md border border-border bg-background/60 px-2 py-3.5 shadow-[inset_0_2px_10px_oklch(0_0_0/.35)]">
         <div className="flex items-center justify-between px-2 pb-2.5">
           <Eyebrow>Setlist</Eyebrow>
-          <a href="#day" className="text-[13.5px] font-semibold text-primary-text hover:underline">Szerkesztés</a>
+          <Link href={`/rehearsals/${date}`} className="text-[13.5px] font-semibold text-primary-text hover:underline">Próba oldala →</Link>
         </div>
+        {entries.length === 0 && <p className="px-2 py-4 text-sm text-muted-foreground">Még nincs dal a setlistben.</p>}
         <ol aria-label="Setlist">
           {entries.map((entry, i) => {
             const s = entry.song;

@@ -5,13 +5,14 @@ import { getCalendarStats } from '@/actions/calendar';
 import { todayIso } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/shared/page-header';
+import { RehearsalTabs } from '@/components/rehearsals/rehearsal-tabs';
 import { PracticeHeatmap } from '@/components/analytics/practice-heatmap';
 import { TopSongsRanking } from '@/components/analytics/top-songs-ranking';
 import { TrendChart } from '@/components/analytics/trend-chart';
 import { NeglectedSongs } from '@/components/analytics/neglected-songs';
 import { PracticeHistory } from '@/components/dashboard/practice-history';
 
-export const metadata = { title: 'Statisztika — ChordMate' };
+export const metadata = { title: 'Próbák · Áttekintés — ChordMate' };
 
 export default async function AnalyticsPage() {
   const session = await auth();
@@ -27,7 +28,10 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="flex flex-col gap-12">
-      <PageHeader title="Statisztika" description="A banda próbái egy év alatt" />
+      <div className="flex flex-col gap-8">
+        <PageHeader title="Próbák" description="A banda próbái egy év alatt" />
+        <RehearsalTabs active="overview" />
+      </div>
 
       <dl className="grid grid-cols-2 border-t border-border-strong md:grid-cols-4">
         {kpis.map((k, i) => (

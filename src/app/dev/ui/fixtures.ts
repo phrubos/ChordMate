@@ -1,4 +1,4 @@
-import type { CalendarEntryWithSong, SongWithUser } from '@/types';
+import type { CalendarEntryWithSong, Rehearsal, SongWithUser } from '@/types';
 import type { SongStatus } from '@/lib/song-meta';
 
 export const FIXTURE_TODAY = '2026-10-16';
@@ -90,4 +90,17 @@ export const fixtureMembers = [
   { name: 'Kiss Péter', image: null },
   { name: 'Nagy Gábor', image: null },
   { name: 'Szabó Dani', image: null },
+];
+
+const rehearsalBase = { bandId: 'band-1', createdById: peter.id, createdAt: new Date('2026-10-10'), updatedAt: new Date('2026-10-10'), notes: null };
+
+export const fixtureRehearsals: Rehearsal[] = [
+  { ...rehearsalBase, id: 'r-1022', date: '2026-10-22', kind: 'rehearsal', startTime: '19:00', endTime: '21:30', place: 'Pince próbaterem', goal: 'A Hotel California szólója tisztán', notes: 'Hozz tartalék húrt!' },
+  { ...rehearsalBase, id: 'r-1107', date: '2026-11-07', kind: 'gig', startTime: '20:00', endTime: null, place: 'Grand Café, Szeged', goal: null },
+];
+
+export const fixtureAttendance = [
+  { userId: peter.id, name: 'Kiss Péter', image: null, answer: 'yes' as const },
+  { userId: 'u-gabor', name: 'Nagy Gábor', image: null, answer: 'maybe' as const },
+  { userId: 'u-dani', name: 'Szabó Dani', image: null, answer: null },
 ];

@@ -1,4 +1,4 @@
-import { BarChart3, Home, ListMusic, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Home, ListMusic, Users, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   href: string;
@@ -10,7 +10,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Kezdőlap', icon: Home, match: (p) => p.startsWith('/dashboard') },
   { href: '/songs', label: 'Dalok', icon: ListMusic, match: (p) => p.startsWith('/songs') },
-  { href: '/analytics', label: 'Statisztika', icon: BarChart3, match: (p) => p.startsWith('/analytics') },
+  { href: '/rehearsals', label: 'Próbák', icon: CalendarDays, match: (p) => p.startsWith('/rehearsals') || p.startsWith('/analytics') },
   { href: '/band', label: 'Banda', icon: Users, match: (p) => p.startsWith('/band') },
 ];
 

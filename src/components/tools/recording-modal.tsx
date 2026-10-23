@@ -446,10 +446,12 @@ interface RecordingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   date: string;
+  /** Set from Próba mode: the recording is linked to this song. */
+  songId?: string;
   readOnly?: boolean;
 }
 
-export function RecordingModal({ open, onOpenChange, date, readOnly = false }: RecordingModalProps) {
+export function RecordingModal({ open, onOpenChange, date, songId, readOnly = false }: RecordingModalProps) {
   const [state, setState] = useState<RecState>('idle');
   const [recordings, setRecordings] = useState<RecordingMeta[]>([]);
   const [elapsed, setElapsed] = useState(0);
@@ -530,6 +532,7 @@ export function RecordingModal({ open, onOpenChange, date, readOnly = false }: R
         audioBase64,
         mimeType: recordedBlob.type,
         duration: elapsed,
+        songId,
       });
       toast.success('Felvétel mentve');
       setRecordedBlob(null);

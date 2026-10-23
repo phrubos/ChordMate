@@ -1,7 +1,7 @@
 // Server-side access helpers. Deliberately NOT a 'use server' module: its exports must not become callable actions.
 import { and, eq, inArray, isNull, or, type SQL } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { bandMembers, calendarEntries, songs } from '@/lib/db/schema';
+import { bandMembers, calendarEntries, rehearsals, songs } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { getUserBandId } from '@/actions/bands';
 import { canAccessSong, type AccessContext } from './access';
@@ -29,6 +29,11 @@ export function songScope(ctx: AccessContext): SQL {
 /** SQL twin of canAccessCalendarEntry. */
 export function calendarScope(ctx: AccessContext): SQL {
   return ctx.bandId ? eq(calendarEntries.bandId, ctx.bandId) : and(isNull(calendarEntries.bandId), eq(calendarEntries.addedById, ctx.userId))!;
+}
+
+/** SQL twin of canAccessRehearsal. */
+export function rehearsalScope(ctx: AccessContext): SQL {
+  return ctx.bandId ? eq(rehearsals.bandId, ctx.bandId) : and(isNull(rehearsals.bandId), eq(rehearsals.createdById, ctx.userId))!;
 }
 
 /** Throws unless every id is a song the user can access (unknown ids count as inaccessible). */

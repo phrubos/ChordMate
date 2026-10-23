@@ -28,3 +28,27 @@ export const songSchema = z.object({
 });
 
 export type SongFormValues = z.infer<typeof songSchema>;
+
+const timeField = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Időpont formátuma: ÓÓ:PP')
+  .optional()
+  .or(z.literal('').transform(() => undefined));
+const textField = (max: number) => z.string().trim().max(max, `Legfeljebb ${max} karakter`).optional();
+
+export const rehearsalMetaSchema = z
+  .object({
+    kind: z.enum(['rehearsal', 'gig']).default('rehearsal'),
+    startTime: timeField,
+    endTime: timeField,
+    place: textField(120),
+    goal: textField(280),
+    notes: textField(2000),
+  })
+  .superRefine((v, ctx) => {
+    if (v.startTime && v.endTime && v.endTime <= v.startTime) {
+      ctx.addIssue({ code: 'custom', path: ['endTime'], message: 'A vége legyen a kezdés után' });
+    }
+  });
+
+export type RehearsalMetaInput = z.input<typeof rehearsalMetaSchema>;

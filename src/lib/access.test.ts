@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { canAccessCalendarEntry, canAccessSong } from './access';
+import { canAccessCalendarEntry, canAccessRehearsal, canAccessSong } from './access';
 
 const band = { userId: 'me', bandId: 'b1', memberIds: ['me', 'pal'] };
 const solo = { userId: 'me', bandId: null, memberIds: [] };
@@ -30,4 +30,11 @@ describe('calendar entry access', () => {
     expect(canAccessCalendarEntry({ bandId: null, addedById: 'me' }, solo)).toBe(true);
     expect(canAccessCalendarEntry({ bandId: null, addedById: 'pal' }, solo)).toBe(false);
   });
+});
+
+test('rehearsal access follows the calendar rule', () => {
+  expect(canAccessRehearsal({ bandId: 'b1', createdById: 'stranger' }, band)).toBe(true);
+  expect(canAccessRehearsal({ bandId: 'b2', createdById: 'me' }, band)).toBe(false);
+  expect(canAccessRehearsal({ bandId: null, createdById: 'me' }, solo)).toBe(true);
+  expect(canAccessRehearsal({ bandId: null, createdById: 'pal' }, solo)).toBe(false);
 });
