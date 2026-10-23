@@ -223,6 +223,16 @@
   }
 }
 
+/* A20 — üres dallista: a hangjegy egyszer megpendül (A11 kilengése), a két hanghullám kicseng. */
+@keyframes wave-ring {
+  from { opacity: 0; transform: translate(-4px, 2px); }
+}
+.empty-pluck-note { transform-box: view-box; transform-origin: 36px 34px; }
+@media (prefers-reduced-motion: no-preference) {
+  .empty-pluck .empty-pluck-note { animation: guitar-strum 700ms var(--ease-out) 300ms both; }
+  .empty-pluck .empty-pluck-wave { animation: wave-ring 500ms var(--ease-out) calc(420ms + var(--i, 0) * 90ms) both; }
+}
+
 /* A8 — hero borítósáv: alulról felfelé kitakarás, munkamenetenként egyszer. CSS-ből fut, így hidratálás előtt is látszik. */
 @keyframes hero-reveal {
   from { clip-path: inset(0 0 100% 0); }

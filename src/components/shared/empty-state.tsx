@@ -8,18 +8,21 @@ interface EmptyStateProps {
   children?: React.ReactNode;
 }
 
+/** A20: the note is plucked once (A11's strum) and its two sound waves ring out — CSS in globals.css. */
 function SongsIllustration() {
   return (
-    <svg width="120" height="100" viewBox="0 0 120 100" fill="none" className="mb-2">
+    <svg width="120" height="100" viewBox="0 0 120 100" fill="none" className="empty-pluck mb-2">
       <rect x="20" y="20" width="80" height="60" rx="8" className="fill-primary/5 stroke-primary/20" strokeWidth="1.5" />
       <circle cx="60" cy="45" r="14" className="fill-primary/10 stroke-primary/30" strokeWidth="1.5" />
       <path d="M56 45 L66 45 M61 40 L61 50" className="stroke-primary/40" strokeWidth="2" strokeLinecap="round" />
       <rect x="35" y="65" width="50" height="4" rx="2" className="fill-primary/10" />
-      <path d="M30 15 L30 35 M30 15 L45 10 L45 30" className="stroke-primary/20" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="27" cy="35" r="4" className="fill-primary/15" />
-      <circle cx="42" cy="30" r="4" className="fill-primary/15" />
-      <path d="M85 10 Q95 20 90 30" className="stroke-primary/15" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M90 8 Q102 18 96 30" className="stroke-primary/10" strokeWidth="1.5" strokeLinecap="round" />
+      <g className="empty-pluck-note">
+        <path d="M30 15 L30 35 M30 15 L45 10 L45 30" className="stroke-primary/20" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="27" cy="35" r="4" className="fill-primary/15" />
+        <circle cx="42" cy="30" r="4" className="fill-primary/15" />
+      </g>
+      <path d="M85 10 Q95 20 90 30" className="empty-pluck-wave stroke-primary/15" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M90 8 Q102 18 96 30" className="empty-pluck-wave stroke-primary/10 [--i:1]" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
