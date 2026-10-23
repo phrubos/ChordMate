@@ -54,12 +54,14 @@ export function HubVideo({ song }: { song: Song }) {
             type="button"
             onClick={() => (isCurrent ? player.toggle() : player.play(song))}
             aria-label={isCurrent && player.state.isPlaying ? `Szünet: ${song.title}` : `Lejátszás: ${song.title}`}
-            className="group absolute inset-0 grid place-items-center"
+            className="group absolute inset-0 grid cursor-pointer place-items-center outline-none"
           >
-            <span className="grid size-16 place-items-center rounded-full bg-foreground text-background transition-transform duration-200 ease-(--ease-out) group-active:scale-[.97]">
+            {/* Hover: the box lifts a touch and the disc turns amber like the player's own play button. */}
+            <span aria-hidden className="absolute inset-0 bg-foreground/0 transition-colors duration-(--dur-fade) group-hover:bg-foreground/[0.04]" />
+            <span className="relative grid size-16 place-items-center rounded-full bg-foreground text-background shadow-[0_8px_24px_oklch(0_0_0/.35)] transition-[transform,background-color,color] duration-(--dur-press) ease-(--ease-out) group-hover:scale-[1.06] group-hover:bg-primary group-hover:text-primary-foreground group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-background group-active:scale-[.97] motion-reduce:group-hover:scale-100">
               {isCurrent && player.state.isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="ml-0.5 size-5 fill-current" />}
             </span>
-            <span className="absolute bottom-3.5 left-4 inline-flex items-center gap-2 text-[13px] font-medium text-foreground/90">
+            <span className="absolute bottom-3.5 left-4 inline-flex items-center gap-2 text-[13px] font-medium text-foreground/80 transition-colors duration-(--dur-fade) group-hover:text-foreground">
               {player.mode === 'video' ? <Video className="size-4" aria-hidden /> : <Headphones className="size-4" aria-hidden />}
               {player.mode === 'video' ? 'YouTube · itt jelenik meg' : isCurrent ? 'Csak hang · a mini-playerben szól' : 'Csak hang · a mini-playerben fog szólni'}
             </span>
