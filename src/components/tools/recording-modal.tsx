@@ -16,17 +16,19 @@ import { Button } from '@/components/ui/button';
 import { Eyebrow } from '@/components/design/eyebrow';
 import { Input } from '@/components/ui/input';
 import { Mic, Square, Play, Pause, Trash2, Pencil, Check, X, Save, Loader2 } from 'lucide-react';
+import { PlayerProvider, usePlayer, usePlayerOptional } from '@/components/player/player-provider';
+import { ElapsedTime, SeekBar, TotalTime } from '@/components/player/seek-bar';
+import { formatClock, recordingTrack } from '@/lib/player-state';
 import {
   saveRecording as dbSave,
   getRecordingsByDate,
-  getRecordingAudio,
   updateRecordingName,
   deleteRecording,
 } from '@/actions/recordings';
 import type { RecordingMeta } from '@/types';
 import { toast } from 'sonner';
 import { ExpandableText } from '@/components/shared/expandable-text';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -38,12 +40,6 @@ function blobToBase64(blob: Blob): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds) % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 // ─── SVG Turntable ─────────────────────────────────────────────
@@ -67,11 +63,11 @@ function RecorderDisc({ recording, label, elapsed }: { recording: boolean; label
           <span
             key="timer"
             role="timer"
-            aria-label={`${label}: ${formatTime(elapsed)}`}
+            aria-label={`${label}: ${formatClock(elapsed)}`}
             className="inline-flex items-center gap-2 rounded-full bg-destructive/10 px-4 py-1.5 animate-in fade-in-0 duration-(--dur-fade)"
           >
             <span className="size-2 rounded-full bg-destructive" />
-            <span className="text-lg leading-6 font-bold tabular-nums text-destructive">{formatTime(elapsed)}</span>
+            <span className="text-lg leading-6 font-bold tabular-nums text-destructive">{formatClock(elapsed)}</span>
           </span>
         ) : (
           <span key="label" className="font-mono text-xs tracking-[0.12em] text-muted-foreground uppercase animate-in fade-in-0 duration-(--dur-fade)">
@@ -83,218 +79,31 @@ function RecorderDisc({ recording, label, elapsed }: { recording: boolean; label
   );
 }
 
-function SeekableProgress({
-  progress,
-  duration,
-  currentTime,
-  onSeek,
-}: {
-  progress: number;
-  duration: number;
-  currentTime: number;
-  onSeek: (fraction: number) => void;
-}) {
-  const barRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [hoverX, setHoverX] = useState<number | null>(null);
-
-  function getFraction(clientX: number) {
-    if (!barRef.current) return 0;
-    const rect = barRef.current.getBoundingClientRect();
-    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-  }
-
-  function handlePointerDown(e: React.PointerEvent) {
-    setIsDragging(true);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    onSeek(getFraction(e.clientX));
-  }
-
-  function handlePointerMove(e: React.PointerEvent) {
-    const frac = getFraction(e.clientX);
-    setHoverX(frac);
-    if (isDragging) onSeek(frac);
-  }
-
-  function handlePointerUp() {
-    setIsDragging(false);
-  }
-
-  const pct = `${(progress * 100).toFixed(2)}%`;
-
-  return (
-    <div className="flex items-center gap-2 w-full">
-      <span className="text-[10px] text-muted-foreground/60 tabular-nums w-8 text-right shrink-0">
-        {formatTime(currentTime)}
-      </span>
-      <div
-        ref={barRef}
-        className="relative flex-1 h-4 flex items-center cursor-pointer group touch-none"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={() => { setHoverX(null); if (isDragging) setIsDragging(false); }}
-      >
-        {/* Track background */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-secondary/80 rounded-full" />
-        {/* Filled track */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 left-0 h-1.5 bg-primary rounded-full"
-          style={{ width: pct }}
-        />
-        {/* Thumb — always visible */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-3.5 rounded-full bg-primary shadow-md ring-2 ring-background pointer-events-none"
-          style={{ left: pct }}
-        />
-        {/* Hover time tooltip */}
-        {hoverX !== null && duration > 0 && (
-          <div
-            className="absolute -top-6 -translate-x-1/2 rounded bg-popover px-1.5 py-0.5 text-[9px] text-popover-foreground shadow-sm pointer-events-none"
-            style={{ left: `${hoverX * 100}%` }}
-          >
-            {formatTime(hoverX * duration)}
-          </div>
-        )}
-      </div>
-      <span className="text-[10px] text-muted-foreground/60 tabular-nums w-8 shrink-0">
-        {formatTime(duration)}
-      </span>
-    </div>
-  );
-}
-
 // ─── Recordings List ───────────────────────────────────────────
-function RecordingsList({
+/** "Saját felvétel · okt. 13." — the second line in the player. */
+const recordingSubtitle = (date: string) => `Saját felvétel · ${formatDate(date, 'MMM d.')}`;
+
+/**
+ * A22: recordings play in the shared player — the mini player on app pages (it keeps playing after the
+ * modal closes), or the modal's own provider in Próba mód. The playing row shows the seek bar (A21).
+ */
+export function RecordingsList({
   recordings,
   onUpdate,
 }: {
   recordings: RecordingMeta[];
   onUpdate: () => void;
 }) {
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const player = usePlayer();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [audioDuration, setAudioDuration] = useState(0);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urlRef = useRef<string | null>(null);
-  const rafRef = useRef<number>(0);
-  const knownDurRef = useRef<number>(0);
+  const queue = recordings.map((r) => recordingTrack(r, recordingSubtitle(r.date)));
 
-  function startTick() {
-    function tick() {
-      if (!audioRef.current || audioRef.current.paused) return;
-      const ct = audioRef.current.currentTime;
-      const dur = isFinite(audioRef.current.duration) ? audioRef.current.duration : knownDurRef.current;
-      setCurrentTime(ct);
-      setProgress(dur > 0 ? Math.min(ct / dur, 1) : 0);
-      rafRef.current = requestAnimationFrame(tick);
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  }
-
-  const stopAudio = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.removeAttribute('src');
-      audioRef.current.load();
-    }
-    if (urlRef.current) {
-      URL.revokeObjectURL(urlRef.current);
-      urlRef.current = null;
-    }
-    audioRef.current = null;
-    setPlayingId(null);
-    setIsPaused(false);
-    setProgress(0);
-    setCurrentTime(0);
-    setAudioDuration(0);
-  }, []);
-
-  useEffect(() => {
-    return () => stopAudio();
-  }, [stopAudio]);
-
-  async function togglePlay(rec: RecordingMeta) {
-    // If already loading this recording, ignore repeated clicks
-    if (loadingId === rec.id) return;
-
-    if (playingId === rec.id) {
-      if (!audioRef.current) return;
-      if (isPaused) {
-        audioRef.current.play();
-        setIsPaused(false);
-        startTick();
-      } else {
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        audioRef.current.pause();
-        setIsPaused(true);
-      }
-      return;
-    }
-
-    stopAudio();
-    setLoadingId(rec.id);
-
-    try {
-      const { audioData, mimeType } = await getRecordingAudio(rec.id);
-
-      // If user clicked something else while we were fetching, bail out
-      if (loadingId !== null && loadingId !== rec.id) {
-        setLoadingId(null);
-        return;
-      }
-
-      const binary = atob(audioData);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      urlRef.current = url;
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audioRef.current = audio;
-      knownDurRef.current = rec.duration;
-      setAudioDuration(rec.duration);
-
-      audio.addEventListener('durationchange', () => {
-        if (audio.duration && isFinite(audio.duration)) {
-          knownDurRef.current = audio.duration;
-          setAudioDuration(audio.duration);
-        }
-      });
-
-      audio.addEventListener('ended', () => stopAudio());
-
-      // Start playback as soon as enough data is buffered
-      audio.src = url;
-      await audio.play();
-      setLoadingId(null);
-      setPlayingId(rec.id);
-      setIsPaused(false);
-      startTick();
-    } catch {
-      setLoadingId(null);
-      toast.error('Hiba a lejátszásnál');
-    }
-  }
-
-  function handleSeek(fraction: number) {
-    if (!audioRef.current) return;
-    const dur = isFinite(audioRef.current.duration)
-      ? audioRef.current.duration
-      : knownDurRef.current;
-    if (dur > 0) {
-      audioRef.current.currentTime = fraction * dur;
-      setProgress(fraction);
-      setCurrentTime(fraction * dur);
-    }
+  function togglePlay(index: number) {
+    const track = queue[index];
+    if (player.current?.id === track.id) player.toggle();
+    else player.playTrack(track, queue);
   }
 
   async function handleRename(id: string) {
@@ -310,7 +119,7 @@ function RecordingsList({
 
   async function confirmDelete() {
     if (deleteConfirmId == null) return;
-    if (playingId === deleteConfirmId) stopAudio();
+    if (player.current?.id === `rec:${deleteConfirmId}`) player.close();
     try {
       await deleteRecording(deleteConfirmId);
       toast.success('Felvétel törölve');
@@ -328,37 +137,37 @@ function RecordingsList({
         Felvételek ({recordings.length})
       </p>
       <div className="flex flex-col gap-1 max-h-56 overflow-y-auto">
-        {recordings.map((rec) => {
-          const isPlaying = playingId === rec.id;
+        {recordings.map((rec, index) => {
+          const isCurrent = player.current?.id === queue[index].id;
+          const isPlaying = isCurrent && player.state.isPlaying;
+          const isLoading = isCurrent && player.loading && player.state.isPlaying;
           const isEditing = editingId === rec.id;
 
           return (
-            <div key={rec.id}
-              className="group relative rounded-lg px-2 py-2 hover:bg-secondary/30 transition-colors"
+            <div
+              key={rec.id}
+              className={cn('group relative rounded-lg px-2 py-2 transition-colors', isCurrent ? 'bg-primary/[0.07]' : 'hover:bg-secondary/30')}
             >
               <div className="flex items-center gap-2">
-                {/* Play button */}
                 <button
-                  onClick={() => { togglePlay(rec); }}
-                  disabled={loadingId === rec.id}
-                  className={`flex size-9 shrink-0 items-center justify-center rounded-full transition-[color,background-color,border-color,opacity,transform] ${
-                    loadingId === rec.id
-                      ? 'bg-primary/20 text-primary-text'
-                      : isPlaying
-                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                        : 'bg-primary/10 text-primary hover:bg-primary/20'
-                  }`}
+                  type="button"
+                  onClick={() => togglePlay(index)}
+                  aria-label={isPlaying ? `Szünet: ${rec.name}` : `Lejátszás: ${rec.name}`}
+                  aria-busy={isLoading || undefined}
+                  className={cn(
+                    'flex size-9 shrink-0 items-center justify-center rounded-full transition-[color,background-color,transform] active:scale-[.97]',
+                    isCurrent ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20' : 'bg-primary/10 text-primary hover:bg-primary/20'
+                  )}
                 >
-                  {loadingId === rec.id ? (
+                  {isLoading ? (
                     <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
-                  ) : isPlaying && !isPaused ? (
-                    <Pause className="size-3.5" />
+                  ) : isPlaying ? (
+                    <Pause className="size-3.5 fill-current" />
                   ) : (
-                    <Play className="size-3.5 ml-0.5" />
+                    <Play className="size-3.5 ml-0.5 fill-current" />
                   )}
                 </button>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   {isEditing ? (
                     <div className="flex items-center gap-1">
@@ -380,15 +189,17 @@ function RecordingsList({
                       </Button>
                     </div>
                   ) : (
-                    <p className="text-sm font-medium leading-tight">
-                      <ExpandableText className="block" clampClassName="truncate">{rec.name}</ExpandableText>
-                    </p>
+                    <>
+                      <p className={cn('text-sm font-medium leading-tight', isCurrent && 'text-primary-text')}>
+                        <ExpandableText className="block" clampClassName="truncate">{rec.name}</ExpandableText>
+                      </p>
+                      {!isCurrent && <p className="text-[11px] text-muted-foreground tabular-nums">{formatClock(rec.duration)}</p>}
+                    </>
                   )}
                 </div>
 
-                {/* Actions */}
                 {!isEditing && (
-                  <div className="flex items-center gap-0.5 shrink-0 opacity-100 transition-opacity hover-device:opacity-0 hover-device:group-hover:opacity-100">
+                  <div className="flex items-center gap-0.5 shrink-0 opacity-100 transition-opacity hover-device:opacity-0 hover-device:group-hover:opacity-100 hover-device:group-focus-within:opacity-100">
                     <Button
                       variant="ghost"
                       size="icon-xs"
@@ -414,21 +225,12 @@ function RecordingsList({
                 )}
               </div>
 
-              {/* Seekable progress bar — shown when playing */}
-              {isPlaying && !isEditing && (
-                <div className="mt-1.5 ml-11">
-                  <SeekableProgress
-                    progress={progress}
-                    duration={audioDuration}
-                    currentTime={currentTime}
-                    onSeek={handleSeek}
-                  />
+              {isCurrent && !isEditing && (
+                <div className="mt-1 ml-11 flex items-center gap-2.5 font-mono text-[11px] text-muted-foreground animate-in fade-in-0 duration-(--dur-fade)">
+                  <ElapsedTime className="w-9 shrink-0" />
+                  <SeekBar label={`Lejátszási pozíció: ${rec.name}`} className="h-6 flex-1" />
+                  <TotalTime className="w-9 shrink-0 text-right" />
                 </div>
-              )}
-
-              {/* Duration when not playing */}
-              {!isPlaying && !isEditing && (
-                <p className="text-[10px] text-muted-foreground/50 ml-11 tabular-nums">{formatTime(rec.duration)}</p>
               )}
             </div>
           );
@@ -475,6 +277,7 @@ interface RecordingModalProps {
 }
 
 export function RecordingModal({ open, onOpenChange, date, songId, readOnly = false }: RecordingModalProps) {
+  const sharedPlayer = usePlayerOptional();
   const [state, setState] = useState<RecState>('idle');
   const [recordings, setRecordings] = useState<RecordingMeta[]>([]);
   const [elapsed, setElapsed] = useState(0);
@@ -644,7 +447,7 @@ export function RecordingModal({ open, onOpenChange, date, songId, readOnly = fa
                 <div key="naming" className={cn('flex flex-col gap-3', STATE_ENTER, 'slide-in-from-bottom-1')}>
                   <div className="text-center">
                     <p className="text-sm font-medium">Felvétel kész!</p>
-                    <p className="text-xs text-muted-foreground">Időtartam: {formatTime(elapsed)}</p>
+                    <p className="text-xs text-muted-foreground">Időtartam: {formatClock(elapsed)}</p>
                   </div>
                   <Input
                     placeholder="Add meg a felvétel nevét..."
@@ -675,10 +478,16 @@ export function RecordingModal({ open, onOpenChange, date, songId, readOnly = fa
             </>
           )}
 
-          {/* Recordings list */}
+          {/* Recordings list — Próba mód has no shared player, so the list brings one that stops with the modal. */}
           {recordings.length > 0 && (
             <div className="border-t border-border/30 pt-4">
-              <RecordingsList recordings={recordings} onUpdate={loadRecordings} />
+              {sharedPlayer ? (
+                <RecordingsList recordings={recordings} onUpdate={loadRecordings} />
+              ) : (
+                <PlayerProvider>
+                  <RecordingsList recordings={recordings} onUpdate={loadRecordings} />
+                </PlayerProvider>
+              )}
             </div>
           )}
 

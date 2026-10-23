@@ -3,7 +3,9 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import YouTube, { type YouTubeEvent, type YouTubePlayer as YTPlayer } from 'react-youtube';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { getRecordingAudio } from '@/actions/recordings';
 import { extractYoutubeId } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { buildQueue, initialPlayerState, playerReducer, toTrack, type PlayerState, type PlayerTrack, type SongLike } from '@/lib/player-state';
@@ -11,8 +13,12 @@ import { buildQueue, initialPlayerState, playerReducer, toTrack, type PlayerStat
 interface PlayerContextValue {
   state: PlayerState;
   current: PlayerTrack | null;
-  progress: { current: number; duration: number };
+  /** A recording's audio is still being fetched. */
+  loading: boolean;
   play: (song: SongLike, queue?: SongLike[]) => void;
+  /** Any track (e.g. own recordings) with its queue. */
+  playTrack: (track: PlayerTrack, queue?: PlayerTrack[]) => void;
+  seek: (seconds: number) => void;
   toggle: () => void;
   next: () => void;
   prev: () => void;
@@ -53,19 +59,64 @@ export function usePlayer(): PlayerContextValue {
   return ctx;
 }
 
+/** Null outside a provider (Próba mód has none; the recording modal then brings its own). */
+export function usePlayerOptional(): PlayerContextValue | null {
+  return useContext(PlayerContext);
+}
+
+/** Playback position, updated every frame while playing; `scrub` is a seek bar being dragged. */
+export interface PlayerTime {
+  current: number;
+  duration: number;
+  scrub: number | null;
+}
+
+interface PlayerTimeStore {
+  subscribe: (listener: () => void) => () => void;
+  get: () => PlayerTime;
+  /** Show a drag preview everywhere (bars, time text) without seeking yet; null ends it. */
+  setScrub: (seconds: number | null) => void;
+}
+
+const ZERO_TIME: PlayerTime = { current: 0, duration: 0, scrub: null };
+const PlayerTimeContext = createContext<PlayerTimeStore | null>(null);
+
+/**
+ * Separate from the player context on purpose: only what shows the position re-renders every frame,
+ * not every `usePlayer()` consumer.
+ */
+export function usePlayerTime(): PlayerTime & { setScrub: PlayerTimeStore['setScrub'] } {
+  const store = useContext(PlayerTimeContext);
+  if (!store) throw new Error('usePlayerTime must be used inside <PlayerProvider>');
+  const time = useSyncExternalStore(store.subscribe, store.get, () => ZERO_TIME);
+  return { ...time, setScrub: store.setScrub };
+}
+
+/** Recording id → object URL of its audio. */
+export type RecordingLoader = (recordingId: string) => Promise<string>;
+
+const loadRecordingAudio: RecordingLoader = async (id) => {
+  const { audioData, mimeType } = await getRecordingAudio(id);
+  const binary = atob(audioData);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return URL.createObjectURL(new Blob([bytes], { type: mimeType }));
+};
+
 const YT_PLAYING = 1;
 const YT_PAUSED = 2;
 
 /**
  * Owns the single YouTube iframe for the whole app shell. The iframe never unmounts on
  * route changes; "expanding" only restyles its container (moving an iframe in the DOM reloads it).
+ * Own recordings play through a hidden <audio> with the same controls and queue.
  */
-export function PlayerProvider({ children }: { children: ReactNode }) {
+export function PlayerProvider({ children, loadRecording = loadRecordingAudio }: { children: ReactNode; loadRecording?: RecordingLoader }) {
   const [state, dispatch] = useReducer(playerReducer, initialPlayerState);
-  const [progress, setProgress] = useState({ current: 0, duration: 0 });
   const playerRef = useRef<YTPlayer | null>(null);
   const current = state.queue[state.index] ?? null;
-  const videoId = current ? extractYoutubeId(current.youtubeUrl) : null;
+  const videoId = current?.kind === 'youtube' ? extractYoutubeId(current.youtubeUrl) : null;
+  const recordingId = current?.kind === 'recording' ? current.recordingId : null;
   const mode = useSyncExternalStore(subscribeMode, readMode, (): PlayerMode => 'video');
   const [slot, setSlot] = useState<{ el: HTMLElement; songId: string } | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -123,14 +174,144 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     else p.pauseVideo();
   }, [state.isPlaying, videoId]);
 
+  // --- Own recordings ---
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioUrls = useRef(new Map<string, string>());
+  /** The recording whose audio was put into the <audio> element — a new object on every load, so the play effect re-runs. */
+  const [ready, setReady] = useState<{ id: string } | null>(null);
+  const readyId = ready?.id ?? null;
+  const loading = !!recordingId && readyId !== recordingId;
+  // Pause events while switching sources are ours, not the user's.
+  const switching = useRef(false);
+
   useEffect(() => {
-    if (!state.isPlaying) return;
-    const id = window.setInterval(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!recordingId) {
+      if (audio.getAttribute('src')) {
+        switching.current = true;
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+      }
+      return;
+    }
+    let stale = false;
+    switching.current = true;
+    audio.pause();
+    (async () => {
+      try {
+        const url = audioUrls.current.get(recordingId) ?? (await loadRecording(recordingId));
+        audioUrls.current.set(recordingId, url);
+        if (stale) return;
+        audio.src = url;
+        setReady({ id: recordingId });
+      } catch {
+        if (stale) return;
+        toast.error('Nem sikerült betölteni a felvételt');
+        dispatch({ type: 'setPlaying', value: false });
+      }
+    })();
+    return () => {
+      stale = true;
+    };
+  }, [recordingId, loadRecording]);
+
+  // Closed (or unmounted): free the decoded files.
+  const closed = !current;
+  useEffect(() => {
+    const urls = audioUrls.current;
+    const free = () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.clear();
+    };
+    if (closed) free();
+    return free;
+  }, [closed]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !recordingId || ready?.id !== recordingId) return;
+    if (state.isPlaying) {
+      audio
+        .play()
+        .then(() => (switching.current = false))
+        // Autoplay policy or a broken file: show it as paused instead of pretending to play.
+        .catch(() => dispatch({ type: 'setPlaying', value: false }));
+    } else {
+      switching.current = false;
+      audio.pause();
+    }
+  }, [state.isPlaying, recordingId, ready]);
+
+  // --- Position: a tiny external store, published every frame while playing ---
+  const currentRef = useRef(current);
+  useEffect(() => {
+    currentRef.current = current;
+  });
+  const time = useRef<PlayerTime>(ZERO_TIME);
+  const timeListeners = useRef(new Set<() => void>());
+  const publish = useCallback((next: Partial<PlayerTime>) => {
+    const prev = time.current;
+    const merged = { ...prev, ...next };
+    if (merged.current === prev.current && merged.duration === prev.duration && merged.scrub === prev.scrub) return;
+    time.current = merged;
+    timeListeners.current.forEach((l) => l());
+  }, []);
+  const timeStore = useMemo<PlayerTimeStore>(
+    () => ({
+      subscribe: (l) => {
+        timeListeners.current.add(l);
+        return () => timeListeners.current.delete(l);
+      },
+      get: () => time.current,
+      setScrub: (scrub) => publish({ scrub }),
+    }),
+    [publish]
+  );
+
+  const readTime = useCallback((): Pick<PlayerTime, 'current' | 'duration'> => {
+    const track = currentRef.current;
+    if (track?.kind === 'youtube') {
       const p = playerRef.current;
-      if (p) setProgress({ current: p.getCurrentTime() ?? 0, duration: p.getDuration() ?? 0 });
-    }, 500);
-    return () => window.clearInterval(id);
-  }, [state.isPlaying]);
+      return { current: p?.getCurrentTime?.() ?? 0, duration: p?.getDuration?.() ?? 0 };
+    }
+    if (track?.kind === 'recording') {
+      const a = audioRef.current;
+      // MediaRecorder webm files often report Infinity until fully read: fall back to the saved length.
+      const duration = a && Number.isFinite(a.duration) && a.duration > 0 ? a.duration : track.duration;
+      return { current: readyId === track.recordingId ? (a?.currentTime ?? 0) : 0, duration };
+    }
+    return { current: 0, duration: 0 };
+  }, [readyId]);
+
+  useEffect(() => {
+    currentRef.current = current;
+    if (!current) {
+      publish(ZERO_TIME);
+      return;
+    }
+    publish(readTime());
+    if (!state.isPlaying) return;
+    let raf = 0;
+    const tick = () => {
+      publish(readTime());
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [current, state.isPlaying, publish, readTime]);
+
+  const seek = useCallback(
+    (seconds: number) => {
+      const track = currentRef.current;
+      if (track?.kind === 'youtube') playerRef.current?.seekTo(seconds, true);
+      else if (track?.kind === 'recording' && audioRef.current) audioRef.current.currentTime = seconds;
+      else return;
+      publish({ current: seconds });
+    },
+    [publish]
+  );
 
   const expand = useCallback(
     (v: boolean) => {
@@ -166,22 +347,30 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (track) dispatch({ type: 'play', track, queue: tracks });
   }, []);
 
+  const playTrack = useCallback((track: PlayerTrack, queue?: PlayerTrack[]) => dispatch({ type: 'play', track, queue }), []);
+
   const value = useMemo<PlayerContextValue>(
     () => ({
       state,
       current,
-      progress,
+      loading,
       play,
+      playTrack,
+      seek,
       toggle: () => dispatch({ type: 'toggle' }),
       next: () => dispatch({ type: 'next' }),
       prev: () => dispatch({ type: 'prev' }),
-      close: () => dispatch({ type: 'close' }),
+      close: () => {
+        // The next play of the same recording must load again: closing empties the <audio>.
+        setReady(null);
+        dispatch({ type: 'close' });
+      },
       expand,
       mode,
       setMode,
       dock,
     }),
-    [state, current, progress, play, expand, mode, setMode, dock]
+    [state, current, loading, play, playTrack, seek, expand, mode, setMode, dock]
   );
 
   /** Keep our state in sync when the user plays/pauses inside the YouTube iframe itself. */
@@ -191,69 +380,80 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   return (
     <PlayerContext.Provider value={value}>
-      {children}
-      {videoId && (
-        <div
-          ref={boxRef}
-          data-player-box
-          aria-hidden={!state.isExpanded && !docked}
-          className={cn(
-            state.isExpanded
-              ? cn(
-                  'fixed inset-0 z-[80] flex items-end justify-center bg-scrim/70 md:items-center',
-                  closing ? 'animate-out fade-out-0 fill-mode-forwards duration-130' : 'animate-in fade-in-0 duration-200'
-                )
-              : docked
-                ? 'fixed z-10 overflow-hidden rounded-[6px] bg-scrim'
-                : 'pointer-events-none fixed top-0 left-0 size-px overflow-hidden opacity-0'
-          )}
-          onClick={(e) => e.target === e.currentTarget && expand(false)}
-        >
+      <PlayerTimeContext.Provider value={timeStore}>
+        {children}
+        <audio
+          ref={audioRef}
+          preload="auto"
+          hidden
+          onEnded={() => dispatch({ type: 'ended' })}
+          // Headset buttons and OS media controls play/pause the element directly.
+          onPlay={() => !switching.current && dispatch({ type: 'setPlaying', value: true })}
+          onPause={(e) => !switching.current && !e.currentTarget.ended && dispatch({ type: 'setPlaying', value: false })}
+        />
+        {videoId && (
           <div
-            role={state.isExpanded ? 'dialog' : undefined}
-            aria-modal={state.isExpanded || undefined}
-            aria-label={state.isExpanded ? `Videó: ${current?.title}` : undefined}
-            onAnimationEnd={(e) => closing && e.target === e.currentTarget && finishClosing()}
+            ref={boxRef}
+            data-player-box
+            aria-hidden={!state.isExpanded && !docked}
             className={cn(
               state.isExpanded
                 ? cn(
-                    'w-full rounded-t-2xl border-t border-border-strong bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:max-w-3xl md:rounded-xl md:border',
-                    closing
-                      ? 'animate-out fade-out-0 slide-out-to-bottom fill-mode-forwards duration-200 ease-(--ease-out) md:slide-out-to-bottom-0 md:zoom-out-[0.96] md:duration-130'
-                      : 'animate-in slide-in-from-bottom duration-300 ease-(--ease-drawer) md:slide-in-from-bottom-0 md:zoom-in-[0.96] md:duration-200 md:ease-(--ease-out) motion-reduce:slide-in-from-bottom-0 motion-reduce:zoom-in-100'
+                    'fixed inset-0 z-[80] flex items-end justify-center bg-scrim/70 md:items-center',
+                    closing ? 'animate-out fade-out-0 fill-mode-forwards duration-130' : 'animate-in fade-in-0 duration-200'
                   )
                 : docked
-                  ? 'size-full'
-                  : 'size-px'
+                  ? 'fixed z-10 overflow-hidden rounded-[6px] bg-scrim'
+                  : 'pointer-events-none fixed top-0 left-0 size-px overflow-hidden opacity-0'
             )}
+            onClick={(e) => e.target === e.currentTarget && expand(false)}
           >
-            {state.isExpanded && (
-              <div className="mb-3 flex items-center justify-between gap-3 px-1">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{current?.title}</p>
-                  <p className="truncate text-[13px] text-muted-foreground">{current?.artist}</p>
+            <div
+              role={state.isExpanded ? 'dialog' : undefined}
+              aria-modal={state.isExpanded || undefined}
+              aria-label={state.isExpanded ? `Videó: ${current?.title}` : undefined}
+              onAnimationEnd={(e) => closing && e.target === e.currentTarget && finishClosing()}
+              className={cn(
+                state.isExpanded
+                  ? cn(
+                      'w-full rounded-t-2xl border-t border-border-strong bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:max-w-3xl md:rounded-xl md:border',
+                      closing
+                        ? 'animate-out fade-out-0 slide-out-to-bottom fill-mode-forwards duration-200 ease-(--ease-out) md:slide-out-to-bottom-0 md:zoom-out-[0.96] md:duration-130'
+                        : 'animate-in slide-in-from-bottom duration-300 ease-(--ease-drawer) md:slide-in-from-bottom-0 md:zoom-in-[0.96] md:duration-200 md:ease-(--ease-out) motion-reduce:slide-in-from-bottom-0 motion-reduce:zoom-in-100'
+                    )
+                  : docked
+                    ? 'size-full'
+                    : 'size-px'
+              )}
+            >
+              {state.isExpanded && (
+                <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{current?.title}</p>
+                    <p className="truncate text-[13px] text-muted-foreground">{current?.artist}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" aria-label="Videó bezárása" autoFocus onClick={() => expand(false)}>
+                    <X />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon" aria-label="Videó bezárása" autoFocus onClick={() => expand(false)}>
-                  <X />
-                </Button>
+              )}
+              <div className={cn('relative overflow-hidden bg-scrim', state.isExpanded ? 'aspect-video w-full rounded-lg' : docked ? 'size-full' : 'size-px')}>
+                <YouTube
+                  videoId={videoId}
+                  opts={{ width: '100%', height: '100%', playerVars: { autoplay: 1, modestbranding: 1, playsinline: 1 } }}
+                  className="absolute inset-0"
+                  iframeClassName="h-full w-full"
+                  onReady={(e: YouTubeEvent) => {
+                    playerRef.current = e.target;
+                  }}
+                  onStateChange={onStateChange}
+                  onEnd={() => dispatch({ type: 'ended' })}
+                />
               </div>
-            )}
-            <div className={cn('relative overflow-hidden bg-scrim', state.isExpanded ? 'aspect-video w-full rounded-lg' : docked ? 'size-full' : 'size-px')}>
-              <YouTube
-                videoId={videoId}
-                opts={{ width: '100%', height: '100%', playerVars: { autoplay: 1, modestbranding: 1, playsinline: 1 } }}
-                className="absolute inset-0"
-                iframeClassName="h-full w-full"
-                onReady={(e: YouTubeEvent) => {
-                  playerRef.current = e.target;
-                }}
-                onStateChange={onStateChange}
-                onEnd={() => dispatch({ type: 'ended' })}
-              />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </PlayerTimeContext.Provider>
     </PlayerContext.Provider>
   );
 }

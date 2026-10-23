@@ -2,15 +2,23 @@
 
 import { useRef, type ReactNode } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform, type PanInfo } from 'motion/react';
-import { Maximize2, Pause, Play, SkipBack, SkipForward, Video, X } from 'lucide-react';
+import { Loader2, Maximize2, Mic, Pause, Play, SkipBack, SkipForward, Video, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoverArt } from '@/components/design/cover-art';
 import { dur, ease, exitDur, rubberband, shouldDismiss } from '@/lib/motion';
 import { usePlayer } from './player-provider';
+import { ElapsedTime, SeekBar, TotalTime } from './seek-bar';
 
-function formatTime(seconds: number): string {
-  const s = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+/** Cover for an own recording: the recorder's disc (recording-modal) in miniature, REC-red centre. */
+function RecordingArt() {
+  return (
+    <span aria-hidden className="relative grid size-10 shrink-0 place-items-center rounded-full bg-foreground/[0.06] shadow-[inset_0_0_0_1px_var(--border-strong)]">
+      <span className="absolute size-[70%] rounded-full shadow-[inset_0_0_0_1px_var(--border)]" />
+      <span className="grid size-3.5 place-items-center rounded-full bg-destructive">
+        <span className="size-1 rounded-full bg-background" />
+      </span>
+    </span>
+  );
 }
 
 /**
@@ -32,9 +40,11 @@ function DismissDrag({ onDismiss, children }: { onDismiss: () => void; children:
 
   function onPanStart(e: PointerEvent) {
     const r = ref.current?.getBoundingClientRect();
+    // The seek bar drags sideways too; it must not also throw the player away.
+    const own = e.target instanceof Element && e.target.closest('[data-no-dismiss]');
     // How far each way the pill has to travel to be gone: to the screen bottom, or past the side edge.
     gesture.current = {
-      lock: e.pointerType === 'mouse' ? 'off' : 'pending',
+      lock: e.pointerType === 'mouse' || own ? 'off' : 'pending',
       down: Math.max(window.innerHeight - (r?.top ?? 0), 1),
       side: Math.max(window.innerWidth, 1),
     };
@@ -73,6 +83,7 @@ function DismissDrag({ onDismiss, children }: { onDismiss: () => void; children:
   return (
     <motion.div
       ref={ref}
+      className="relative"
       style={{ x, y, opacity, touchAction: 'none' }}
       onPanStart={onPanStart}
       onPan={onPan}
@@ -92,9 +103,9 @@ function DismissDrag({ onDismiss, children }: { onDismiss: () => void; children:
 
 /** Docked mini player: floating pill on desktop, above the bottom nav on mobile (spec A2). */
 export function MiniPlayer() {
-  const { current, state, progress, toggle, next, prev, close, expand } = usePlayer();
+  const { current, state, loading, toggle, next, prev, close, expand } = usePlayer();
   const reduce = useReducedMotion();
-  const pct = progress.duration ? (progress.current / progress.duration) * 100 : 0;
+  const isRecording = current?.kind === 'recording';
 
   return (
     <AnimatePresence>
@@ -117,26 +128,39 @@ export function MiniPlayer() {
               aria-label="Lejátszó"
               className="relative grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-full border border-border-strong bg-card/90 py-2 pr-2 pl-2 shadow-[0_16px_40px_oklch(0_0_0/.5)] backdrop-blur-xl md:grid-cols-[40px_minmax(0,1fr)_auto_auto_auto] md:gap-3.5"
             >
-              <CoverArt title={current.title} artist={current.artist} imageUrl={current.imageUrl} size="sm" className="rounded-full" />
+              {isRecording ? (
+                <RecordingArt />
+              ) : (
+                <CoverArt title={current.title} artist={current.artist} imageUrl={current.imageUrl} size="sm" className="rounded-full" />
+              )}
               <div className="flex min-w-0 flex-col leading-tight">
                 <span className="truncate text-sm font-semibold">{current.title}</span>
                 <span className="truncate text-[13px] text-muted-foreground">
+                  {isRecording && <Mic className="mr-1 inline size-3 -translate-y-px text-destructive" aria-hidden />}
                   {current.artist}
-                  <span className="ml-1.5 hidden items-center gap-1 text-faint sm:inline-flex">
-                    <Video className="size-3" aria-hidden />
-                    YouTube
-                  </span>
+                  {!isRecording && (
+                    <span className="ml-1.5 hidden items-center gap-1 text-faint sm:inline-flex">
+                      <Video className="size-3" aria-hidden />
+                      YouTube
+                    </span>
+                  )}
                 </span>
               </div>
-              <span className="hidden font-mono text-[12.5px] text-muted-foreground tabular-nums md:inline">
-                {formatTime(progress.current)} <span className="text-faint">/ {formatTime(progress.duration)}</span>
+              <span className="hidden font-mono text-[12.5px] text-muted-foreground md:inline">
+                <ElapsedTime /> <span className="text-faint">/ <TotalTime /></span>
               </span>
               <div className="flex items-center gap-0.5">
                 <Button variant="ghost" size="icon" aria-label="Előző" onClick={prev} className="hidden md:inline-flex">
                   <SkipBack />
                 </Button>
-                <Button size="icon" aria-label={state.isPlaying ? 'Szünet' : 'Lejátszás'} onClick={toggle}>
-                  {state.isPlaying ? <Pause className="fill-current" /> : <Play className="ml-0.5 fill-current" />}
+                <Button size="icon" aria-label={state.isPlaying ? 'Szünet' : 'Lejátszás'} aria-busy={loading || undefined} onClick={toggle}>
+                  {loading && state.isPlaying ? (
+                    <Loader2 className="animate-spin motion-reduce:animate-none" />
+                  ) : state.isPlaying ? (
+                    <Pause className="fill-current" />
+                  ) : (
+                    <Play className="ml-0.5 fill-current" />
+                  )}
                 </Button>
                 <Button variant="ghost" size="icon" aria-label="Következő" onClick={next}>
                   <SkipForward />
@@ -147,18 +171,21 @@ export function MiniPlayer() {
                 </Button>
               </div>
               <div className="hidden items-center md:flex">
-                <Button variant="ghost" size="icon" aria-label="Videó megnyitása" onClick={() => expand(true)}>
-                  <Maximize2 />
-                </Button>
+                {!isRecording && (
+                  <Button variant="ghost" size="icon" aria-label="Videó megnyitása" onClick={() => expand(true)}>
+                    <Maximize2 />
+                  </Button>
+                )}
                 <Button variant="ghost" size="icon" aria-label="Lejátszó bezárása" onClick={close}>
                   <X />
                 </Button>
               </div>
-              <button type="button" className="absolute inset-y-0 left-0 w-14 md:hidden" aria-label="Videó megnyitása" onClick={() => expand(true)} />
-              <span aria-hidden className="absolute inset-x-14 bottom-1 h-0.5 rounded-full bg-border">
-                <span className="block h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-              </span>
+              {!isRecording && (
+                <button type="button" className="absolute inset-y-0 left-0 w-14 md:hidden" aria-label="Videó megnyitása" onClick={() => expand(true)} />
+              )}
             </div>
+            {/* Outside the clipped pill: the hit area reaches a little below it, the time bubble above the line. */}
+            <SeekBar label={`Lejátszási pozíció: ${current.title}`} className="absolute inset-x-6 -bottom-1.5 h-[18px] md:inset-x-8" />
           </DismissDrag>
         </motion.div>
       )}
