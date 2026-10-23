@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { beatIntervalMs, statusChanges, summarizeChanges, clampIndex, formatElapsed, nextBeatTime, scrollStepPx, swipeDelta } from './practice';
+import { beatIntervalMs, statusChanges, summarizeChanges, clampIndex, formatElapsed, nextBeatTime, scrollStepPx } from './practice';
 
 describe('practice helpers', () => {
   test('clampIndex', () => {
@@ -43,27 +43,5 @@ describe('wrap-up status changes', () => {
 
   test('counts songs that moved forward and back', () => {
     expect(summarizeChanges(before, [{ id: 'a', status: 'ready' }, { id: 'c', status: 'ok' }])).toEqual({ up: 1, down: 1 });
-  });
-});
-
-describe('song swipe', () => {
-  test('swipeDelta: finger left → next, right → previous', () => {
-    expect(swipeDelta(-150, 0, 400)).toBe(1);
-    expect(swipeDelta(150, 0, 400)).toBe(-1);
-  });
-
-  test('swipeDelta: short drag without momentum snaps back', () => {
-    expect(swipeDelta(-60, 0, 400)).toBe(0);
-    expect(swipeDelta(-60, -100, 400)).toBe(0);
-  });
-
-  test('swipeDelta: a quick flick counts even when short', () => {
-    expect(swipeDelta(-40, -900, 400)).toBe(1);
-    expect(swipeDelta(20, 520, 400)).toBe(-1);
-    expect(swipeDelta(-20, -450, 400)).toBe(0);
-  });
-
-  test('swipeDelta: a fast reversal cancels a long drag', () => {
-    expect(swipeDelta(-200, 600, 400)).toBe(0);
   });
 });

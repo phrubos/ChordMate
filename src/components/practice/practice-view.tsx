@@ -11,6 +11,7 @@ import { useIsDesktop } from '@/hooks/use-is-desktop';
 import { useStoredNumber } from '@/hooks/use-stored-number';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { TabSizeControl } from '@/components/song-hub/tab-size-control';
+import { SwipePane } from '@/components/design/swipe-pane';
 import { useMetronome } from '@/hooks/use-metronome';
 import { dur, ease, exitDur } from '@/lib/motion';
 import { clampIndex, DEFAULT_BPM } from '@/lib/practice';
@@ -21,7 +22,6 @@ import { PracticeInfo } from './practice-info';
 import { PracticeSheet } from './practice-sheet';
 import { PracticeControls } from './practice-controls';
 import { PracticeWrapUp } from './practice-wrap-up';
-import { SongSwipe } from './song-swipe';
 import { useAutoScroll } from './use-auto-scroll';
 import { useWakeLock } from './use-wake-lock';
 
@@ -137,13 +137,14 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
       <PracticeTopBar index={index} total={songs.length} animate={animate} exitHref={exitHref}>
         {song.tabContent && <TabSizeControl size={tabSize} onChange={setTabSize} />}
       </PracticeTopBar>
-      <SongSwipe
+      <SwipePane
         key={index}
         canPrev={index > 0}
         canNext={!isLast}
         onSwipe={(delta) => go(delta, 'swipe')}
         enterFrom={animate ? direction * 24 : false}
-        className={cn(sideInfo && 'grid grid-cols-[340px_minmax(0,1fr)]')}
+        className="flex min-h-0 flex-1 flex-col"
+        paneClassName={cn('flex min-h-0 flex-1 flex-col', sideInfo && 'grid grid-cols-[340px_minmax(0,1fr)]')}
       >
         {sideInfo && (
           <aside className="overflow-y-auto border-r border-border px-7 py-7">
@@ -156,7 +157,7 @@ export function PracticeView({ date, songs, label, exitHref = '/dashboard', init
           fontSize={tabSize}
           header={!sideInfo && <PracticeInfo variant="inline" song={song} next={songs[index + 1]} label={label} onNext={() => go(1, 'button')} />}
         />
-      </SongSwipe>
+      </SwipePane>
       {/* A2 desktop: grows out of the bottom-right corner, towards the Videó button. */}
       <AnimatePresence>
         {videoOn && song.youtubeUrl && isDesktop && (

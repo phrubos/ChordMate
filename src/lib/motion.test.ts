@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { ease, exitDur, projectMomentum, rubberband, sheetShouldClose } from './motion';
+import { ease, exitDur, projectMomentum, rubberband, sheetShouldClose, swipeDelta } from './motion';
 
 describe('motion tokens', () => {
   test('exit duration is ~65% of the enter duration', () => {
@@ -32,5 +32,27 @@ describe('gesture physics', () => {
     expect(sheetShouldClose(190, 0, 500)).toBe(true);
     expect(sheetShouldClose(120, 0, 500)).toBe(false);
     expect(sheetShouldClose(150, 400, 500)).toBe(true);
+  });
+});
+
+describe('paging swipe', () => {
+  test('swipeDelta: finger left → next, right → previous', () => {
+    expect(swipeDelta(-150, 0, 400)).toBe(1);
+    expect(swipeDelta(150, 0, 400)).toBe(-1);
+  });
+
+  test('swipeDelta: short drag without momentum snaps back', () => {
+    expect(swipeDelta(-60, 0, 400)).toBe(0);
+    expect(swipeDelta(-60, -100, 400)).toBe(0);
+  });
+
+  test('swipeDelta: a quick flick counts even when short', () => {
+    expect(swipeDelta(-40, -900, 400)).toBe(1);
+    expect(swipeDelta(20, 520, 400)).toBe(-1);
+    expect(swipeDelta(-20, -450, 400)).toBe(0);
+  });
+
+  test('swipeDelta: a fast reversal cancels a long drag', () => {
+    expect(swipeDelta(-200, 600, 400)).toBe(0);
   });
 });

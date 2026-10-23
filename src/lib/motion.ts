@@ -36,6 +36,19 @@ export function rubberband(overshoot: number, dimension: number, constant = 0.55
   return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
 }
 
+/**
+ * Horizontal paging swipe (songs, months): +1 next, −1 previous, 0 snap back.
+ * Decided on where the gesture is heading (offset + momentum), not where it was released;
+ * a clear flick always counts, a fast flick back the other way cancels.
+ */
+export function swipeDelta(offset: number, velocity: number, width: number): -1 | 0 | 1 {
+  if (Math.abs(velocity) > 300 && Math.sign(velocity) !== Math.sign(offset)) return 0;
+  if (Math.abs(velocity) >= 500) return velocity < 0 ? 1 : -1; // a clear flick, however short
+  const projected = offset + projectMomentum(velocity);
+  if (Math.abs(projected) < width * 0.3) return 0;
+  return projected < 0 ? 1 : -1;
+}
+
 /** Bottom sheet drag-to-dismiss: a clear downward flick, or heading past 35% of its height. */
 export function sheetShouldClose(offset: number, velocity: number, height: number): boolean {
   if (velocity >= 500) return true;
