@@ -50,15 +50,6 @@ export function BandSwitcher() {
     load();
   }, []);
 
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [mobileOpen]);
-
   const activeBand = bands.find(b => b.id === activeBandId);
 
   async function handleSwitch(bandId: string) {
