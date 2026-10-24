@@ -14,6 +14,7 @@ import { PracticeSection } from './sections/practice';
 import { WrapUpSection } from './sections/wrap-up';
 import { RehearsalPageSection, RehearsalsSection } from './sections/rehearsals';
 import { FormSection } from './sections/form';
+import { AddToRehearsalSection } from './sections/add-to-rehearsal';
 import { AnalyticsSection } from './sections/analytics';
 
 export const metadata = { title: 'ChordMate — UI showcase (dev)' };
@@ -44,6 +45,8 @@ export default async function DevUiPage({ searchParams }: DevUiPageProps) {
       {show('rehearsals') && <RehearsalsSection />}
       {show('rehearsal') && <RehearsalPageSection />}
       {only === 'rehearsal-edit' && <RehearsalPageSection editOpen />}
+      {show('add-to-rehearsal') && <AddToRehearsalSection />}
+      {only === 'add-to-rehearsal-open' && <AddToRehearsalSection defaultOpen />}
       {show('form') && <FormSection />}
       {show('analytics') && <AnalyticsSection />}
       {show('tokens') && <TokensSection />}
