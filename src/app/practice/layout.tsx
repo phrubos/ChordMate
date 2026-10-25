@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { auth } from '@/lib/auth';
 
-export const metadata = { title: 'Próba mód — ChordMate' };
+export const metadata = { title: 'Próba mód' };
 
 /** Full-screen practice: no masthead, bottom nav or mini-player. */
 export default async function PracticeLayout({ children }: { children: ReactNode }) {

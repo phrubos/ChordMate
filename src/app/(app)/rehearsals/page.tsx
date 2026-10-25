@@ -9,7 +9,7 @@ import { getCalendarEntries } from '@/actions/calendar';
 import { getSongs } from '@/actions/songs';
 import { todayIso } from '@/lib/calendar-utils';
 
-export const metadata = { title: 'Próbák — ChordMate' };
+export const metadata = { title: 'Próbák' };
 
 export default async function RehearsalsPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const session = await auth();

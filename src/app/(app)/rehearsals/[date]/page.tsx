@@ -1,4 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
+import { format, parseISO } from 'date-fns';
+import { hu } from 'date-fns/locale';
 import { auth } from '@/lib/auth';
 import { getRehearsal } from '@/actions/rehearsals';
 import { getCalendarEntries } from '@/actions/calendar';
@@ -9,7 +11,10 @@ import { RehearsalAttendance } from '@/components/rehearsals/rehearsal-attendanc
 import { todayIso } from '@/lib/calendar-utils';
 import { isIsoDate } from '@/lib/rehearsals';
 
-export const metadata = { title: 'Próba — ChordMate' };
+export async function generateMetadata({ params }: { params: Promise<{ date: string }> }) {
+  const { date } = await params;
+  return { title: isIsoDate(date) ? `Próba · ${format(parseISO(date), 'MMM d.', { locale: hu })}` : 'Próba' };
+}
 
 export default async function RehearsalPage({ params }: { params: Promise<{ date: string }> }) {
   const session = await auth();

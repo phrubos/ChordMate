@@ -30,8 +30,9 @@ const fontMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ChordMate — Gitárgyakorlás szervező",
-  description: "Gyakorolj együtt a haveroddal! Közös dallista, naptár és YouTube lejátszó.",
+  // Pages set a bare title ("Dalok"); the template adds the app name, so every tab says where it is.
+  title: { default: "ChordMate — a banda próbái", template: "%s — ChordMate" },
+  description: "A banda próbái egy helyen: setlist, naptár, kották és felvételek.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

@@ -14,6 +14,8 @@ import { getRehearsalMetas } from '@/actions/rehearsals';
 import { findNextRehearsalDate, todayIso } from '@/lib/calendar-utils';
 import { buildSongInsights } from '@/lib/neglected';
 
+export const metadata = { title: 'Kezdőlap' };
+
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect('/login');

@@ -18,7 +18,7 @@ import { AddToRehearsalSection } from './sections/add-to-rehearsal';
 import { BandSwitcherSection } from './sections/band-switcher';
 import { AnalyticsSection } from './sections/analytics';
 
-export const metadata = { title: 'ChordMate — UI showcase (dev)' };
+export const metadata = { title: 'UI showcase (dev)' };
 
 interface DevUiPageProps {
   searchParams: Promise<{ w?: string; embed?: string; only?: string }>;

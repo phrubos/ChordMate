@@ -310,14 +310,15 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries, var
               <div role="list" aria-label="Setlist">
                 <AnimatePresence initial={false}>
                   {optimistic.map((entry, i) => (
+                    // Clip only while the row grows in or shrinks out: at rest a clipping wrapper would hide
+                    // the rows dnd-kit shifts out of their slot while another row is dragged past them.
                     <motion.div
                       key={entry.id}
                       role="listitem"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0, transition: { duration: exitDur(0.2), ease: ease.out } }}
+                      initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                      animate={{ opacity: 1, height: 'auto', transitionEnd: { overflow: 'visible' } }}
+                      exit={{ opacity: 0, height: 0, overflow: 'hidden', transition: { duration: exitDur(0.2), ease: ease.out } }}
                       transition={{ duration: 0.2, ease: ease.out }}
-                      className="overflow-hidden"
                     >
                       <SetlistRow entry={entry} index={i} date={date} isPlaying={playingId === entry.song.id} onPlay={onPlay} onRemove={onRemove} />
                     </motion.div>

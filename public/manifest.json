@@ -2,7 +2,7 @@
   "id": "/dashboard",
   "name": "ChordMate",
   "short_name": "ChordMate",
-  "description": "Gitárgyakorlás szervező – közös dallista, naptár és YouTube lejátszó",
+  "description": "A banda próbái egy helyen: setlist, naptár, kották és felvételek",
   "start_url": "/dashboard",
   "display": "standalone",
   "scope": "/",

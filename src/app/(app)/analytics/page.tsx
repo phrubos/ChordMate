@@ -12,7 +12,7 @@ import { TrendChart } from '@/components/analytics/trend-chart';
 import { NeglectedSongs } from '@/components/analytics/neglected-songs';
 import { PracticeHistory } from '@/components/dashboard/practice-history';
 
-export const metadata = { title: 'Próbák · Áttekintés — ChordMate' };
+export const metadata = { title: 'Próbák · Áttekintés' };
 
 export default async function AnalyticsPage() {
   const session = await auth();

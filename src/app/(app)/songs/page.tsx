@@ -10,6 +10,8 @@ import { getUserBand } from '@/actions/bands';
 import { parseSongFilters } from '@/lib/song-filters';
 import { countByStatus } from '@/lib/song-meta';
 
+export const metadata = { title: 'Dalok' };
+
 interface SongsPageProps {
   searchParams: Promise<Record<string, string | undefined>>;
 }

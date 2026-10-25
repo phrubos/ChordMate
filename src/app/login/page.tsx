@@ -4,7 +4,7 @@ import { LoginForm } from '@/components/auth/login-form';
 import { TurntableScene } from '@/components/auth/turntable-scene';
 import { LOGIN_ALBUMS, shuffleAlbums } from '@/lib/login-albums';
 
-export const metadata = { title: 'Bejelentkezés — ChordMate' };
+export const metadata = { title: 'Bejelentkezés' };
 
 export default async function LoginPage() {
   try {

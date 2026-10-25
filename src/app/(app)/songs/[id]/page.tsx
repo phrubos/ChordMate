@@ -12,6 +12,11 @@ interface SongHubPageProps {
   params: Promise<{ id: string }>;
 }
 
+export async function generateMetadata({ params }: SongHubPageProps) {
+  const song = await getSongById((await params).id).catch(() => null);
+  return { title: song ? `${song.title} · ${song.artist}` : 'Dal' };
+}
+
 export default async function SongHubPage({ params }: SongHubPageProps) {
   const session = await auth();
   if (!session?.user) redirect('/login');
