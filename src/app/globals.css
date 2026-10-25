@@ -278,6 +278,23 @@
   }
 }
 
+/* A24 — betöltő link (<PendingLink>): a lenyomás tónusa megmarad, és a következő oldalig lassan lélegzik. */
+@keyframes link-pending {
+  from { opacity: 0.1; }
+  to { opacity: 0.04; }
+}
+@layer components {
+  .pressable:has(> [data-link-pending])::before {
+    opacity: 0.1;
+    animation: link-pending 700ms var(--ease-in-out) infinite alternate;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  @layer components {
+    .pressable:has(> [data-link-pending])::before { animation: none; }
+  }
+}
+
 /* Skeleton: gyors betöltésnél (< 150ms) meg sem jelenik, utána átúszik és lüktet. */
 @keyframes skeleton-pulse {
   50% { opacity: 0.5; }

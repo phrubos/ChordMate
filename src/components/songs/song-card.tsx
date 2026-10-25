@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { Heart, Play } from 'lucide-react';
 import { CoverArt } from '@/components/design/cover-art';
 import { ChipList } from '@/components/design/chip';
@@ -20,9 +20,9 @@ export const SongCard = memo(function SongCard({ song, onPlay }: SongCardProps) 
   return (
     <article className="group flex min-w-0 flex-col">
       <div className="relative aspect-square overflow-hidden rounded-[2px] shadow-[0_2px_0_oklch(0_0_0/.2)] transition-[transform,box-shadow] duration-250 ease-(--ease-out) hover-device:group-hover:-translate-y-[3px] hover-device:group-hover:rotate-[-0.4deg] hover-device:group-hover:shadow-[0_18px_36px_oklch(0_0_0/.55),0_0_0_1px_color-mix(in_oklch,var(--primary)_25%,transparent)] motion-reduce:transform-none">
-        <Link href={`/songs/${song.id}`} tabIndex={-1} aria-hidden className="absolute inset-0">
+        <PendingLink href={`/songs/${song.id}`} tabIndex={-1} aria-hidden className="pressable absolute inset-0 [--press-scale:1]">
           <CoverArt title={song.title} artist={song.artist} imageUrl={song.imageUrl} size="fill" showType />
-        </Link>
+        </PendingLink>
         {song.isFavorite && (
           <span className="absolute top-2.5 right-2.5 grid size-7 place-items-center rounded-full bg-scrim/35 text-on-media backdrop-blur-sm" title="Kedvenc">
             <Heart className="size-3.5 fill-current" aria-label="Kedvenc" />
@@ -41,9 +41,9 @@ export const SongCard = memo(function SongCard({ song, onPlay }: SongCardProps) 
       </div>
       <div className="flex min-w-0 flex-col gap-1 pt-3.5">
         <div className="flex items-start justify-between gap-2">
-          <Link href={`/songs/${song.id}`} className="display-soft min-w-0 font-display text-[17px] leading-tight font-medium tracking-[-0.01em] hover:underline md:text-[21px]">
+          <PendingLink href={`/songs/${song.id}`} className="pressable -mx-1.5 rounded-md px-1.5 [--press-scale:.985] display-soft min-w-0 font-display text-[17px] leading-tight font-medium tracking-[-0.01em] hover:underline md:text-[21px]">
             {song.title}
-          </Link>
+          </PendingLink>
           <SongActionsMenu song={song} className="-mt-1 -mr-2 shrink-0" />
         </div>
         <span className="truncate text-[13.5px] text-muted-foreground">{song.artist}</span>

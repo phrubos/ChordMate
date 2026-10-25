@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { motion } from 'motion/react';
 import { Clock, X } from 'lucide-react';
 import { ease } from '@/lib/motion';
@@ -27,9 +27,9 @@ function Elapsed() {
 export function PracticeTopBar({ index, total, animate, exitHref, children }: { index: number; total: number; animate: boolean; exitHref: string; children?: ReactNode }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border px-3 md:h-[68px] md:gap-5 md:px-5">
-      <Link href={exitHref} aria-label="Kilépés a próba módból" className="grid size-10 place-items-center rounded-full text-muted-foreground hover:text-foreground">
+      <PendingLink href={exitHref} aria-label="Kilépés a próba módból" className="pressable grid size-10 place-items-center rounded-full text-muted-foreground hover:text-foreground">
         <X className="size-5" />
-      </Link>
+      </PendingLink>
       <div className="flex flex-1 gap-1.5" role="progressbar" aria-label="Haladás a setlistben" aria-valuemin={1} aria-valuemax={total} aria-valuenow={index + 1}>
         {Array.from({ length: total }, (_, k) => (
           <span key={k} className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-border-strong">

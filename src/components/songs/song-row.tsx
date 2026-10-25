@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoverArt } from '@/components/design/cover-art';
@@ -29,10 +29,10 @@ export function SongRow({ song, onPlay }: { song: Song; onPlay?: (song: Song) =>
   return (
     <div role="row" className={`grid items-center gap-3 border-t border-border px-3 py-2.5 transition-colors duration-(--dur-fade) hover:bg-muted/40 md:gap-4 md:px-4 ${COLS}`}>
       <CoverArt title={song.title} artist={song.artist} imageUrl={song.imageUrl} size="sm" />
-      <Link href={`/songs/${song.id}`} className="flex min-w-0 flex-col leading-tight">
+      <PendingLink href={`/songs/${song.id}`} className="pressable -mx-1.5 flex min-w-0 flex-col rounded-md px-1.5 leading-tight [--press-scale:.985]">
         <span className="display-soft truncate font-display text-[17px] font-medium" title={song.title}>{song.title}</span>
         <span className="truncate text-[13px] text-muted-foreground">{song.artist}</span>
-      </Link>
+      </PendingLink>
       <span className="hidden font-mono text-sm md:inline">{song.songKey ?? '—'}</span>
       <span className="hidden font-mono text-sm tabular-nums md:inline">{song.bpm ?? '—'}</span>
       <span className="hidden md:inline">

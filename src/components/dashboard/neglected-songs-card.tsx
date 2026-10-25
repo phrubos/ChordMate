@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { Check, Plus, Sparkles } from 'lucide-react';
@@ -49,12 +49,12 @@ export function NeglectedSongsCard({ items, nextRehearsalDate }: NeglectedSongsC
           {items.map(({ song, daysSince }) => (
             <li key={song.id} className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 py-1.5">
               <CoverArt title={song.title} artist={song.artist} imageUrl={song.imageUrl} size="sm" />
-              <Link href={`/songs/${song.id}`} className="flex min-w-0 flex-col leading-tight">
+              <PendingLink href={`/songs/${song.id}`} className="pressable -mx-1.5 flex min-w-0 flex-col rounded-md px-1.5 leading-tight [--press-scale:.985]">
                 <span className="truncate text-[14.5px] font-semibold">{song.title}</span>
                 <span className="truncate text-[13px] text-muted-foreground">
                   {daysSince === null ? 'Még nem volt próbán' : `${daysSince} napja`} · {song.artist}
                 </span>
-              </Link>
+              </PendingLink>
               {label &&
                 (added.has(song.id) ? (
                   <span className="inline-flex h-8 items-center gap-1 px-2 text-[13px] font-semibold text-done">

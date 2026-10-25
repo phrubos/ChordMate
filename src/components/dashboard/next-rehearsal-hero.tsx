@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { CalendarPlus, Clock, ListMusic, MapPin, Play, Theater, Users } from 'lucide-react';
@@ -70,9 +70,9 @@ export function NextRehearsalHero({ rehearsal, members, today, bandName, meta }:
           Következő {meta?.kind === 'gig' ? kindLabel('gig').toLowerCase() : 'próba'} · {rehearsalCountdownLabel(daysUntil(today, date))}
         </Eyebrow>
         <h2 id="hero-title" className="display-soft font-display text-[40px] leading-[1.02] font-medium tracking-[-0.03em] md:text-[64px]">
-          <Link href={`/rehearsals/${date}`} className="hover:underline hover:decoration-2 hover:underline-offset-8">
+          <PendingLink href={`/rehearsals/${date}`} className="hover:underline hover:decoration-2 hover:underline-offset-8">
             <span className="capitalize">{weekday}</span>, <em className="font-normal whitespace-nowrap text-primary">{shortDate}</em>
-          </Link>
+          </PendingLink>
         </h2>
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[14.5px] text-muted-foreground">
           {time && (
@@ -106,15 +106,15 @@ export function NextRehearsalHero({ rehearsal, members, today, bandName, meta }:
         )}
         <div className="mt-auto flex flex-wrap gap-2.5 pt-1.5">
           {songs.length > 0 ? (
-            <Link href={`/practice/${date}`} className={cn(buttonVariants({ size: 'lg' }), 'flex-1 md:flex-none')}>
+            <PendingLink href={`/practice/${date}`} className={cn(buttonVariants({ size: 'lg' }), 'flex-1 md:flex-none')}>
               <Theater />
               Próba mód indítása
-            </Link>
+            </PendingLink>
           ) : (
-            <Link href={`/rehearsals/${date}`} className={cn(buttonVariants({ size: 'lg' }), 'flex-1 md:flex-none')}>
+            <PendingLink href={`/rehearsals/${date}`} className={cn(buttonVariants({ size: 'lg' }), 'flex-1 md:flex-none')}>
               <ListMusic />
               Setlist összeállítása
-            </Link>
+            </PendingLink>
           )}
           <Button variant="outline" size="lg" disabled={!playable} className="hidden md:inline-flex" onClick={() => player.play(songs.find((s) => s.youtubeUrl) ?? songs[0], songs)}>
             <Play />
@@ -126,7 +126,7 @@ export function NextRehearsalHero({ rehearsal, members, today, bandName, meta }:
       <div className="min-w-0 rounded-md border border-border bg-background/60 px-2 py-3.5 shadow-[inset_0_2px_10px_oklch(0_0_0/.35)]">
         <div className="flex items-center justify-between px-2 pb-2.5">
           <Eyebrow>Setlist</Eyebrow>
-          <Link href={`/rehearsals/${date}`} className="text-[13.5px] font-semibold text-primary-text hover:underline">Próba oldala →</Link>
+          <PendingLink href={`/rehearsals/${date}`} className="pressable -mx-1.5 rounded-md px-1.5 text-[13.5px] font-semibold text-primary-text [--press-scale:.985] hover:underline">Próba oldala →</PendingLink>
         </div>
         {entries.length === 0 && <p className="px-2 py-4 text-sm text-muted-foreground">Még nincs dal a setlistben.</p>}
         <ol aria-label="Setlist">
@@ -136,10 +136,10 @@ export function NextRehearsalHero({ rehearsal, members, today, bandName, meta }:
               <li key={entry.id} className="grid grid-cols-[22px_40px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border p-2 last:border-b-0 md:grid-cols-[26px_40px_minmax(0,1fr)_auto_auto]">
                 <span className="text-right font-mono text-[12.5px] text-primary-text">{String(i + 1).padStart(2, '0')}</span>
                 <CoverArt title={s.title} artist={s.artist} imageUrl={s.imageUrl} size="sm" />
-                <Link href={`/songs/${s.id}`} className="flex min-w-0 flex-col leading-tight">
+                <PendingLink href={`/songs/${s.id}`} className="pressable -mx-1.5 flex min-w-0 flex-col rounded-md px-1.5 leading-tight [--press-scale:.985]">
                   <span className="display-soft truncate font-display text-[17px] font-medium" title={s.title}>{s.title}</span>
                   <span className="truncate text-[13px] text-muted-foreground">{s.artist}</span>
-                </Link>
+                </PendingLink>
                 <ChipList className="hidden md:inline-flex" items={[s.songKey, s.bpm ? `${s.bpm} BPM` : null]} />
                 <StatusBadge status={s.status} compact className="md:hidden" />
                 <StatusBadge status={s.status} className="hidden md:inline-flex" />

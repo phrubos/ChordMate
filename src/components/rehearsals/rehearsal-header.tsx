@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { ChevronLeft, Clock, ListMusic, MapPin, Pencil, Theater } from 'lucide-react';
@@ -31,10 +31,10 @@ export function RehearsalHeader({ date, meta, songCount, today, preview, initial
   return (
     <header className="flex flex-col gap-5">
       <nav aria-label="Morzsamenü" className="text-sm text-muted-foreground">
-        <Link href="/rehearsals" className="inline-flex items-center gap-1 hover:text-foreground">
+        <PendingLink href="/rehearsals" className="pressable -mx-1.5 inline-flex items-center gap-1 rounded-md px-1.5 [--press-scale:.985] hover:text-foreground">
           <ChevronLeft className="size-4" aria-hidden />
           Próbák
-        </Link>
+        </PendingLink>
         <span aria-hidden className="mx-1.5 text-faint">/</span>
         <span aria-current="page">{format(parsed, 'MMM d.', { locale: hu })}</span>
       </nav>
@@ -80,10 +80,10 @@ export function RehearsalHeader({ date, meta, songCount, today, preview, initial
 
       <div className="flex flex-wrap gap-2.5">
         {songCount > 0 ? (
-          <Link href={`/practice/${date}`} className={buttonVariants({ size: 'lg' })}>
+          <PendingLink href={`/practice/${date}`} className={buttonVariants({ size: 'lg' })}>
             <Theater />
             Próba mód indítása
-          </Link>
+          </PendingLink>
         ) : (
           <Button size="lg" disabled title="Nincs setlist">
             <Theater />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useOptimistic, useState, useTransition } from 'react';
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import dynamic from 'next/dynamic';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -77,13 +77,13 @@ function SetlistRow({ entry, index, date, isPlaying, onPlay, onRemove }: Setlist
       </button>
       <span className="text-right font-mono text-xs text-faint">{index + 1}</span>
       <CoverArt title={s.title} artist={s.artist} imageUrl={s.imageUrl} size="sm" />
-      <Link href={`/songs/${s.id}`} className="flex min-w-0 flex-col leading-tight">
+      <PendingLink href={`/songs/${s.id}`} className="pressable -mx-1.5 flex min-w-0 flex-col rounded-md px-1.5 leading-tight [--press-scale:.985]">
         <span className="truncate text-[14.5px] font-semibold" title={s.title}>{s.title}</span>
         <span className="truncate text-[13px] text-muted-foreground">
           {s.artist}
           {s.songKey && <span className="font-mono text-faint"> · {s.songKey}</span>}
         </span>
-      </Link>
+      </PendingLink>
       <span className="flex items-center">
         {s.tabContent && (
           <TabViewerModal
@@ -220,9 +220,9 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries, var
             </span>
           )}
           {variant === 'day' && (
-            <Link href={`/rehearsals/${date}`} className="text-[13.5px] font-semibold whitespace-nowrap text-primary-text hover:underline">
+            <PendingLink href={`/rehearsals/${date}`} className="pressable -mx-1.5 rounded-md px-1.5 text-[13.5px] font-semibold whitespace-nowrap text-primary-text [--press-scale:.985] hover:underline">
               Próba oldala →
-            </Link>
+            </PendingLink>
           )}
         </div>
       </header>

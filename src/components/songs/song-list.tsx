@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { ListMusic } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -33,9 +33,9 @@ export function SongList({ songs, view, searchQuery, filtered }: SongListProps) 
     }
     return (
       <EmptyState icon={ListMusic} illustration="songs" title="Még nincsenek dalok" description="Adj hozzá az első dalt, hogy elkezdhessétek a gyakorlást!">
-        <Link href="/songs/new" className={buttonVariants()}>
+        <PendingLink href="/songs/new" className={buttonVariants()}>
           Első dal hozzáadása
-        </Link>
+        </PendingLink>
       </EmptyState>
     );
   }

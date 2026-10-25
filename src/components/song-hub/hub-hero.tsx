@@ -1,7 +1,7 @@
 'use client';
 
 import { useOptimistic, useTransition } from 'react';
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { ArrowRight, Heart, Play, Theater } from 'lucide-react';
@@ -84,10 +84,10 @@ export function HubHero({ song, rehearsal }: { song: SongWithUser; rehearsal: Hu
           <StatusPicker songId={song.id} status={song.status} />
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/practice/song/${song.id}`} className={cn(buttonVariants({ size: 'lg' }), 'max-md:h-10 max-md:px-4')}>
+          <PendingLink href={`/practice/song/${song.id}`} className={cn(buttonVariants({ size: 'lg' }), 'max-md:h-10 max-md:px-4')}>
             <Theater />
             Gyakorlás
-          </Link>
+          </PendingLink>
           {song.youtubeUrl && (
             <Button variant="outline" size="lg" className="max-md:h-10 max-md:px-4" onClick={() => player.play(song)}>
               <Play className="fill-current" />
@@ -100,13 +100,13 @@ export function HubHero({ song, rehearsal }: { song: SongWithUser; rehearsal: Hu
           <SongActionsMenu song={song} />
         </div>
         {rehearsal && (
-          <Link
+          <PendingLink
             href={`/practice/${rehearsal.date}?i=${rehearsal.position}`}
-            className="inline-flex w-fit items-center gap-1.5 text-[13.5px] text-muted-foreground hover:text-foreground"
+            className="pressable -mx-1.5 inline-flex w-fit items-center gap-1.5 rounded-md px-1.5 text-[13.5px] text-muted-foreground [--press-scale:.985] hover:text-foreground"
           >
             <span className="first-letter:uppercase">{format(parseISO(rehearsal.date), 'MMM d.', { locale: hu })} próba</span> · setlist {rehearsal.position}/{rehearsal.count}
             <ArrowRight className="size-3.5" aria-hidden />
-          </Link>
+          </PendingLink>
         )}
       </div>
     </section>

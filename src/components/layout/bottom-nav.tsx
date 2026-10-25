@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS } from './nav-items';
@@ -20,7 +20,7 @@ export function BottomNav() {
     const active = item.match(pathname);
     const Icon = item.icon;
     return (
-      <Link
+      <PendingLink
         key={item.href}
         href={item.href}
         aria-current={active ? 'page' : undefined}
@@ -28,7 +28,7 @@ export function BottomNav() {
       >
         <Icon className="size-[22px]" strokeWidth={1.75} />
         {item.label}
-      </Link>
+      </PendingLink>
     );
   };
 

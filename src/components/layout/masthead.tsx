@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown, Search, Theater } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -36,17 +37,17 @@ export function Masthead({ user, practiceHref = '/practice/next' }: MastheadProp
         {NAV_ITEMS.map((item) => {
           const active = item.match(pathname);
           return (
-            <Link
+            <PendingLink
               key={item.href}
               href={item.href}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'px-2.5 py-1.5 text-[15px] transition-colors duration-(--dur-fade)',
+                'pressable rounded-md px-2.5 py-1.5 text-[15px] transition-[transform,color] duration-(--dur-fade)',
                 active ? 'text-foreground shadow-[inset_0_-2px_0_var(--primary)]' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               {item.label}
-            </Link>
+            </PendingLink>
           );
         })}
       </nav>
@@ -83,10 +84,10 @@ export function Masthead({ user, practiceHref = '/practice/next' }: MastheadProp
           </DropdownMenuContent>
         </DropdownMenu>
         <span aria-hidden className="mx-1.5 h-6 w-px bg-border-strong" />
-        <Link href={practiceHref} className={buttonVariants({ size: 'sm' })}>
+        <PendingLink href={practiceHref} className={buttonVariants({ size: 'sm' })}>
           <Theater />
           Próba mód
-        </Link>
+        </PendingLink>
         <BandSwitcher />
         <UserMenu user={user} triggerId="user-menu-desktop" />
       </div>

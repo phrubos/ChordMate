@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { notFound, redirect } from 'next/navigation';
@@ -20,9 +20,9 @@ function PracticeEmpty({ title, description }: { title: string; description: str
   return (
     <div className="grid min-h-dvh place-items-center px-4">
       <EmptyState icon={CalendarX} illustration="calendar" title={title} description={description}>
-        <Link href="/dashboard" className={buttonVariants({ variant: 'outline' })}>
+        <PendingLink href="/dashboard" className={buttonVariants({ variant: 'outline' })}>
           Vissza a kezdőlapra
-        </Link>
+        </PendingLink>
       </EmptyState>
     </div>
   );

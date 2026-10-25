@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { PendingLink } from '@/components/shared/pending-link';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { CalendarPlus, ChevronRight } from 'lucide-react';
@@ -20,10 +20,10 @@ export function RehearsalList({ upcoming, past, today }: RehearsalListProps) {
     return (
       <div className="flex flex-col items-start gap-4 border-t border-border-strong pt-8">
         <p className="text-lg">Még nincs próba. Tervezz egyet!</p>
-        <Link href="/rehearsals?view=calendar" className={buttonVariants()}>
+        <PendingLink href="/rehearsals?view=calendar" className={buttonVariants()}>
           <CalendarPlus />
           Próba tervezése
-        </Link>
+        </PendingLink>
       </div>
     );
   }
@@ -42,9 +42,9 @@ function Section({ title, days, today, empty }: { title: string; days: Rehearsal
       {days.length === 0 ? (
         <p className="border-t border-border-strong pt-4 text-muted-foreground">
           {empty}{' '}
-          <Link href="/rehearsals?view=calendar" className="font-semibold text-primary-text hover:underline">
+          <PendingLink href="/rehearsals?view=calendar" className="font-semibold text-primary-text hover:underline">
             Próba tervezése
-          </Link>
+          </PendingLink>
         </p>
       ) : (
         <ul className="border-t border-border-strong">
@@ -63,9 +63,9 @@ function RehearsalRow({ day, today }: { day: RehearsalDay; today: string }) {
   const parsed = parseISO(day.date);
   const time = formatTimeRange(day.meta?.startTime ?? null, day.meta?.endTime ?? null);
   return (
-    <Link
+    <PendingLink
       href={`/rehearsals/${day.date}`}
-      className="group grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-4 border-b border-border py-3.5 transition-colors duration-(--dur-fade) hover:bg-muted/40 md:grid-cols-[64px_minmax(0,1fr)_auto] md:px-2"
+      className="pressable group grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-4 border-b border-border py-3.5 transition-[transform,background-color] duration-(--dur-fade) [--press-scale:.985] hover:bg-muted/40 md:grid-cols-[64px_minmax(0,1fr)_auto] md:px-2"
     >
       <span className={cn('flex flex-col items-center leading-none', day.isPast && 'text-muted-foreground')}>
         <span className="font-mono text-[11px] tracking-[0.12em] uppercase">{format(parsed, 'MMM', { locale: hu })}</span>
@@ -83,6 +83,6 @@ function RehearsalRow({ day, today }: { day: RehearsalDay; today: string }) {
         {day.meta?.goal && <span className="truncate text-[13.5px] text-muted-foreground">{day.meta.goal}</span>}
       </span>
       <ChevronRight className="size-4 text-faint transition-transform duration-(--dur-fade) group-hover:translate-x-0.5" aria-hidden />
-    </Link>
+    </PendingLink>
   );
 }
