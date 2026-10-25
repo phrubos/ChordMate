@@ -105,9 +105,9 @@ function SetlistRow({ entry, index, date, isPlaying, onPlay, onRemove }: Setlist
       <CoverArt title={s.title} artist={s.artist} imageUrl={s.imageUrl} size="sm" />
       <PendingLink href={`/songs/${s.id}`} className="pressable -mx-1.5 flex min-w-0 flex-col rounded-md px-1.5 leading-tight [--press-scale:.985]">
         <span className="truncate text-[14.5px] font-semibold" title={s.title}>{s.title}</span>
-        <span className="truncate text-[13px] text-muted-foreground">
-          {s.artist}
-          {s.songKey && <span className="font-mono text-faint"> · {s.songKey}</span>}
+        <span className="flex min-w-0 text-[13px] text-muted-foreground">
+          <span className="truncate">{s.artist}</span>
+          {s.songKey && <span className="shrink-0 font-mono whitespace-pre text-faint"> · {s.songKey}</span>}
         </span>
       </PendingLink>
       <span className="flex items-center">
@@ -348,23 +348,26 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries, var
       </motion.div>
 
       {hasSongs && (
-        <footer className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-          <Button size="sm" variant="outline" onClick={() => setPickerOpen(true)}>
-            <Plus />
-            Dal hozzáadása
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setCopyOpen(true)}>
-            <Copy />
-            Másolás
-          </Button>
-          {(!isPast || hasRecordings) && (
-            <Button size="sm" variant="outline" onClick={() => setRecordingOpen(true)}>
-              {isPast ? <Disc3 /> : <Mic className="text-destructive" />}
-              {isPast ? 'Felvételek' : 'Felvétel'}
+        <footer className="mt-3 flex items-start gap-2 border-t border-border pt-3">
+          {/* The buttons wrap among themselves; the ⋯ menu stays at the end of the first line. */}
+          <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setPickerOpen(true)}>
+              <Plus />
+              Dal hozzáadása
             </Button>
-          )}
+            <Button size="sm" variant="outline" onClick={() => setCopyOpen(true)}>
+              <Copy />
+              Másolás
+            </Button>
+            {(!isPast || hasRecordings) && (
+              <Button size="sm" variant="outline" onClick={() => setRecordingOpen(true)}>
+                {isPast ? <Disc3 /> : <Mic className="text-destructive" />}
+                {isPast ? 'Felvételek' : 'Felvétel'}
+              </Button>
+            )}
+          </div>
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="További műveletek" className="ml-auto" />}>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="További műveletek" className="shrink-0" />}>
               <MoreHorizontal />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

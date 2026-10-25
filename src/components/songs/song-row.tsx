@@ -38,11 +38,8 @@ export function SongRow({ song, onPlay }: { song: Song; onPlay?: (song: Song) =>
       <span className="hidden md:inline">
         <DifficultyMeter level={song.difficulty} />
       </span>
-      <span className="hidden md:inline">
-        <StatusBadge status={song.status} />
-      </span>
-      <span className="md:hidden">
-        <StatusBadge status={song.status} compact />
+      <span>
+        <StatusBadge status={song.status} className="max-md:text-xs" />
       </span>
       <span className="flex items-center justify-end">
         {onPlay && song.youtubeUrl && (

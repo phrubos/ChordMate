@@ -142,8 +142,7 @@ export function NextRehearsalHero({ rehearsal, members, today, bandName, meta }:
                   <span className="truncate text-[13px] text-muted-foreground">{s.artist}</span>
                 </PendingLink>
                 <ChipList className="hidden md:inline-flex" items={[s.songKey, s.bpm ? `${s.bpm} BPM` : null]} />
-                <StatusBadge status={s.status} compact className="md:hidden" />
-                <StatusBadge status={s.status} className="hidden md:inline-flex" />
+                <StatusBadge status={s.status} className="max-md:text-xs" />
               </li>
             );
           })}

@@ -11,7 +11,7 @@ import { getCalendarEntries } from '@/actions/calendar';
 import { getSongs } from '@/actions/songs';
 import { getUserBand } from '@/actions/bands';
 import { getRehearsalMetas } from '@/actions/rehearsals';
-import { pickNextRehearsal, todayIso } from '@/lib/calendar-utils';
+import { findNextRehearsalDate, todayIso } from '@/lib/calendar-utils';
 import { buildSongInsights } from '@/lib/neglected';
 
 export default async function DashboardPage() {
@@ -23,9 +23,7 @@ export default async function DashboardPage() {
 
   const [entries, songs, band, metas] = await Promise.all([getCalendarEntries(), getSongs(), getUserBand(), getRehearsalMetas()]);
   // The next rehearsal is the first upcoming day with a setlist or with details.
-  const nextDate = [pickNextRehearsal(entries, today)?.date, ...metas.filter((m) => m.date >= today).map((m) => m.date)]
-    .filter((d): d is string => !!d)
-    .sort()[0];
+  const nextDate = findNextRehearsalDate([...entries.map((e) => e.date), ...metas.map((m) => m.date)], today);
   const next = nextDate ? { date: nextDate, entries: entries.filter((e) => e.date === nextDate) } : null;
   const nextMeta = metas.find((m) => m.date === nextDate) ?? null;
   const insights = buildSongInsights(songs, entries, today);

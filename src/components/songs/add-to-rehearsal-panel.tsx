@@ -80,7 +80,7 @@ export function AddToRehearsalPanel({ upcoming, today, onAdd }: AddToRehearsalPa
           ref={stripRef}
           role="listbox"
           aria-label="Nap kiválasztása"
-          className="-mx-4 flex snap-x scroll-px-4 gap-1.5 overflow-x-auto overscroll-x-contain px-4 pb-1 [scrollbar-width:none] md:-mx-5 md:scroll-px-5 md:px-5"
+          className="-mx-4 flex snap-x scroll-px-4 gap-1.5 overflow-x-auto overscroll-x-contain px-4 pb-1 [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)] [scrollbar-width:none] md:-mx-5 md:scroll-px-5 md:px-5"
         >
           {days.map((date, i) => {
             const d = parseISO(date);

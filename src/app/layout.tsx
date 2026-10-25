@@ -3,7 +3,6 @@ import { Fraunces, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
-import { KeyboardShortcuts } from "@/components/shared/keyboard-shortcuts";
 import { PressFeedback } from "@/components/shared/press-feedback";
 import { OnboardingCheck } from "@/components/band/onboarding-check";
 import { needsOnboarding } from "@/actions/bands";
@@ -80,7 +79,6 @@ export default async function RootLayout({
           <AuthSessionProvider>
             <NextTopLoader color="oklch(0.8 0.145 72)" showSpinner={false} height={2} shadow={false} />
             <TooltipProvider>
-              <KeyboardShortcuts />
               <PressFeedback />
               <OnboardingCheck needsOnboardingServer={needs} />
               {children}

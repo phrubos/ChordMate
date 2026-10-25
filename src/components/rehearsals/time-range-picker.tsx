@@ -52,7 +52,7 @@ export function TimeRangePicker({ start, end, onChange, error }: TimeRangePicker
         </span>
         {start && (
           <Button variant="link" size="xs" className="h-auto px-0 text-muted-foreground" onClick={() => onChange({ start: '', end: '' })}>
-            Törlés
+            Időpont nélkül
           </Button>
         )}
       </div>
@@ -167,7 +167,12 @@ function ChipRow({ label, hint, children }: { label: string; hint?: string; chil
       <span className="w-14 shrink-0 font-mono text-[11px] tracking-[0.08em] text-muted-foreground uppercase">{label}</span>
       <div role="group" aria-label={label} className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
         {children}
-        {hint && <span className="text-[13px] text-primary-text">{hint}</span>}
+        {/* A length no chip matches (e.g. 2,5 óra) shows as the selected chip would, but is not a button. */}
+        {hint && (
+          <span className="inline-flex h-8 items-center rounded-full border border-primary bg-primary/12 px-3 text-[13px] font-medium text-primary-text tabular-nums">
+            {hint}
+          </span>
+        )}
       </div>
     </div>
   );
