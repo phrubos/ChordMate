@@ -2,7 +2,8 @@
 
 import { useState, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield, Camera, Image as ImageIcon, Eye, Plus, Ticket } from 'lucide-react';
+import Image from 'next/image';
+import { Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield, Camera, Image as ImageIcon, Eye, Plus, Ticket } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,17 +28,17 @@ import { updateBandName, regenerateInviteCode, removeBandMember, leaveBand, upda
 import { toast } from 'sonner';
 import type { BandWithMembers } from '@/types';
 import { TruncatedText } from '@/components/shared/truncated-text';
+import { ImageLightbox } from '@/components/shared/image-lightbox';
 import { compressImageBase64 } from '@/lib/image-utils';
 
 interface BandProfileProps {
   band: BandWithMembers;
   currentUserId: string;
-  bandCount?: number;
   /** Connected services (Spotify), rendered as their own section. */
   integrations?: ReactNode;
 }
 
-export function BandProfile({ band, currentUserId, bandCount = 1, integrations }: BandProfileProps) {
+export function BandProfile({ band, currentUserId, integrations }: BandProfileProps) {
   const router = useRouter();
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(band.name);
@@ -190,10 +191,10 @@ export function BandProfile({ band, currentUserId, bandCount = 1, integrations }
       >
         <div className="relative h-48 w-full bg-background">
           {band.backgroundData ? (
-            <img src={band.backgroundData} alt="Cover" className="h-full w-full object-cover" />
+            <Image src={band.backgroundData} alt="" fill sizes="(min-width: 1024px) 1024px, 100vw" className="object-cover" />
           ) : band.logoData ? (
             <div className="relative h-full w-full overflow-hidden">
-              <img src={band.logoData} alt="Cover" className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl opacity-40" />
+              <Image src={band.logoData} alt="" fill sizes="100vw" className="scale-110 object-cover blur-2xl opacity-40" />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
             </div>
           ) : (
@@ -342,7 +343,7 @@ export function BandProfile({ band, currentUserId, bandCount = 1, integrations }
           <SectionHeader title="Tagok" className="mb-4" />
           <div className="flex flex-col gap-2">
             {band.members
-              .sort((a, b) => (a.role === 'admin' ? -1 : 1))
+              .toSorted((a, b) => Number(b.role === 'admin') - Number(a.role === 'admin'))
               .map((member) => {
                 const initials = member.user.name
                   ?.split(' ')
@@ -543,29 +544,7 @@ export function BandProfile({ band, currentUserId, bandCount = 1, integrations }
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Fullscreen Image Viewer */}
-      {viewImage && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in-0 duration-150"
-          onClick={() => setViewImage(null)}
-        >
-          <div className="relative flex items-center justify-center animate-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setViewImage(null)}
-              className="pressable absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-[color,background-color,border-color,opacity,transform] shadow-md cursor-pointer"
-            >
-              <X className="size-5" />
-            </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={viewImage}
-              alt="Nagyított megtekintés"
-              className="max-h-[85vh] max-w-[85vw] object-contain rounded-xl shadow-2xl block"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
+      <ImageLightbox src={viewImage} alt="Nagyított megtekintés" onClose={() => setViewImage(null)} />
     </div>
   );
 }
