@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { PendingLink } from '@/components/shared/pending-link';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -19,24 +19,27 @@ interface NeglectedSongsCardProps {
 
 export function NeglectedSongsCard({ items, nextRehearsalDate }: NeglectedSongsCardProps) {
   const [added, setAdded] = useState<Set<string>>(new Set());
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
   const label = nextRehearsalDate ? format(parseISO(nextRehearsalDate), 'MMM d.', { locale: hu }) : null;
 
-  function add(song: Song) {
-    if (!nextRehearsalDate) return;
-    setPendingId(song.id);
-    startTransition(async () => {
-      try {
-        await assignSongToDate(song.id, nextRehearsalDate);
-        setAdded((prev) => new Set(prev).add(song.id));
-        toast.success(`${song.title} — felkerült a ${label} próbára`);
-      } catch {
-        toast.error('Nem sikerült hozzáadni');
-      } finally {
-        setPendingId(null);
-      }
+  const mark = (id: string, on: boolean) =>
+    setAdded((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
     });
+
+  // Shown as added at once; taken back if the server says no.
+  async function add(song: Song) {
+    if (!nextRehearsalDate) return;
+    mark(song.id, true);
+    try {
+      await assignSongToDate(song.id, nextRehearsalDate);
+      toast.success(`${song.title} — felkerült a ${label} próbára`);
+    } catch {
+      mark(song.id, false);
+      toast.error('Nem sikerült hozzáadni');
+    }
   }
 
   return (
@@ -66,7 +69,6 @@ export function NeglectedSongsCard({ items, nextRehearsalDate }: NeglectedSongsC
                     variant="outline"
                     size="xs"
                     className="h-8 border-dashed px-3 text-[13px]"
-                    isLoading={pendingId === song.id}
                     aria-label={`${song.title} hozzáadása a ${label} próbához`}
                     onClick={() => add(song)}
                   >

@@ -37,10 +37,33 @@ import { CopyDayDialog } from './copy-day-dialog';
 const TabViewerModal = dynamic(() => import('@/components/songs/tab-viewer-modal').then((m) => ({ default: m.TabViewerModal })), { ssr: false });
 const RecordingModal = dynamic(() => import('@/components/tools/recording-modal').then((m) => ({ default: m.RecordingModal })), { ssr: false });
 
-type OptimisticAction = { type: 'remove'; id: string } | { type: 'reorder'; ids: string[] };
+type OptimisticAction =
+  | { type: 'remove'; id: string }
+  | { type: 'reorder'; ids: string[] }
+  | { type: 'add'; songs: Song[]; date: string }
+  | { type: 'clear' };
+
+/** Rows shown before the server has saved them: no real id yet, so they can't be removed or dragged. */
+const PROVISIONAL = 'provisional:';
+const isProvisional = (entry: CalendarEntryWithSong) => entry.id.startsWith(PROVISIONAL);
 
 function applyOptimistic(entries: CalendarEntryWithSong[], action: OptimisticAction): CalendarEntryWithSong[] {
   if (action.type === 'remove') return entries.filter((e) => e.id !== action.id);
+  if (action.type === 'clear') return [];
+  if (action.type === 'add') {
+    const added = action.songs.map((song, i) => ({
+      id: `${PROVISIONAL}${song.id}:${i}`,
+      date: action.date,
+      songId: song.id,
+      bandId: null,
+      addedById: '',
+      sortOrder: null,
+      createdAt: new Date(),
+      song,
+      addedBy: { id: '', name: null, image: null },
+    }));
+    return [...entries, ...added];
+  }
   const byId = new Map(entries.map((e) => [e.id, e]));
   return action.ids.map((id) => byId.get(id)).filter((e): e is CalendarEntryWithSong => !!e);
 }
@@ -55,15 +78,18 @@ interface SetlistRowProps {
 }
 
 function SetlistRow({ entry, index, date, isPlaying, onPlay, onRemove }: SetlistRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: entry.id });
+  const provisional = isProvisional(entry);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: entry.id, disabled: provisional });
   const s = entry.song;
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
+      aria-busy={provisional || undefined}
       className={cn(
-        'grid grid-cols-[28px_22px_40px_minmax(0,1fr)_auto] items-center gap-2.5 border-b border-border py-2 pr-1',
-        isDragging && 'relative z-10 rounded-md bg-card shadow-lg'
+        'grid grid-cols-[28px_22px_40px_minmax(0,1fr)_auto] items-center gap-2.5 border-b border-border py-2 pr-1 transition-opacity duration-(--dur-fade)',
+        isDragging && 'relative z-10 rounded-md bg-card shadow-lg',
+        provisional && 'opacity-60'
       )}
     >
       <button
@@ -104,7 +130,7 @@ function SetlistRow({ entry, index, date, isPlaying, onPlay, onRemove }: Setlist
             {isPlaying ? <Pause className="fill-current" /> : <Play className="fill-current" />}
           </Button>
         )}
-        <Button variant="ghost" size="icon-sm" aria-label={`Eltávolítás a próbáról: ${s.title}`} className="text-faint hover:text-destructive" onClick={() => onRemove(entry)}>
+        <Button variant="ghost" size="icon-sm" aria-label={`Eltávolítás a próbáról: ${s.title}`} className="text-faint hover:text-destructive" disabled={provisional} onClick={() => onRemove(entry)}>
           <X />
         </Button>
       </span>
@@ -185,6 +211,51 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries, var
         await reorderCalendarEntries(ids);
       } catch {
         toast.error('Nem sikerült menteni a sorrendet');
+      }
+    });
+  }
+
+  // Added, copied and cleared songs show at once; the server's answer replaces them (or they vanish on error).
+  function onAdd(ids: string[]) {
+    const byId = new Map(allSongs.map((s) => [s.id, s]));
+    const songs = ids.map((id) => byId.get(id)).filter((s): s is Song => !!s);
+    startTransition(async () => {
+      applyAction({ type: 'add', songs, date });
+      try {
+        await assignSongsToDate(ids, date);
+        toast.success(ids.length > 1 ? `${ids.length} dal hozzáadva` : 'Dal hozzáadva');
+      } catch {
+        toast.error('Nem sikerült hozzáadni');
+      }
+    });
+  }
+
+  function onCopy(from: string) {
+    const songs = allEntries
+      .filter((e) => e.date === from)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .map((e) => e.song);
+    startTransition(async () => {
+      applyAction({ type: 'add', songs, date });
+      try {
+        await copySongsToDate(from, date);
+        toast.success('Setlist átmásolva');
+      } catch {
+        toast.error('Nem sikerült másolni');
+      }
+    });
+  }
+
+  function onClear() {
+    // AlertDialogAction is a plain button: it does not close the dialog by itself.
+    setClearOpen(false);
+    startTransition(async () => {
+      applyAction({ type: 'clear' });
+      try {
+        await clearSongsFromDate(date);
+        toast.success('Próba törölve');
+      } catch {
+        toast.error('Nem sikerült törölni');
       }
     });
   }
@@ -312,29 +383,9 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries, var
         date={date}
         songs={allSongs}
         excludeIds={new Set(optimistic.map((e) => e.songId))}
-        onConfirm={async (ids) => {
-          try {
-            await assignSongsToDate(ids, date);
-            toast.success(ids.length > 1 ? `${ids.length} dal hozzáadva` : 'Dal hozzáadva');
-          } catch {
-            toast.error('Nem sikerült hozzáadni');
-          }
-        }}
+        onConfirm={onAdd}
       />
-      <CopyDayDialog
-        open={copyOpen}
-        onOpenChange={setCopyOpen}
-        targetDate={date}
-        sourceDates={sourceDates}
-        onCopy={async (from) => {
-          try {
-            await copySongsToDate(from, date);
-            toast.success('Setlist átmásolva');
-          } catch {
-            toast.error('Nem sikerült másolni');
-          }
-        }}
-      />
+      <CopyDayDialog open={copyOpen} onOpenChange={setCopyOpen} targetDate={date} sourceDates={sourceDates} onCopy={onCopy} />
       <AlertDialog open={clearOpen} onOpenChange={setClearOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -347,18 +398,7 @@ export function DayDetailPanel({ date, today, entries, allSongs, allEntries, var
             <AlertDialogCancel>Mégse</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-background hover:bg-destructive/90"
-              onClick={() =>
-                startTransition(async () => {
-                  // AlertDialogAction is a plain button: it does not close the dialog by itself.
-                  setClearOpen(false);
-                  try {
-                    await clearSongsFromDate(date);
-                    toast.success('Próba törölve');
-                  } catch {
-                    toast.error('Nem sikerült törölni');
-                  }
-                })
-              }
+              onClick={onClear}
             >
               Törlés
             </AlertDialogAction>

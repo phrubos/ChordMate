@@ -6,7 +6,7 @@ Gitárgyakorlás-szervező (Next.js 16 App Router, React 19, Tailwind v4, shadcn
 - Fejlesztői szerver: `npm run dev` (http://localhost:3000)
 - Tesztek: `npm test` (Vitest, `src/**/*.test.ts`, tiszta függvények)
 - Típusellenőrzés: `npx tsc --noEmit`
-- Lint: `npm run lint` — a master ágon már volt 29 hiba; új hibát ne vigyünk be (`npx eslint <fájlok>`)
+- Lint: `npm run lint` — hiba és figyelmeztetés nélkül fut; így is maradjon (`npx eslint <fájlok>`)
 - Build: `npm run build`
 - Képernyőkép (futó dev szerver mellett): `bash scripts/ui-shot.sh "/dev/ui#atoms" desktop out.png`, mobil: `bash scripts/ui-shot.sh "/dev/ui?w=390#atoms" mobile out.png`
 - Egy szekció önmagában (stabil képernyőképhez): `/dev/ui?only=<id>` (pl. `songs`, `hub`, `practice`, `form`, `analytics`), mobilon `/dev/ui?w=390&only=<id>`

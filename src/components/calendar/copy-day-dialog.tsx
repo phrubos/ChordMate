@@ -10,7 +10,8 @@ interface CopyDayDialogProps {
   onOpenChange: (open: boolean) => void;
   targetDate: string;
   sourceDates: { date: string; titles: string[] }[];
-  onCopy: (from: string) => Promise<void>;
+  /** May return at once (the caller shows the result optimistically): the dialog then closes immediately. */
+  onCopy: (from: string) => void | Promise<void>;
 }
 
 export function CopyDayDialog({ open, onOpenChange, targetDate, sourceDates, onCopy }: CopyDayDialogProps) {

@@ -77,16 +77,20 @@ export function BandSwitcher({ preview }: { preview?: { bands: BandInfo[]; activ
 
   const activeBand = bands.find(b => b.id === activeBandId);
 
+  // The switcher shows the new band at once; the page's data follows with the refresh, and a failure switches back.
   async function handleSwitch(bandId: string) {
     if (bandId === activeBandId) return;
+    const previous = activeBandId;
+    setActiveBandId(bandId);
+    setMobileOpen(false);
+    toast.success(`Váltás: ${bands.find(b => b.id === bandId)?.name}`, { id: 'band-switch' });
+    if (preview) return;
     try {
-      if (!preview) await setActiveBand(bandId);
-      setActiveBandId(bandId);
-      toast.success(`Váltás: ${bands.find(b => b.id === bandId)?.name}`);
-      setMobileOpen(false);
-      if (!preview) router.refresh();
+      await setActiveBand(bandId);
+      router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Hiba történt');
+      setActiveBandId(previous);
+      toast.error(err instanceof Error ? err.message : 'Nem sikerült bandát váltani', { id: 'band-switch' });
     }
   }
 

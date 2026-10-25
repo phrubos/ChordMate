@@ -16,7 +16,8 @@ interface SongPickerDialogProps {
   date: string;
   songs: Song[];
   excludeIds: Set<string>;
-  onConfirm: (ids: string[]) => Promise<void>;
+  /** May return at once (the caller shows the result optimistically): the dialog then closes immediately. */
+  onConfirm: (ids: string[]) => void | Promise<void>;
 }
 
 /** Multi-select song picker for a rehearsal day (shared by calendar and day panel). */
