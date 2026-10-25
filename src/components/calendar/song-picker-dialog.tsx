@@ -85,7 +85,7 @@ export function SongPickerDialog({ open, onOpenChange, date, songs, excludeIds, 
                   aria-pressed={isOn}
                   onClick={() => toggle(song.id)}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-md px-1 py-2 text-left transition-colors duration-(--dur-fade) hover:bg-muted/60',
+                    'pressable flex w-full items-center gap-3 rounded-md px-1 py-2 text-left transition-[transform,background-color] duration-(--dur-fade) [--press-scale:.985] hover:bg-muted/60',
                     isOn && 'bg-primary/10'
                   )}
                 >

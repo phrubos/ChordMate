@@ -53,8 +53,8 @@ export function DeleteSongDialog({ song, open, onOpenChange }: DeleteSongDialogP
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Mégse</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} disabled={isPending} className="bg-destructive text-background hover:bg-destructive/90">
-            {isPending ? 'Törlés...' : 'Törlés'}
+          <AlertDialogAction onClick={handleDelete} isLoading={isPending} className="bg-destructive text-background hover:bg-destructive/90">
+            Törlés
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

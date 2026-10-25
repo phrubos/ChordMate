@@ -20,7 +20,7 @@ export function ToolsSheet({ open, onOpenChange }: { open: boolean; onOpenChange
             <SheetClose
               key={id}
               onClick={() => tools.open(id)}
-              className="flex min-h-14 items-center gap-4 border-t border-border py-3 text-left first:border-t-0"
+              className="pressable flex min-h-14 items-center gap-4 rounded-lg border-t border-border py-3 text-left [--press-scale:.985] first:border-t-0"
             >
               <span className="grid size-10 place-items-center rounded-full bg-primary/12 text-primary-text">
                 <Icon className="size-5" />

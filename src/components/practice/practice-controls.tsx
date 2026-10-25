@@ -39,7 +39,7 @@ function Tool({ on, label, className, children, ...props }: { on?: boolean; labe
       aria-label={label}
       aria-pressed={on}
       className={cn(
-        'inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-md border border-border-strong px-2 text-[13px] font-medium transition-[transform,border-color] duration-(--dur-press) ease-(--ease-out) hover:border-ring active:scale-[.97] disabled:pointer-events-none disabled:opacity-40 md:h-[52px] md:min-w-12 md:gap-2 md:px-4',
+        'pressable inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-md border border-border-strong px-2 text-[13px] font-medium transition-[transform,border-color] duration-(--dur-press) ease-(--ease-out) hover:border-ring disabled:pointer-events-none disabled:opacity-40 md:h-[52px] md:min-w-12 md:gap-2 md:px-4',
         on && 'border-primary bg-primary/10 text-primary-text',
         className
       )}

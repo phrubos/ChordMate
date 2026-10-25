@@ -8,7 +8,7 @@ import { NAV_ITEMS } from './nav-items';
 import { ToolsSheet } from './tools-sheet';
 import { MetronomeIcon } from './tool-icons';
 
-const itemClass = 'flex flex-col items-center gap-[3px] py-1.5 text-xs font-medium transition-colors duration-(--dur-fade)';
+const itemClass = 'pressable flex flex-col items-center gap-[3px] rounded-xl py-1.5 text-xs font-medium transition-[transform,color] duration-(--dur-fade)';
 
 /** Mobile bottom navigation: 4 destinations + Eszközök sheet. */
 export function BottomNav() {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { ResponsiveDialog } from '@/components/calendar/responsive-dialog';
 import { AddToRehearsalPanel } from '@/components/songs/add-to-rehearsal-panel';
@@ -10,10 +10,15 @@ import { FIXTURE_TODAY, fixtureEntries, fixtureSongs } from '../fixtures';
 const song = fixtureSongs[0];
 const upcoming = upcomingRehearsals(fixtureEntries, FIXTURE_TODAY, song.id);
 
-/** "Hozzáadás próbához": loaded, empty and loading bodies, plus the real dialog / sheet. */
+/** "Hozzáadás próbához": loaded, empty and loading bodies, plus the real dialog / sheet. Adding "works" 1.5s. */
 export function AddToRehearsalSection({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
-  const add = (date: string) => console.log('[dev] add', song.title, date);
+  const [pending, startTransition] = useTransition();
+  const add = (date: string) =>
+    startTransition(async () => {
+      await new Promise((r) => setTimeout(r, 1500));
+      console.log('[dev] add', song.title, date);
+    });
   return (
     <section id="add-to-rehearsal" className="flex flex-col gap-6">
       <Button className="self-start" onClick={() => setOpen(true)}>
@@ -22,12 +27,12 @@ export function AddToRehearsalSection({ defaultOpen = false }: { defaultOpen?: b
       <div className="grid gap-6 lg:grid-cols-3">
         {[upcoming, [], null].map((rows, i) => (
           <div key={i} className="flex min-w-0 flex-col rounded-xl bg-card p-4 ring-1 ring-foreground/10 md:p-5">
-            <AddToRehearsalPanel upcoming={rows} today={FIXTURE_TODAY} pending={false} onAdd={add} />
+            <AddToRehearsalPanel upcoming={rows} today={FIXTURE_TODAY} pending={pending} onAdd={add} />
           </div>
         ))}
       </div>
       <ResponsiveDialog open={open} onOpenChange={setOpen} title="Hozzáadás próbához" description={song.title}>
-        <AddToRehearsalPanel upcoming={upcoming} today={FIXTURE_TODAY} pending={false} onAdd={add} />
+        <AddToRehearsalPanel upcoming={upcoming} today={FIXTURE_TODAY} pending={pending} onAdd={add} />
       </ResponsiveDialog>
     </section>
   );

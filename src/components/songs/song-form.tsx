@@ -703,8 +703,8 @@ export function SongForm({ song }: SongFormProps) {
             <Button type="button" variant="ghost" onClick={handleBack} disabled={isPending}>
               Mégse
             </Button>
-            <Button type="submit" disabled={isPending} className="min-w-[110px]">
-              {isPending ? 'Mentés…' : 'Mentés'}
+            <Button type="submit" isLoading={isPending} className="min-w-[110px]">
+              Mentés
             </Button>
           </div>
         </form>

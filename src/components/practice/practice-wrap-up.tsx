@@ -105,7 +105,7 @@ export function PracticeWrapUp({ songs, label, exitHref, preview }: PracticeWrap
             Elvetés
           </Button>
         )}
-        <Button size="lg" onClick={save} disabled={pending}>
+        <Button size="lg" onClick={save} isLoading={pending}>
           {changes.length > 0 ? 'Mentés és kilépés' : 'Kilépés'}
         </Button>
       </footer>

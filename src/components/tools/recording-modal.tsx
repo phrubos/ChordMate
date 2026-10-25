@@ -155,7 +155,7 @@ export function RecordingsList({
                   aria-label={isPlaying ? `Szünet: ${rec.name}` : `Lejátszás: ${rec.name}`}
                   aria-busy={isLoading || undefined}
                   className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-full transition-[color,background-color,transform] active:scale-[.97]',
+                    'pressable flex size-9 shrink-0 items-center justify-center rounded-full transition-[color,background-color,transform]',
                     isCurrent ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20' : 'bg-primary/10 text-primary hover:bg-primary/20'
                   )}
                 >

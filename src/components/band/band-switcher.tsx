@@ -100,7 +100,7 @@ export function BandSwitcher() {
         <div
           key={band.id}
           onClick={() => { handleSwitch(band.id); onClose?.(); }}
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer hover:bg-secondary/50 transition-colors"
+          className="pressable flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer hover:bg-secondary/50 transition-[transform,background-color] [--press-scale:.985]"
         >
           <div className="flex size-7 shrink-0 items-center justify-center rounded-md overflow-hidden bg-primary/10 ring-1 ring-border/30">
             {band.logoData ? (
@@ -124,7 +124,7 @@ export function BandSwitcher() {
                 setLightboxSrc(band.logoData);
               }}
               title="Logó megtekintése"
-              className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+              className="pressable flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-[transform,color,background-color] cursor-pointer"
             >
               <Eye className="size-3.5" />
             </div>
@@ -137,7 +137,7 @@ export function BandSwitcher() {
                 router.push('/band');
               }}
               title="Banda profil"
-              className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+              className="pressable flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-[transform,color,background-color] cursor-pointer"
             >
               <Settings className="size-3.5" />
             </div>
@@ -147,7 +147,7 @@ export function BandSwitcher() {
       <div className="h-px bg-border/50 my-1" />
       <div
         onClick={() => { onClose?.(); router.push('/band'); }}
-        className="flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer text-muted-foreground hover:bg-secondary/50 transition-colors"
+        className="pressable flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer text-muted-foreground hover:bg-secondary/50 transition-[transform,background-color] [--press-scale:.985]"
       >
         <div className="flex size-7 shrink-0 items-center justify-center">
           <Plus className="size-4" />
@@ -198,7 +198,7 @@ export function BandSwitcher() {
                       setLightboxSrc(band.logoData);
                     }}
                     title="Logó megtekintése"
-                    className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                    className="pressable flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-[transform,color,background-color] cursor-pointer"
                   >
                     <Eye className="size-3.5" />
                   </div>
@@ -210,7 +210,7 @@ export function BandSwitcher() {
                       router.push('/band');
                     }}
                     title="Banda profil"
-                    className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                    className="pressable flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-[transform,color,background-color] cursor-pointer"
                   >
                     <Settings className="size-3.5" />
                   </div>
@@ -260,7 +260,7 @@ export function BandSwitcher() {
               type="button"
               aria-label="Bezárás"
               onClick={() => { setLightboxSrc(null); if (returnToModal) { setMobileOpen(true); setReturnToModal(false); } }}
-              className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-[color,background-color,border-color,opacity,transform] shadow-md cursor-pointer"
+              className="pressable absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-[color,background-color,border-color,opacity,transform] shadow-md cursor-pointer"
             >
               <X className="size-5" />
             </button>

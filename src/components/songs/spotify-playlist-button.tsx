@@ -346,8 +346,8 @@ export function SpotifyPlaylistButton({ bandName }: SpotifyPlaylistButtonProps) 
                 <Button variant="ghost" onClick={() => setDialogState('create')}>
                   Mégse
                 </Button>
-                <Button variant="destructive" onClick={handleDisconnect} disabled={isPending}>
-                  {isPending ? <Loader2 className="size-4 animate-spin" /> : 'Leválasztás'}
+                <Button variant="destructive" onClick={handleDisconnect} isLoading={isPending}>
+                  Leválasztás
                 </Button>
               </div>
             </>

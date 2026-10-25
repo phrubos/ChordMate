@@ -2,7 +2,7 @@ import { cva } from "class-variance-authority"
 
 /** Server-safe: import from here in Server Components (button.tsx is "use client"). */
 export const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,box-shadow] duration-(--dur-press) ease-(--ease-out) outline-none select-none active:scale-[.97] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/30 [&_*]:cursor-pointer [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer motion-reduce:active:scale-100",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-[transform,background-color,border-color,color,box-shadow] duration-(--dur-press) ease-(--ease-out) pressable outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/30 [&_*]:cursor-pointer [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer",
   {
     variants: {
       variant: {
@@ -16,7 +16,7 @@ export const buttonVariants = cva(
           "text-foreground hover:bg-muted aria-expanded:bg-muted",
         destructive:
           "bg-destructive/15 text-destructive hover:bg-destructive/25 focus-visible:ring-destructive",
-        link: "text-primary-text underline-offset-4 hover:underline active:scale-100",
+        link: "text-primary-text underline-offset-4 hover:underline [--press-scale:1] before:hidden",
       },
       size: {
         default:

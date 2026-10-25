@@ -2,7 +2,7 @@
 
 import { useState, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield, Camera, Image as ImageIcon, Eye, Plus, Ticket, Loader2 } from 'lucide-react';
+import { Users, Copy, RefreshCw, LogOut, Trash2, Pencil, Check, X, Crown, Shield, Camera, Image as ImageIcon, Eye, Plus, Ticket } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -286,7 +286,7 @@ export function BandProfile({ band, currentUserId, bandCount = 1, integrations }
                     }
                   }}
                 />
-                <Button variant="ghost" size="icon" aria-label="Név mentése" className="shrink-0 text-primary-text" onClick={handleSaveName} disabled={loading}>
+                <Button variant="ghost" size="icon" aria-label="Név mentése" className="shrink-0 text-primary-text" onClick={handleSaveName} isLoading={loading}>
                   <Check className="size-5" />
                 </Button>
                 <Button variant="ghost" size="icon" aria-label="Mégse" className="shrink-0" onClick={() => { setIsEditingName(false); setNewName(band.name); }}>
@@ -448,8 +448,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1, integrations }
                 <Button variant="outline" className="flex-1 h-9 rounded-xl" onClick={() => { setAddMode('none'); setNewBandName(''); }} disabled={addLoading}>
                   Mégse
                 </Button>
-                <Button className="flex-1 h-9 rounded-xl gap-2" onClick={handleCreateBand} disabled={!newBandName.trim() || addLoading}>
-                  {addLoading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+                <Button className="flex-1 h-9 rounded-xl gap-2" onClick={handleCreateBand} disabled={!newBandName.trim()} isLoading={addLoading}>
+                  <Plus className="size-4" />
                   Létrehozás
                 </Button>
               </div>
@@ -474,8 +474,8 @@ export function BandProfile({ band, currentUserId, bandCount = 1, integrations }
                 <Button variant="outline" className="flex-1 h-9 rounded-xl" onClick={() => { setAddMode('none'); setJoinCode(''); }} disabled={addLoading}>
                   Mégse
                 </Button>
-                <Button className="flex-1 h-9 rounded-xl gap-2" onClick={handleJoinBand} disabled={!joinCode.trim() || addLoading}>
-                  {addLoading ? <Loader2 className="size-4 animate-spin" /> : <Ticket className="size-4" />}
+                <Button className="flex-1 h-9 rounded-xl gap-2" onClick={handleJoinBand} disabled={!joinCode.trim()} isLoading={addLoading}>
+                  <Ticket className="size-4" />
                   Csatlakozás
                 </Button>
               </div>
@@ -552,7 +552,7 @@ export function BandProfile({ band, currentUserId, bandCount = 1, integrations }
           <div className="relative flex items-center justify-center animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setViewImage(null)}
-              className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-[color,background-color,border-color,opacity,transform] shadow-md cursor-pointer"
+              className="pressable absolute -right-4 -top-4 sm:-right-6 sm:-top-6 z-10 flex size-9 sm:size-11 items-center justify-center rounded-full bg-background/80 text-foreground/80 hover:text-foreground hover:bg-background border border-border/50 backdrop-blur-md transition-[color,background-color,border-color,opacity,transform] shadow-md cursor-pointer"
             >
               <X className="size-5" />
             </button>

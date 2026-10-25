@@ -167,7 +167,7 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
               <button
                 key={ts.label}
                 onClick={() => setTimeSigIdx(idx)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-bold transition-[color,background-color,border-color,opacity,transform] ${
+                className={`pressable rounded-lg px-3 py-1.5 text-sm font-bold transition-[color,background-color,border-color,opacity,transform] ${
                   timeSigIdx === idx
                     ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
@@ -219,7 +219,7 @@ export function MetronomeModal({ open, onOpenChange, keepAliveOnClose = false, o
               <button
                 key={preset}
                 onClick={() => setBpm(preset)}
-                className={`rounded-md px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,opacity,transform] ${
+                className={`pressable rounded-md px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,opacity,transform] ${
                   bpm === preset
                     ? 'bg-primary/15 text-primary'
                     : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/50'

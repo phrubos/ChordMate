@@ -54,12 +54,12 @@ export function HubVideo({ song }: { song: Song }) {
             type="button"
             onClick={() => (isCurrent ? player.toggle() : player.play(song))}
             aria-label={isCurrent && player.state.isPlaying ? `Szünet: ${song.title}` : `Lejátszás: ${song.title}`}
-            className="group absolute inset-0 grid cursor-pointer place-items-center outline-none"
+            className="pressable group absolute inset-0 grid cursor-pointer place-items-center outline-none [--press-scale:1]"
           >
             {/* Hover on the box: faint wash, the disc lifts a touch inside a soft halo. On the disc itself it
                 turns amber — clickable everywhere, but the target is obvious. */}
             <span aria-hidden className="absolute inset-0 bg-foreground/0 transition-colors duration-(--dur-fade) group-hover:bg-foreground/[0.04]" />
-            <span className="relative grid place-items-center transition-transform duration-(--dur-press) ease-(--ease-out) group-hover:scale-[1.04] group-active:scale-[.97] motion-reduce:transition-none motion-reduce:group-hover:scale-100">
+            <span className="relative grid place-items-center transition-transform duration-(--dur-press) ease-(--ease-out) group-hover:scale-[1.04] group-active:scale-[.97] group-data-pressed:scale-[.97] motion-reduce:transition-none motion-reduce:group-hover:scale-100">
               <span aria-hidden className="absolute inset-0 scale-[1.3] rounded-full bg-foreground/12 opacity-0 transition-opacity duration-(--dur-fade) group-hover:opacity-100" />
               <span className="relative grid size-16 place-items-center rounded-full bg-foreground text-background shadow-[0_8px_24px_oklch(0_0_0/.35)] transition-[transform,background-color,color] duration-(--dur-press) ease-(--ease-out) hover:scale-[1.04] hover:bg-primary hover:text-primary-foreground group-focus-visible:bg-primary group-focus-visible:text-primary-foreground group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-background motion-reduce:transition-colors motion-reduce:hover:scale-100">
                 {isCurrent && player.state.isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="ml-0.5 size-5 fill-current" />}

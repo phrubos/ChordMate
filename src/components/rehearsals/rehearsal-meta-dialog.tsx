@@ -28,7 +28,8 @@ type Field = 'startTime' | 'endTime' | 'place' | 'goal' | 'notes';
 
 export function RehearsalMetaDialog({ date, meta, open, onOpenChange, preview }: RehearsalMetaDialogProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [saving, startSave] = useTransition();
+  const [removing, startRemove] = useTransition();
   const [kind, setKind] = useState<RehearsalKind>(meta?.kind ?? 'rehearsal');
   const [values, setValues] = useState<Record<Field, string>>({
     startTime: meta?.startTime ?? '',
@@ -51,7 +52,7 @@ export function RehearsalMetaDialog({ date, meta, open, onOpenChange, preview }:
     }
     setErrors({});
     if (preview) return onOpenChange(false);
-    startTransition(async () => {
+    startSave(async () => {
       try {
         await saveRehearsalMeta(date, input);
         toast.success('Próba mentve');
@@ -66,7 +67,7 @@ export function RehearsalMetaDialog({ date, meta, open, onOpenChange, preview }:
   function remove() {
     if (!confirmDelete) return setConfirmDelete(true);
     if (preview) return onOpenChange(false);
-    startTransition(async () => {
+    startRemove(async () => {
       try {
         await clearSongsFromDate(date);
         toast.success('Próba törölve');
@@ -120,7 +121,7 @@ export function RehearsalMetaDialog({ date, meta, open, onOpenChange, preview }:
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-        <Button variant="ghost" size="sm" className="text-destructive" disabled={pending} onClick={remove}>
+        <Button variant="ghost" size="sm" className="text-destructive" isLoading={removing} disabled={saving} onClick={remove}>
           <Trash2 />
           {confirmDelete ? 'Biztosan törlöd?' : 'Próba törlése'}
         </Button>
@@ -128,7 +129,7 @@ export function RehearsalMetaDialog({ date, meta, open, onOpenChange, preview }:
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Mégse
           </Button>
-          <Button disabled={pending} onClick={save}>
+          <Button isLoading={saving} disabled={removing} onClick={save}>
             Mentés
           </Button>
         </div>

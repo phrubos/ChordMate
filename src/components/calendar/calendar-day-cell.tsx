@@ -44,7 +44,7 @@ export const CalendarDayCell = memo(function CalendarDayCell({
       aria-label={label}
       aria-pressed={isSelected}
       className={cn(
-        'relative flex min-h-14 flex-col items-start justify-between border-r border-b border-border p-1.5 text-left transition-colors duration-(--dur-fade) outline-none hover:bg-muted/50 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring md:min-h-[84px] md:p-2',
+        'pressable relative flex min-h-14 flex-col items-start justify-between border-r border-b border-border p-1.5 text-left transition-colors duration-(--dur-fade) outline-none hover:bg-muted/50 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring md:min-h-[84px] md:p-2 [--press-scale:1]',
         !isCurrentMonth && 'text-faint opacity-55',
         state === 'plan' && !isSelected && PLAN_STRIPES,
         isSelected && 'bg-primary/12 shadow-[inset_0_0_0_1px_var(--primary)]'

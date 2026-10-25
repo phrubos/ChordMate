@@ -76,7 +76,7 @@ export function RehearsalAttendance({ date, userId, attendance, isPast, preview 
                 aria-pressed={mine === b.value}
                 onClick={() => answer(b.value)}
                 className={cn(
-                  'h-10 rounded-full border text-sm font-semibold transition-colors duration-(--dur-fade) outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'pressable h-10 rounded-full border text-sm font-semibold transition-[transform,background-color,border-color,color] duration-(--dur-fade) outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   mine === b.value ? 'border-foreground bg-foreground text-background' : 'border-border-strong text-muted-foreground hover:text-foreground'
                 )}
               >

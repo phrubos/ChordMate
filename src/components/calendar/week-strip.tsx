@@ -31,7 +31,7 @@ export function WeekStrip({ dates, today, selected, stateByDate, onSelect }: Wee
             aria-label={`${format(d, 'MMMM d., EEEE', { locale: hu })}${state === 'empty' ? '' : state === 'done' ? ', lezajlott próba' : ', tervezett próba'}`}
             onClick={() => onSelect(date)}
             className={cn(
-              'flex min-w-11 flex-[0_0_calc((100%-36px)/7)] snap-start flex-col items-center gap-0.5 rounded-full border border-border bg-card pt-2.5 pb-3 transition-colors duration-(--dur-fade) outline-none focus-visible:ring-2 focus-visible:ring-ring md:flex-1',
+              'pressable flex min-w-11 flex-[0_0_calc((100%-36px)/7)] snap-start flex-col items-center gap-0.5 rounded-full border border-border bg-card pt-2.5 pb-3 transition-[transform,background-color,border-color,color] duration-(--dur-fade) outline-none focus-visible:ring-2 focus-visible:ring-ring md:flex-1',
               isToday && 'border-primary bg-primary text-primary-foreground',
               isSelected && !isToday && 'border-primary bg-primary/12'
             )}

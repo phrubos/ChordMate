@@ -242,6 +242,42 @@
   html:not([data-hero-seen]) .hero-cover { animation: hero-reveal 450ms var(--ease-out) calc(var(--i) * 60ms) both; }
 }
 
+/*
+ * A1 — lenyomás. A tónus (a szövegszín 10%-a, ::before rétegen, csak opacity) azonnal megjelenik, elengedéskor
+ * kiúszik; mellé scale(--press-scale, .97). Érintésnél a <PressFeedback> tartja a [data-pressed]-et legalább 120ms-ig,
+ * így egy gyors koppintás is látszik — és iOS-en is működik, ahol a :active magától nem jön. Széles soroknál
+ * [--press-scale:.985], rácscelláknál [--press-scale:1]. Utility (absolute, transition-*) felülírja.
+ */
+@layer components {
+  .pressable {
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--dur-press) var(--ease-out);
+  }
+  .pressable::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms var(--ease-out);
+  }
+  .pressable:is(:active, [data-pressed]):not(:disabled, [aria-disabled="true"], [data-disabled]) {
+    transform: scale(var(--press-scale, 0.97));
+  }
+  .pressable:is(:active, [data-pressed]):not(:disabled, [aria-disabled="true"], [data-disabled])::before {
+    opacity: 0.1;
+    transition-duration: 0ms;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  @layer components {
+    .pressable:is(:active, [data-pressed]) { transform: none; }
+  }
+}
+
 /* Skeleton: gyors betöltésnél (< 150ms) meg sem jelenik, utána átúszik és lüktet. */
 @keyframes skeleton-pulse {
   50% { opacity: 0.5; }

@@ -33,7 +33,7 @@ export const SongCard = memo(function SongCard({ song, onPlay }: SongCardProps) 
             type="button"
             onClick={() => onPlay(song)}
             aria-label={`Lejátszás: ${song.title}`}
-            className="absolute right-2.5 bottom-2.5 grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0_0_0/.5)] transition-[opacity,transform] duration-200 ease-(--ease-out) active:scale-[.97] hover-device:translate-y-1.5 hover-device:opacity-0 hover-device:group-hover:translate-y-0 hover-device:group-hover:opacity-100 hover-device:focus-visible:translate-y-0 hover-device:focus-visible:opacity-100"
+            className="pressable absolute right-2.5 bottom-2.5 grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_oklch(0_0_0/.5)] transition-[opacity,transform] duration-200 ease-(--ease-out) hover-device:translate-y-1.5 hover-device:opacity-0 hover-device:group-hover:translate-y-0 hover-device:group-hover:opacity-100 hover-device:focus-visible:translate-y-0 hover-device:focus-visible:opacity-100"
           >
             <Play className="ml-0.5 size-4 fill-current" />
           </button>

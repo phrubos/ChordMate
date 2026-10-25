@@ -34,7 +34,7 @@ export function CopyDayDialog({ open, onOpenChange, targetDate, sourceDates, onC
                     onOpenChange(false);
                   })
                 }
-                className="flex w-full items-center justify-between gap-3 rounded-md px-1 py-2.5 text-left transition-colors duration-(--dur-fade) hover:bg-muted/60 disabled:opacity-50"
+                className="pressable flex w-full items-center justify-between gap-3 rounded-md px-1 py-2.5 text-left transition-[transform,background-color] duration-(--dur-fade) [--press-scale:.985] hover:bg-muted/60 disabled:opacity-50"
               >
                 <span className="flex min-w-0 flex-col">
                   <span className="text-sm font-semibold capitalize">{format(parseISO(date), 'MMMM d., EEEE', { locale: hu })}</span>

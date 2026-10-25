@@ -21,7 +21,8 @@ function Button({
   ...props
 }: ButtonProps) {
   if (isLoading) {
-    // The label crossfades out (blur + scale .96) and a spinner takes its place; the width stays put.
+    // Blocked at once; after 300ms the label crossfades out (blur + scale .96) and a spinner takes its place —
+    // a quick action finishes before anything flickers. The width stays put.
     return (
       <ButtonPrimitive
         data-slot="button"
@@ -32,10 +33,10 @@ function Button({
         // After {...props}: a loading button must not run the caller's onClick a second time.
         onClick={(e) => e.preventDefault()}
       >
-        <span className="inline-flex size-full items-center justify-center gap-[inherit] animate-out fade-out-0 zoom-out-[0.96] blur-out-[2px] fill-mode-forwards duration-(--dur-fade) ease-(--ease-out)">
+        <span className="inline-flex size-full items-center justify-center gap-[inherit] animate-out fade-out-0 zoom-out-[0.96] blur-out-[2px] fill-mode-both delay-300 duration-(--dur-fade) ease-(--ease-out)">
           {props.children}
         </span>
-        <span className="absolute inset-0 grid place-items-center animate-in fade-in-0 zoom-in-90 blur-in-[2px] duration-(--dur-fade) ease-(--ease-out)">
+        <span className="absolute inset-0 grid place-items-center animate-in fade-in-0 zoom-in-90 blur-in-[2px] fill-mode-both delay-300 duration-(--dur-fade) ease-(--ease-out)">
           <Loader2 aria-hidden className="size-4 animate-spin motion-reduce:animate-none" />
         </span>
       </ButtonPrimitive>

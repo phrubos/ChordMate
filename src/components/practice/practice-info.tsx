@@ -49,7 +49,7 @@ export function PracticeInfo({ song, next, label, onNext, variant }: PracticeInf
           <button
             type="button"
             onClick={onNext}
-            className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-border-strong p-2.5 text-left transition-transform duration-(--dur-press) ease-(--ease-out) hover:border-ring active:scale-[.97]"
+            className="pressable grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-border-strong p-2.5 text-left transition-transform duration-(--dur-press) ease-(--ease-out) [--press-scale:.985] hover:border-ring"
           >
             <CoverArt title={next.title} artist={next.artist} imageUrl={next.imageUrl} size="sm" />
             <span className="flex min-w-0 flex-col leading-tight">

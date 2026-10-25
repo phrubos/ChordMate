@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { addDays, format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Eyebrow } from '@/components/design/eyebrow';
@@ -24,6 +24,13 @@ interface AddToRehearsalPanelProps {
 /** Body of "Hozzáadás próbához": the planned rehearsals as date stubs, then a day strip for any other day. */
 export function AddToRehearsalPanel({ upcoming, today, pending, onAdd }: AddToRehearsalPanelProps) {
   const [selected, setSelected] = useState<string | null>(null);
+  // Which day the running add is for: that control shows the work, the rest just wait.
+  const [adding, setAdding] = useState<string | null>(null);
+  const add = (date: string) => {
+    setAdding(date);
+    onAdd(date);
+  };
+  const busy = (date: string) => pending && adding === date;
   const stripRef = useRef<HTMLDivElement>(null);
   const byDate = new Map((upcoming ?? []).map((r) => [r.date, r]));
   const days = Array.from({ length: STRIP_DAYS }, (_, i) => format(addDays(parseISO(today), i), 'yyyy-MM-dd'));
@@ -56,7 +63,7 @@ export function AddToRehearsalPanel({ upcoming, today, pending, onAdd }: AddToRe
           <ul className="flex flex-col gap-2">
             {upcoming.map((r) => (
               <li key={r.date}>
-                <RehearsalStub rehearsal={r} today={today} disabled={pending} onAdd={() => onAdd(r.date)} />
+                <RehearsalStub rehearsal={r} today={today} disabled={pending} busy={busy(r.date)} onAdd={() => add(r.date)} />
               </li>
             ))}
           </ul>
@@ -96,7 +103,7 @@ export function AddToRehearsalPanel({ upcoming, today, pending, onAdd }: AddToRe
                 aria-label={`${format(d, 'MMMM d., EEEE', { locale: hu })}${r ? (r.position != null ? ', már a setlisten' : ', tervezett próba') : ''}`}
                 onClick={() => setSelected(isSelected ? null : date)}
                 className={cn(
-                  'relative flex w-12 shrink-0 snap-start flex-col items-center gap-0.5 rounded-full border border-border bg-background/40 pt-2 pb-2.5 transition-[background-color,border-color,color] duration-(--dur-fade) outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'pressable flex w-12 shrink-0 snap-start flex-col items-center gap-0.5 rounded-full border border-border bg-background/40 pt-2 pb-2.5 transition-[transform,background-color,border-color,color] duration-(--dur-fade) outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   'hover:border-border-strong',
                   isSelected && 'border-primary bg-primary text-primary-foreground hover:border-primary'
                 )}
@@ -118,7 +125,11 @@ export function AddToRehearsalPanel({ upcoming, today, pending, onAdd }: AddToRe
             );
           })}
         </div>
-        <Button size="lg" variant={selected ? 'default' : 'outline'} className="mt-1 w-full" disabled={!selected || alreadyOnSelected || pending} onClick={() => selected && onAdd(selected)}>
+        <Button size="lg" variant={selected ? 'default' : 'outline'} className="mt-1 w-full"
+          disabled={!selected || alreadyOnSelected || (pending && !busy(selected))}
+          isLoading={!!selected && busy(selected)}
+          onClick={() => selected && add(selected)}
+        >
           {!selected ? (
             'Válassz napot'
           ) : alreadyOnSelected ? (
@@ -141,17 +152,19 @@ export function AddToRehearsalPanel({ upcoming, today, pending, onAdd }: AddToRe
   );
 }
 
-function RehearsalStub({ rehearsal: r, today, disabled, onAdd }: { rehearsal: UpcomingRehearsal; today: string; disabled: boolean; onAdd: () => void }) {
+function RehearsalStub({ rehearsal: r, today, disabled, busy, onAdd }: { rehearsal: UpcomingRehearsal; today: string; disabled: boolean; busy: boolean; onAdd: () => void }) {
   const d = parseISO(r.date);
   const already = r.position !== null;
   return (
     <button
       type="button"
       disabled={already || disabled}
+      aria-busy={busy || undefined}
       onClick={onAdd}
       className={cn(
-        'group flex w-full items-center gap-3.5 rounded-xl border border-border-strong bg-background/40 p-2 pr-3 text-left transition-[background-color,border-color] duration-(--dur-fade) outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        already ? 'cursor-default' : 'hover:border-ring hover:bg-muted/60 disabled:opacity-60'
+        'pressable group flex w-full items-center gap-3.5 rounded-xl border border-border-strong bg-background/40 p-2 pr-3 text-left transition-[transform,background-color,border-color] [--press-scale:.985] duration-(--dur-fade) outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        already ? 'cursor-default' : 'hover:border-ring hover:bg-muted/60',
+        disabled && !already && !busy && 'opacity-60'
       )}
     >
       <span className={cn('flex w-[52px] shrink-0 flex-col items-center rounded-lg py-1.5', already ? 'bg-muted' : 'bg-primary/12')}>
@@ -172,8 +185,14 @@ function RehearsalStub({ rehearsal: r, today, disabled, onAdd }: { rehearsal: Up
           {r.position}. dal
         </span>
       ) : (
-        <span className="grid size-9 shrink-0 place-items-center rounded-full border border-border-strong text-primary-text transition-[background-color,border-color,color] duration-(--dur-fade) group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground">
-          <Plus className="size-4" aria-hidden />
+        <span className="relative grid size-9 shrink-0 place-items-center rounded-full border border-border-strong text-primary-text transition-[background-color,border-color,color] duration-(--dur-fade) group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground">
+          {/* Like Button's isLoading: the plus gives way to a spinner only past 300ms. */}
+          <Plus className={cn('size-4', busy && 'animate-out fade-out-0 fill-mode-both delay-300 duration-(--dur-fade)')} aria-hidden />
+          {busy && (
+            <span className="absolute inset-0 grid place-items-center animate-in fade-in-0 fill-mode-both delay-300 duration-(--dur-fade)">
+              <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+            </span>
+          )}
         </span>
       )}
     </button>
