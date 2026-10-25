@@ -52,4 +52,5 @@ function Button({
   )
 }
 
-export { Button, buttonVariants }
+// buttonVariants lives in ./button-variants: importing it from this client module breaks server components.
+export { Button }

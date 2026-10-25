@@ -2,7 +2,7 @@
 
 import { PendingLink } from '@/components/shared/pending-link';
 import { Plus } from 'lucide-react';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button-variants';
 import { cn } from '@/lib/utils';
 
 export function NewSongButton() {

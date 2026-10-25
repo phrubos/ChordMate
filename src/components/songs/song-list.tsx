@@ -2,7 +2,7 @@
 
 import { PendingLink } from '@/components/shared/pending-link';
 import { ListMusic } from 'lucide-react';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button-variants';
 import { EmptyState } from '@/components/shared/empty-state';
 import { usePlayer } from '@/components/player/player-provider';
 import type { Song } from '@/types';

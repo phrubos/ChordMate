@@ -2,7 +2,7 @@ import { PendingLink } from '@/components/shared/pending-link';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { CalendarPlus, ChevronRight } from 'lucide-react';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button-variants';
 import { Eyebrow } from '@/components/design/eyebrow';
 import { ChipList } from '@/components/design/chip';
 import { daysUntil, rehearsalCountdownLabel } from '@/lib/calendar-utils';
