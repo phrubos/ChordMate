@@ -14,6 +14,7 @@ import { saveRehearsalMeta } from '@/actions/rehearsals';
 import { clearSongsFromDate } from '@/actions/calendar';
 import { rehearsalMetaSchema } from '@/lib/validators';
 import type { Rehearsal, RehearsalKind } from '@/types';
+import { TimeRangePicker } from './time-range-picker';
 
 interface RehearsalMetaDialogProps {
   date: string;
@@ -92,18 +93,15 @@ export function RehearsalMetaDialog({ date, meta, open, onOpenChange, preview }:
             { value: 'gig', label: 'Fellépés' },
           ]}
         />
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rh-start">Kezdés</Label>
-            <Input id="rh-start" type="time" value={values.startTime} onChange={set('startTime')} aria-invalid={!!errors.startTime} />
-            {error('startTime')}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rh-end">Vége</Label>
-            <Input id="rh-end" type="time" value={values.endTime} onChange={set('endTime')} aria-invalid={!!errors.endTime} />
-            {error('endTime')}
-          </div>
-        </div>
+        <TimeRangePicker
+          start={values.startTime}
+          end={values.endTime}
+          onChange={({ start, end }) => {
+            setValues((v) => ({ ...v, startTime: start, endTime: end }));
+            setErrors((e) => ({ ...e, startTime: undefined, endTime: undefined }));
+          }}
+          error={errors.startTime ?? errors.endTime}
+        />
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="rh-place">Helyszín</Label>
           <Input id="rh-place" value={values.place} onChange={set('place')} placeholder="pl. Próbaterem, Szeged" aria-invalid={!!errors.place} />

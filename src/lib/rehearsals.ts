@@ -33,6 +33,29 @@ export function formatTimeRange(start: string | null, end: string | null): strin
   return end ? `${start}–${end}` : start;
 }
 
+const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+const LAST_SLOT = 23 * 60 + 45;
+
+/** "HH:MM" moved by `minutes`, kept within one day (00:00–23:45): a rehearsal never runs past midnight here. */
+export function shiftTime(time: string, minutes: number): string {
+  const m = Math.min(LAST_SLOT, Math.max(0, toMinutes(time) + minutes));
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
+export function minutesBetween(start: string, end: string): number {
+  return toMinutes(end) - toMinutes(start);
+}
+
+/** 45 → "45 perc", 90 → "1,5 óra", 135 → "2 óra 15 perc". */
+export function durationLabel(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} perc`;
+  if (m === 0) return `${h} óra`;
+  if (m === 30) return `${h},5 óra`;
+  return `${h} óra ${m} perc`;
+}
+
 export function kindLabel(kind: Rehearsal['kind']): string {
   return kind === 'gig' ? 'Fellépés' : 'Próba';
 }

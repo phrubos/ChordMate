@@ -16,7 +16,7 @@ interface WeekStripProps {
 /** Horizontally scrollable 14-day strip (mobile default calendar view). */
 export function WeekStrip({ dates, today, selected, stateByDate, onSelect }: WeekStripProps) {
   return (
-    <div role="listbox" aria-label="Heti nézet" className="-mx-4 flex snap-x snap-mandatory gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0">
+    <div role="listbox" aria-label="Heti nézet" className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:scroll-px-0 md:px-0">
       {dates.map((date) => {
         const d = parseISO(date);
         const state = stateByDate[date] ?? 'empty';
