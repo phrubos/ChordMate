@@ -1,9 +1,9 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { calendarEntries, songs } from '@/lib/db/schema';
+import { calendarEntries } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
-import { asc, sql, desc, eq, and, isNull } from 'drizzle-orm';
+import { asc, eq, and, isNull } from 'drizzle-orm';
 import { format, subDays, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { getUserBandId } from './bands';
