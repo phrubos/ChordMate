@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { buildQueue, formatClock, initialPlayerState, playerReducer, recordingTrack, seekKeyTarget, seekTime, toTrack, type PlayerTrack } from './player-state';
+import { buildQueue, formatClock, initialPlayerState, nextTakeName, playerReducer, recordingTrack, seekKeyTarget, seekTime, toTrack, type PlayerTrack } from './player-state';
 
 const song = (id: string, youtubeUrl: string | null = `https://youtu.be/${id}`) => ({ id, title: id, artist: 'A', imageUrl: null, youtubeUrl });
 const track = (id: string) => toTrack(song(id)) as PlayerTrack;
@@ -99,5 +99,21 @@ describe('setPlaying', () => {
     expect(playerReducer(playing, { type: 'setPlaying', value: false }).isPlaying).toBe(false);
     expect(playerReducer(playing, { type: 'setPlaying', value: true })).toBe(playing);
     expect(playerReducer(initialPlayerState, { type: 'setPlaying', value: true })).toBe(initialPlayerState);
+  });
+});
+
+describe('nextTakeName', () => {
+  const rec = (name: string, songId: string | null = 's1') => ({ name, songId });
+  test('first take of the song', () => {
+    expect(nextTakeName('Save Tonight', 's1', [rec('Másik', 's2')])).toBe('Save Tonight – Take 1');
+  });
+  test('counts on from the highest take', () => {
+    expect(nextTakeName('Save Tonight', 's1', [rec('Save Tonight – Take 1'), rec('Save Tonight – Take 2')])).toBe('Save Tonight – Take 3');
+  });
+  test('a deleted take does not come back', () => {
+    expect(nextTakeName('Save Tonight', 's1', [rec('Save Tonight – Take 2')])).toBe('Save Tonight – Take 3');
+  });
+  test('renamed takes still count', () => {
+    expect(nextTakeName('Save Tonight', 's1', [rec('jó volt'), rec('refrén')])).toBe('Save Tonight – Take 3');
   });
 });

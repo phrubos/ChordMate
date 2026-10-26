@@ -122,71 +122,73 @@ export function MiniPlayer() {
           transition={{ duration: dur.sheet, ease: ease.drawer }}
           className="fixed inset-x-2 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 md:inset-x-0 md:bottom-5 md:mx-auto md:max-w-[760px]"
         >
-          <DismissDrag onDismiss={close}>
-            <div
-              role="region"
-              aria-label="Lejátszó"
-              className="relative grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-full border border-border-strong bg-card/90 py-2 pr-2 pl-2 shadow-[0_16px_40px_oklch(0_0_0/.5)] backdrop-blur-xl md:grid-cols-[40px_minmax(0,1fr)_auto_auto_auto] md:gap-3.5"
-            >
-              {isRecording ? (
-                <RecordingArt />
-              ) : (
-                <CoverArt title={current.title} artist={current.artist} imageUrl={current.imageUrl} size="sm" className="rounded-full" />
-              )}
-              <div className="flex min-w-0 flex-col leading-tight">
-                <span className="truncate text-sm font-semibold">{current.title}</span>
-                <span className="truncate text-[13px] text-muted-foreground">
-                  {isRecording && <Mic className="mr-1 inline size-3 -translate-y-px text-destructive" aria-hidden />}
-                  {current.artist}
-                  {!isRecording && (
-                    <span className="ml-1.5 hidden items-center gap-1 text-faint sm:inline-flex">
-                      <Video className="size-3" aria-hidden />
-                      YouTube
-                    </span>
-                  )}
-                </span>
-              </div>
-              <span className="hidden font-mono text-[12.5px] text-muted-foreground md:inline">
-                <ElapsedTime /> <span className="text-faint">/ <TotalTime /></span>
-              </span>
-              <div className="flex items-center gap-0.5">
-                <Button variant="ghost" size="icon" aria-label="Előző" onClick={prev} className="hidden md:inline-flex">
-                  <SkipBack />
-                </Button>
-                <Button size="icon" aria-label={state.isPlaying ? 'Szünet' : 'Lejátszás'} aria-busy={loading || undefined} onClick={toggle}>
-                  {loading && state.isPlaying ? (
-                    <Loader2 className="animate-spin motion-reduce:animate-none" />
-                  ) : state.isPlaying ? (
-                    <Pause className="fill-current" />
-                  ) : (
-                    <Play className="ml-0.5 fill-current" />
-                  )}
-                </Button>
-                <Button variant="ghost" size="icon" aria-label="Következő" onClick={next}>
-                  <SkipForward />
-                </Button>
-                {/* Phones: the × lives with the controls (the video opens from the cover). */}
-                <Button variant="ghost" size="icon" aria-label="Lejátszó bezárása" onClick={close} className="text-muted-foreground md:hidden">
-                  <X />
-                </Button>
-              </div>
-              <div className="hidden items-center md:flex">
-                {!isRecording && (
-                  <Button variant="ghost" size="icon" aria-label="Videó megnyitása" onClick={() => expand(true)}>
-                    <Maximize2 />
-                  </Button>
+          <div className="mini-player-dock">
+            <DismissDrag onDismiss={close}>
+              <div
+                role="region"
+                aria-label="Lejátszó"
+                className="relative grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-full border border-border-strong bg-card/90 py-2 pr-2 pl-2 shadow-[0_16px_40px_oklch(0_0_0/.5)] backdrop-blur-xl md:grid-cols-[40px_minmax(0,1fr)_auto_auto_auto] md:gap-3.5"
+              >
+                {isRecording ? (
+                  <RecordingArt />
+                ) : (
+                  <CoverArt title={current.title} artist={current.artist} imageUrl={current.imageUrl} size="sm" className="rounded-full" />
                 )}
-                <Button variant="ghost" size="icon" aria-label="Lejátszó bezárása" onClick={close}>
-                  <X />
-                </Button>
+                <div className="flex min-w-0 flex-col leading-tight">
+                  <span className="truncate text-sm font-semibold">{current.title}</span>
+                  <span className="truncate text-[13px] text-muted-foreground">
+                    {isRecording && <Mic className="mr-1 inline size-3 -translate-y-px text-destructive" aria-hidden />}
+                    {current.artist}
+                    {!isRecording && (
+                      <span className="ml-1.5 hidden items-center gap-1 text-faint sm:inline-flex">
+                        <Video className="size-3" aria-hidden />
+                        YouTube
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <span className="hidden font-mono text-[12.5px] text-muted-foreground md:inline">
+                  <ElapsedTime /> <span className="text-faint">/ <TotalTime /></span>
+                </span>
+                <div className="flex items-center gap-0.5">
+                  <Button variant="ghost" size="icon" aria-label="Előző" onClick={prev} className="hidden md:inline-flex">
+                    <SkipBack />
+                  </Button>
+                  <Button size="icon" aria-label={state.isPlaying ? 'Szünet' : 'Lejátszás'} aria-busy={loading || undefined} onClick={toggle}>
+                    {loading && state.isPlaying ? (
+                      <Loader2 className="animate-spin motion-reduce:animate-none" />
+                    ) : state.isPlaying ? (
+                      <Pause className="fill-current" />
+                    ) : (
+                      <Play className="ml-0.5 fill-current" />
+                    )}
+                  </Button>
+                  <Button variant="ghost" size="icon" aria-label="Következő" onClick={next}>
+                    <SkipForward />
+                  </Button>
+                  {/* Phones: the × lives with the controls (the video opens from the cover). */}
+                  <Button variant="ghost" size="icon" aria-label="Lejátszó bezárása" onClick={close} className="text-muted-foreground md:hidden">
+                    <X />
+                  </Button>
+                </div>
+                <div className="hidden items-center md:flex">
+                  {!isRecording && (
+                    <Button variant="ghost" size="icon" aria-label="Videó megnyitása" onClick={() => expand(true)}>
+                      <Maximize2 />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" aria-label="Lejátszó bezárása" onClick={close}>
+                    <X />
+                  </Button>
+                </div>
+                {!isRecording && (
+                  <button type="button" className="absolute inset-y-0 left-0 w-14 md:hidden" aria-label="Videó megnyitása" onClick={() => expand(true)} />
+                )}
               </div>
-              {!isRecording && (
-                <button type="button" className="absolute inset-y-0 left-0 w-14 md:hidden" aria-label="Videó megnyitása" onClick={() => expand(true)} />
-              )}
-            </div>
-            {/* Outside the clipped pill: the hit area reaches a little below it, the time bubble above the line. */}
-            <SeekBar label={`Lejátszási pozíció: ${current.title}`} className="absolute inset-x-6 -bottom-1.5 h-[18px] md:inset-x-8" />
-          </DismissDrag>
+              {/* Outside the clipped pill: the hit area reaches a little below it, the time bubble above the line. */}
+              <SeekBar label={`Lejátszási pozíció: ${current.title}`} className="absolute inset-x-6 -bottom-1.5 h-[18px] md:inset-x-8" />
+            </DismissDrag>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

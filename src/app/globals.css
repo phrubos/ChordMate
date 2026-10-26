@@ -321,3 +321,17 @@
     --tw-exit-rotate: 0 !important;
   }
 }
+
+/* A2: modal (dialog, sheet, megerősítés) alatt a mini-player kiúszik — a scrim mögött homályosan, kezelhetetlenül
+   csak zavarna. A lejátszás közben szól tovább; bezáráskor visszaúszik. */
+.mini-player-dock { transition: transform var(--dur-sheet) var(--ease-drawer), opacity var(--dur-sheet) var(--ease-drawer); }
+body:has(:is([data-slot='dialog-content'], [data-slot='sheet-content'], [data-slot='alert-dialog-content']):not([data-closed])) .mini-player-dock {
+  transform: translateY(calc(100% + 2rem));
+  opacity: 0;
+  pointer-events: none;
+  transition-duration: var(--dur-dialog);
+  transition-timing-function: var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  body:has(:is([data-slot='dialog-content'], [data-slot='sheet-content'], [data-slot='alert-dialog-content']):not([data-closed])) .mini-player-dock { transform: none; }
+}

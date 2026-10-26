@@ -72,6 +72,20 @@ export function recordingSubtitle(date: string): string {
   return 'Saját felvétel · ' + formatDate(date, 'MMM d.');
 }
 
+/**
+ * Default name for a new take of a song: "Save Tonight – Take 3". Counts on from the highest take already named so
+ * (and never below the number of the song's recordings), so a deleted or renamed take doesn't bring a number back.
+ */
+export function nextTakeName(songTitle: string, songId: string, recordings: { songId: string | null; name: string }[]): string {
+  const own = recordings.filter((r) => r.songId === songId);
+  const prefix = `${songTitle} – Take `;
+  const highest = own.reduce((max, r) => {
+    const n = r.name.startsWith(prefix) ? Number(r.name.slice(prefix.length)) : NaN;
+    return Number.isInteger(n) ? Math.max(max, n) : max;
+  }, 0);
+  return prefix + (Math.max(highest, own.length) + 1);
+}
+
 /** m:ss, or h:mm:ss from an hour. */
 export function formatClock(seconds: number): string {
   const s = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));

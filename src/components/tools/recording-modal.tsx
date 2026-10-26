@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Mic, Square, Play, Pause, Trash2, Pencil, Check, X, Save, Loader2 } from 'lucide-react';
 import { PlayerProvider, usePlayer, usePlayerOptional } from '@/components/player/player-provider';
 import { ElapsedTime, SeekBar, TotalTime } from '@/components/player/seek-bar';
-import { formatClock, recordingSubtitle, recordingTrack } from '@/lib/player-state';
+import { formatClock, nextTakeName, recordingSubtitle, recordingTrack } from '@/lib/player-state';
 import {
   saveRecording as dbSave,
   getRecordingsByDate,
@@ -273,10 +273,12 @@ interface RecordingModalProps {
   date: string;
   /** Set from Próba mode: the recording is linked to this song. */
   songId?: string;
+  /** With songId: new takes are named "<title> – Take N" by default. */
+  songTitle?: string;
   readOnly?: boolean;
 }
 
-export function RecordingModal({ open, onOpenChange, date, songId, readOnly = false }: RecordingModalProps) {
+export function RecordingModal({ open, onOpenChange, date, songId, songTitle, readOnly = false }: RecordingModalProps) {
   const sharedPlayer = usePlayerOptional();
   const [state, setState] = useState<RecState>('idle');
   const [recordings, setRecordings] = useState<RecordingMeta[]>([]);
@@ -289,6 +291,11 @@ export function RecordingModal({ open, onOpenChange, date, songId, readOnly = fa
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Read from the recorder's onstop, which closes over the list as it was when the take started.
+  const recordingsRef = useRef(recordings);
+  useEffect(() => {
+    recordingsRef.current = recordings;
+  }, [recordings]);
 
   const loadRecordings = useCallback(async () => {
     try {
@@ -324,6 +331,7 @@ export function RecordingModal({ open, onOpenChange, date, songId, readOnly = fa
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
         setRecordedBlob(blob);
+        if (songId && songTitle) setRecordingName(nextTakeName(songTitle, songId, recordingsRef.current));
         setState('naming');
         stream.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
