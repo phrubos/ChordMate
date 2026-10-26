@@ -19,6 +19,12 @@ Gitárgyakorlás-szervező (Next.js 16 App Router, React 19, Tailwind v4, shadcn
 - Napló: `docs/superpowers/progress/2026-10-16-midnight-liner-redesign.md`
 - Mockup: `.superdesign/design_iterations/hybrid.html` (sötét), `liner.html` (világos)
 
+## Munkamenet (spec-alapú fejlesztés)
+- Kis javításhoz nem kell spec. Ha egy feature egy napnál több munka, vagy több képernyőt érint, előbb rövid spec a `docs/superpowers/specs/` mappába, terv a `plans/`-ba, napló a `progress/`-ba.
+- A specben mindig legyen **Hatókörön kívül** szakasz: mit NEM csinál a feature.
+- Ahol a spec vagy a kérés nem dönt, és a választás a felhasználónál is látszik (viselkedés, szabály, elnevezés), ott a döntést a válaszban jelezni kell, hogy vissza lehessen mondani.
+- Converge: egy feature végén a kódot pontonként összevetjük a speccel és a tervvel; ami eltér, abból új feladat lesz (vagy a spec frissül, ha a felhasználó így dönt).
+
 ## Szótár (UI-feliratok)
 - **Próba** = esemény (egy nap a naptárban, a banda közösen). **Setlist** = a próba dalsora, sorrenddel.
 - **Próba mód** = a színpadi nézet (`/practice/[date]`). **Gyakorlás** = egyéni, próbán kívüli Próba mód (`/practice/song/[id]`).
